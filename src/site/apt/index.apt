@@ -1,0 +1,61 @@
+ ------
+ Maven Exec Plugin
+ ------
+ Jerome Lacoste
+ ------
+ 12 Oct 2005
+ ------
+
+Maven Exec Plugin
+
+ A plugin to execute an external program.
+
+ Note: this is a very early release. Potential improvements include depending on the Jakarta commons-exec lib when it is released.
+
+ You can use the plugin in one of two ways, formally specifying all the relevant
+ information in the plugin configuration or through the use of system variables.
+ Using the system variable you would just execute it like the following example.
+ 
+-----
+> m2 org.cb.maven.plugins:maven-exec-plugin:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
+-----
+ 
+Exec Plugin Configuration
+
+ Add configuration similar to the following to your POM:
+
+-------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.cb.maven.plugins</groupId>
+        <artifactId>maven-exec-plugin</artifactId>
+        <!--version>0.1-SNAPSHOT</version-->
+        <executions>
+          <execution>
+            <id>myexecution</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>maven</executable>
+          <!-- optional -->
+          <workingdir>/tmp</workingdir>
+          <arguments>
+            <java.lang.String>-X</java.lang.String>
+            <java.lang.String>myproject:dist</java.lang.String>
+            ...
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+   ...
+</project>
+-------------------
+
