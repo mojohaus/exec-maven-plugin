@@ -17,7 +17,7 @@ Maven Exec Plugin
  Using the system variable you would just execute it like the following example.
  
 -----
-> m2 org.codehaus.mojo:exec-maven-plugin:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
+> mvn org.codehaus.mojo:exec-maven-plugin:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 -----
  
 Exec Plugin Configuration

@@ -69,10 +69,10 @@ public class ExecMojoTest extends TestCase
 
     public void setUp() throws IOException {
         mojo = new MockExecMojo();
-        mojo.setExecutable("m2");
+        mojo.setExecutable("mvn");
         mojo.setArguments( Arrays.asList( new String[] { "--version" } ) );
         mojo.executeResult = 0;
-        mojo.setBasedir( File.createTempFile( "m2-temp" , "txt").getParentFile() );
+        mojo.setBasedir( File.createTempFile( "mvn-temp" , "txt").getParentFile() );
     }
 
     public void tearDown() {
@@ -85,7 +85,7 @@ public class ExecMojoTest extends TestCase
     {
         mojo.execute();
 
-        checkMojo( "m2 --version" );
+        checkMojo( "mvn --version" );
     }
 
     /**
@@ -98,10 +98,10 @@ public class ExecMojoTest extends TestCase
            mojo.execute();
            fail( "expected failure" );
         } catch ( MojoExecutionException e ) {
-            assertEquals( "Result of m2 --version execution is: '1'.", e.getMessage() );
+            assertEquals( "Result of mvn --version execution is: '1'.", e.getMessage() );
         }
 
-        checkMojo( "m2 --version" );
+        checkMojo( "mvn --version" );
     }
 
     /**
@@ -117,7 +117,7 @@ public class ExecMojoTest extends TestCase
             assertEquals( "command execution failed", e.getMessage() );
         }
 
-        checkMojo( "m2 --version" );
+        checkMojo( "mvn --version" );
     }
 
     /**
@@ -127,17 +127,17 @@ public class ExecMojoTest extends TestCase
         mojo.systemProperties.put( "exec.args", "-f pom.xml" );
         mojo.execute();
 
-        checkMojo( "m2 -f pom.xml" );
+        checkMojo( "mvn -f pom.xml" );
     }
 
     /**
      */
     public void testOverrides2() throws MojoExecutionException
     {
-        mojo.systemProperties.put( "exec.executable", "/bin/m2" );
+        mojo.systemProperties.put( "exec.executable", "/bin/mvn" );
         mojo.execute();
 
-        checkMojo( "/bin/m2 --version" );
+        checkMojo( "/bin/mvn --version" );
     }
 
     /**
@@ -147,13 +147,13 @@ public class ExecMojoTest extends TestCase
         mojo.systemProperties.put( "exec.args", null );
         mojo.execute();
 
-        checkMojo( "m2 --version" );
+        checkMojo( "mvn --version" );
 
         mojo.commandLines.clear();
         mojo.systemProperties.put( "exec.args", "" );
         mojo.execute();
 
-        checkMojo( "m2 --version" );
+        checkMojo( "mvn --version" );
     }
 
     private void checkMojo( String expectedCommandLine) {
