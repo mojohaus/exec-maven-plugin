@@ -140,7 +140,7 @@ public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
         });
 
         // compile project
-        mojo.setExecutable( "mvntrunk" );
+        mojo.setExecutable( "mvn" );
         mojo.setWorkingDir( new File( "src/test/projects/" + projectName + "/") );
         mojo.setArguments( Arrays.asList(
             new String[] { "clean", "compile" }
