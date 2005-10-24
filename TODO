@@ -1,0 +1,16 @@
+After talking with Vincent Massol, decided to change interface to that it accepts something like
+ 
+  <executable>java</executable>
+  <arguments>
+    <argument></argument>
+    <argument>-classpath</argument>
+    <classpath>
+      <autocompute>true</autocompute> 
+      <dependencies>
+        <dependency>commons-io:commons-io</dependency>
+      </dependencies>
+    </classpath>
+    <argument></argument>
+  </arguments>
+
+with support of <dependencies> not in the first phase
