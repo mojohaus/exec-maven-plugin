@@ -2,15 +2,52 @@ After talking with Vincent Massol, decided to change interface to that it accept
  
   <executable>java</executable>
   <arguments>
-    <argument></argument>
+    <argument>-classpath</argument>
+    <classpath/>
+    <argument>mypackage.myclass</argument>
+    <argument>myarg</argument>
+  </arguments>
+
+and
+
+  <executable>java</executable>
+  <arguments>
     <argument>-classpath</argument>
     <classpath>
-      <autocompute>true</autocompute> 
+      <dependency>commons-io:commons-io</dependency>
+      <dependency>....</dependency>
+    </classpath>
+    <argument>mypackage.myclass</argument>
+    <argument>myarg</argument>
+  </arguments>
+
+
+OR (FORMAT NOT YET CHOSEN)
+
+ <executable>java</executable>
+  <arguments>
+    <argument>-classpath</argument>
+    <classpath>
+      <autocompute>true</autocompute>
+    </classpath>
+    <argument>mypackage.myclass</argument>
+    <argument>myarg</argument>
+  </arguments>
+
+and 
+
+  <executable>java</executable>
+  <arguments>
+    <argument>-classpath</argument>
+    <classpath>
       <dependencies>
         <dependency>commons-io:commons-io</dependency>
+        <dependency>....</dependency>
       </dependencies>
     </classpath>
-    <argument></argument>
+    <argument>mypackage.myclass</argument>
+    <argument>myarg</argument>
   </arguments>
+
 
 with support of <dependencies> not in the first phase
