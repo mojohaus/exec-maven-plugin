@@ -185,7 +185,7 @@ public class ExecMojo extends AbstractMojo {
         commandLine.setExecutable( executable );
 
         for ( Iterator it = commandArguments.iterator() ; it.hasNext() ; ) {
-            commandLine.createArgument().setLine( it.next().toString() );
+            commandLine.createArgument().setValue( it.next().toString() );
         }
 
         if ( workingDirectory != null ) {
