@@ -19,6 +19,9 @@ package org.codehaus.mojo.exec;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.artifact.Artifact;
+
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -27,6 +30,7 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
@@ -41,6 +45,18 @@ import java.util.ArrayList;
  * @version $Id:$
  */
 public class ExecMojo extends AbstractMojo {
+
+    public static class Classpath {
+        private String autocompute;
+        public void setAutocompute( String autocompute ) {
+             this.autocompute = autocompute;
+        }
+    }
+
+    /**
+     * @parameter
+     */
+    private Classpath classpath;
 
     /**
      * @parameter
@@ -61,7 +77,7 @@ public class ExecMojo extends AbstractMojo {
      * @parameter expression="${project}"
      * @required
      */
-    // private MavenProject project;
+    private MavenProject project;
 
     /**
      * @parameter expression="${basedir}"
@@ -79,6 +95,8 @@ public class ExecMojo extends AbstractMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );  
         }
 
+
+        // FIXME use configuration annotations to implement overrides
 
         String executableProp = getSystemProperty( "exec.executable" );
          
@@ -113,13 +131,48 @@ public class ExecMojo extends AbstractMojo {
                 arguments.add( strtok.nextToken() );
             }
         }
+
+        List commandArguments = new ArrayList();
+
+        if ( classpath != null ) {
+
+            getLog().debug( "classpath specified: " );
+
+            if ( classpath.autocompute != null ) {
+
+                commandArguments.add( classpath.autocompute );
+
+                Set artifacts = project.getArtifacts();
+                StringBuffer theClasspath = new StringBuffer();
+
+                for ( Iterator it = artifacts.iterator(); it.hasNext(); ) {
+                    if ( theClasspath.length() > 0 ) {
+                        theClasspath.append( File.pathSeparator );
+                    }
+                    Artifact artifact = (Artifact) it.next();
+                    getLog().debug( "dealing with " + artifact );
+                    theClasspath.append( artifact.getFile().getAbsolutePath() );
+                }
+                // FIXME check project current phase?
+                if ( true ) {
+                    if ( theClasspath.length() > 0 ) {
+                        theClasspath.append( File.pathSeparator );
+                    }
+                    theClasspath.append( project.getBuild().getOutputDirectory() );
+                }
+
+                commandArguments.add( theClasspath.toString() );
+            }
+        }
+
+        commandArguments.addAll( arguments );
       
         if (getLog().isDebugEnabled()) {
             getLog().debug( "executable: " + executable );
             getLog().debug( "basedir: " + basedir );
-            getLog().debug( "workingDirectory: " + workingDirectory );
-            if ( arguments != null ) {
-                for ( Iterator i = arguments.iterator() ; i.hasNext() ; ) {
+            getLog().debug( "workingDirectory: " + (workingDirectory == null ? null :workingDirectory.getAbsolutePath()) );
+            if ( arguments.size() > 0 ) {
+                for ( Iterator i = commandArguments.iterator() ; i.hasNext() ; ) {
                     getLog().debug( "argument: " + (String) i.next() );
                 }
             } else {
@@ -131,10 +184,8 @@ public class ExecMojo extends AbstractMojo {
 
         commandLine.setExecutable( executable );
 
-        if ( arguments != null ) {
-            for ( Iterator it = arguments.iterator() ; it.hasNext() ; ) {
-                commandLine.createArgument().setLine( it.next().toString() );
-            }
+        for ( Iterator it = commandArguments.iterator() ; it.hasNext() ; ) {
+            commandLine.createArgument().setLine( it.next().toString() );
         }
 
         if ( workingDirectory != null ) {
@@ -147,7 +198,12 @@ public class ExecMojo extends AbstractMojo {
 
         }
 
-        StreamConsumer consumer = new DefaultConsumer();
+        // FIXME what about redirecting the output to getLog() ??
+        StreamConsumer consumer = new StreamConsumer() {
+            public void consumeLine ( String line ) {
+                getLog().info( line );
+            }
+        };
 
         try
         {
@@ -178,12 +234,20 @@ public class ExecMojo extends AbstractMojo {
         return CommandLineUtils.executeCommandLine( commandLine, stream1, stream2 );
     }
 
+    void setClasspath( Classpath classpath ) {
+        this.classpath = classpath;
+    }
+
     void setExecutable( String executable ) {
         this.executable = executable;
     }
 
     void setWorkingDir( String workingDir ) {
-        this.workingDirectory = new File( workingDir );
+        setWorkingDir( new File( workingDir ) );
+    }
+
+    void setWorkingDir( File workingDir ) {
+        this.workingDirectory = workingDir;
     }
 
     void setArguments( List arguments ) {
@@ -192,6 +256,10 @@ public class ExecMojo extends AbstractMojo {
 
     void setBasedir( File basedir ) {
         this.basedir = basedir;
+    }
+
+    void setProject( MavenProject project ) {
+        this.project = project;
     }
 
     protected String getSystemProperty( String key ) {
