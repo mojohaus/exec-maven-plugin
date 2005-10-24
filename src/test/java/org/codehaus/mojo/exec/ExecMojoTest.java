@@ -225,7 +225,7 @@ public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
         mojo.systemProperties.put( "exec.executable", "/bin/mvn" );
         mojo.execute();
 
-        checkMojo( "/bin/mvn --version" );
+        checkMojo( File.separator + "bin" + File.separator + "mvn --version" );
     }
 
     /**
