@@ -86,6 +86,7 @@ or if one wants to restrict the dependencies in the classpath:
             <classpath>
               <dependency>commons-io:commons-io</dependency>
               <dependency>commons-lang:commons-lang</dependency>
+            </classpath>
             <argument>mypackage.MyClass</argument>
             ...
           </arguments>

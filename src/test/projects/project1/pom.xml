@@ -34,16 +34,48 @@
       <artifactId>commons-io</artifactId>
       <version>1.1</version>
     </dependency>      
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.0.4</version>
+    </dependency>      
   </dependencies>
 
   <build>
-    <extensions>
+    <!-- for manual tests. Can't be automated in the unit tests as the plugin's not installed. What about integration tests? -->
+    <!--plugins>
+      <plugin>
+       <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+           <execution>
+              <phase>test</phase>
+              <goals>
+                 <goal>exec</goal>
+              </goals>
+           </execution>
+        </executions>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-Dproject.env1=value1</argument>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.codehaus.mojo.exec.test.Test</argument>
+            <argument>target/exec/output.txt</argument>
+            <argument>arg1</argument>
+            <argument>arg2</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins-->
+    <!--extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-ssh-external</artifactId>
         <version>1.0-alpha-5-SNAPSHOT</version>
       </extension>
-    </extensions>
+    </extensions-->
   </build>
 
 </project>

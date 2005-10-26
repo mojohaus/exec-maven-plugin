@@ -74,13 +74,13 @@
     </dependency>      
   </dependencies>
 
-  <build>
+  <!--build>
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
-        <artifactId>wagon-ssh-external</artifactId>
+        <artifactId>wagon-ssh</artifactId>
         <version>1.0-alpha-5-SNAPSHOT</version>
       </extension>
     </extensions>
-  </build>
+  </build-->
 </project>

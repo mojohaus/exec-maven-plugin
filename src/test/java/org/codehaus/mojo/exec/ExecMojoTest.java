@@ -109,6 +109,67 @@ public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
     {
         String projectName = "project1";
 
+        ExecMojo mojo = new ExecMojo();
+
+        setUpProject( projectName, mojo );
+
+        // compile project
+        mojo.setExecutable( "mvn" );
+        mojo.setWorkingDir( new File( "src/test/projects/" + projectName + "/") );
+        mojo.setArguments( Arrays.asList( new String[] { "clean", "compile" } ) );
+
+        mojo.execute();
+
+        mojo.getLog().info ( "executed mvn clean compile" );
+
+
+        // the command executes the test class
+        mojo.setExecutable( "java" );
+        mojo.setWorkingDir( (File) null );
+        Classpath classpath = new Classpath();
+        mojo.setArguments( Arrays.asList( 
+            new Object[] { "-Dproject.env1=value1", 
+                           "-classpath", classpath,
+                           "org.codehaus.mojo.exec.test.Test", 
+                           new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), 
+                           "arg1", "arg2" }
+             ) );
+
+        mojo.execute();
+
+        // checking the command line would involve resolving the repository
+        // checkMojo( "java -cp" );
+
+        assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
+                          getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
+
+
+        // the command executes the test class, this time specifying the dependencies
+        mojo.setExecutable( "java" );
+        mojo.setWorkingDir( (File) null );
+        classpath = new Classpath();
+        List dependencies = new ArrayList();
+        dependencies.add( "commons-io:commons-io" );
+        classpath.setDependencies( dependencies );
+        mojo.setArguments( Arrays.asList( 
+            new Object[] { "-Dproject.env1=value1", 
+                           "-classpath", classpath,
+                           "org.codehaus.mojo.exec.test.Test", 
+                           new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), 
+                           "arg1", "arg2" }
+             ) );
+
+        mojo.execute();
+
+        // checking the command line would involve resolving the repository
+        // checkMojo( "java -cp" );
+
+        assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
+                          getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
+    }
+
+    private void setUpProject( String projectName, ExecMojo mojo ) throws Exception 
+    {
         MavenProjectBuilder builder = (MavenProjectBuilder) lookup( MavenProjectBuilder.ROLE );	
 
         ArtifactRepositoryLayout localRepositoryLayout =
@@ -124,7 +185,6 @@ public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
                 localRepositoryLayout
             );
 
-        ExecMojo mojo = new ExecMojo();
         mojo.setBasedir( File.createTempFile( "mvn-temp" , "txt").getParentFile() );
 
         MavenProject project = builder.buildWithDependencies( getTestFile( "src/test/projects/" + projectName + "/pom.xml" ),
@@ -138,42 +198,6 @@ public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
                 return true;
             }
         });
-
-        // compile project
-        mojo.setExecutable( "mvn" );
-        mojo.setWorkingDir( new File( "src/test/projects/" + projectName + "/") );
-        mojo.setArguments( Arrays.asList(
-            new String[] { "clean", "compile" }
-             ) );
-
-        mojo.execute();
-
-        mojo.getLog().info ( "executed mvn clean compile" );
-   
-        // the command executes the test class
-        mojo.setExecutable( "java" );
-        mojo.setWorkingDir( (File) null );
-        ExecMojo.Classpath classpath = new ExecMojo.Classpath();
-        classpath.setAutocompute( "-classpath" );
-        mojo.setClasspath( classpath );
-        mojo.setArguments( Arrays.asList(
-            new String[] { "-Dproject.env1=value1",
-                           "org.codehaus.mojo.exec.test.Test", 
-                           new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), 
-                           "arg1", "arg2" }
-             ) );
-
-        // ----------------------------------------------------------------------
-        // Execute the plugin
-        // ----------------------------------------------------------------------
-
-        mojo.execute();
-
-        // checking the command line would involve resolving the repository
-        // checkMojo( "java -cp" );
-
-        assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
-                          getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
     }
 
     /**

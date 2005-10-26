@@ -28,12 +28,17 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.DefaultConsumer;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
+import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
+import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
+
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.Iterator;
 import java.util.StringTokenizer;
-import java.util.ArrayList;
 
 /**
  * A Plugin for executing external programs.
@@ -45,18 +50,6 @@ import java.util.ArrayList;
  * @version $Id:$
  */
 public class ExecMojo extends AbstractMojo {
-
-    public static class Classpath {
-        private String autocompute;
-        public void setAutocompute( String autocompute ) {
-             this.autocompute = autocompute;
-        }
-    }
-
-    /**
-     * @parameter
-     */
-    private Classpath classpath;
 
     /**
      * @parameter
@@ -71,7 +64,7 @@ public class ExecMojo extends AbstractMojo {
     /**
      * @parameter
      */
-    private List arguments;
+    public List arguments;
    
     /**
      * @parameter expression="${project}"
@@ -120,58 +113,39 @@ public class ExecMojo extends AbstractMojo {
 
         String argsProp = getSystemProperty( "exec.args" );
 
+        List commandArguments = new ArrayList();
+
         if ( ! isEmpty(argsProp) ) {
 
             getLog().debug( "got arguments from system properties: " + argsProp );
 
-            arguments = new ArrayList();
-
             StringTokenizer strtok = new StringTokenizer( argsProp, " " );
             while ( strtok.hasMoreTokens() ) {
-                arguments.add( strtok.nextToken() );
+                commandArguments.add( strtok.nextToken() );
+            }
+        } else {
+            if ( arguments != null ) {
+                for ( int i = 0; i < arguments.size(); i++) {
+                    Object argument = arguments.get( i );
+                    if ( argument instanceof Classpath ) {
+                         Classpath classpath = (Classpath) argument;
+                         Collection artifacts = project.getArtifacts();
+                         if ( classpath.getDependencies() != null ) {
+                             artifacts = filterArtifacts( artifacts, classpath.getDependencies() );
+                         }
+                         commandArguments.add( computeClasspath( artifacts ) );
+                    } else {
+                         commandArguments.add( argument.toString() );
+                    }
+                }
             }
         }
-
-        List commandArguments = new ArrayList();
-
-        if ( classpath != null ) {
-
-            getLog().debug( "classpath specified: " );
-
-            if ( classpath.autocompute != null ) {
-
-                commandArguments.add( classpath.autocompute );
-
-                Set artifacts = project.getArtifacts();
-                StringBuffer theClasspath = new StringBuffer();
-
-                for ( Iterator it = artifacts.iterator(); it.hasNext(); ) {
-                    if ( theClasspath.length() > 0 ) {
-                        theClasspath.append( File.pathSeparator );
-                    }
-                    Artifact artifact = (Artifact) it.next();
-                    getLog().debug( "dealing with " + artifact );
-                    theClasspath.append( artifact.getFile().getAbsolutePath() );
-                }
-                // FIXME check project current phase?
-                if ( true ) {
-                    if ( theClasspath.length() > 0 ) {
-                        theClasspath.append( File.pathSeparator );
-                    }
-                    theClasspath.append( project.getBuild().getOutputDirectory() );
-                }
-
-                commandArguments.add( theClasspath.toString() );
-            }
-        }
-
-        commandArguments.addAll( arguments );
       
         if (getLog().isDebugEnabled()) {
             getLog().debug( "executable: " + executable );
             getLog().debug( "basedir: " + basedir );
             getLog().debug( "workingDirectory: " + (workingDirectory == null ? null :workingDirectory.getAbsolutePath()) );
-            if ( arguments.size() > 0 ) {
+            if ( commandArguments.size() > 0 ) {
                 for ( Iterator i = commandArguments.iterator() ; i.hasNext() ; ) {
                     getLog().debug( "argument: " + (String) i.next() );
                 }
@@ -220,6 +194,47 @@ public class ExecMojo extends AbstractMojo {
         }
     }
 
+    private String computeClasspath( Collection artifacts ) {
+        StringBuffer theClasspath = new StringBuffer();
+
+        for ( Iterator it = artifacts.iterator(); it.hasNext(); ) {
+            if ( theClasspath.length() > 0 ) {
+                theClasspath.append( File.pathSeparator );
+            }
+            Artifact artifact = (Artifact) it.next();
+            getLog().debug( "dealing with " + artifact );
+            theClasspath.append( artifact.getFile().getAbsolutePath() );
+        }
+        // FIXME check project current phase?
+        if ( true ) {
+             if ( theClasspath.length() > 0 ) {
+                  theClasspath.append( File.pathSeparator );
+             }
+             theClasspath.append( project.getBuild().getOutputDirectory() );
+        }
+
+        return theClasspath.toString();
+    }
+
+    private Collection filterArtifacts( Collection artifacts, Collection dependencies ) {
+        AndArtifactFilter filter = new AndArtifactFilter();
+        
+        filter.add( new IncludesArtifactFilter( new ArrayList( dependencies ) ) ); // gosh
+
+        StringBuffer theClasspath = new StringBuffer();
+
+        List filteredArtifacts = new ArrayList();
+        for ( Iterator it = artifacts.iterator(); it.hasNext(); ) {
+            Artifact artifact = (Artifact) it.next();
+            if ( filter.include( artifact ) ) {
+                getLog().debug( "filtering in " + artifact );
+                filteredArtifacts.add( artifact );
+            }
+        }
+        return filteredArtifacts;
+    }
+
+
     private static boolean isEmpty( String string ) {
         return string == null || string.length() == 0;
     }
@@ -232,10 +247,6 @@ public class ExecMojo extends AbstractMojo {
                                       StreamConsumer stream1, StreamConsumer stream2 ) 
              throws CommandLineException {
         return CommandLineUtils.executeCommandLine( commandLine, stream1, stream2 );
-    }
-
-    void setClasspath( Classpath classpath ) {
-        this.classpath = classpath;
     }
 
     void setExecutable( String executable ) {
