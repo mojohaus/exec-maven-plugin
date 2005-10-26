@@ -1,4 +1,7 @@
-After talking with Vincent Massol, decided to change interface to that it accepts something like
+Classpath Management
+--------------------
+
+After talking with Vincent Massol, we decided to change interface to that it accepts something like
  
   <executable>java</executable>
   <arguments>
@@ -51,3 +54,24 @@ and
 
 
 with support of <dependencies> not in the first phase
+
+
+
+Merge with execute?
+-------------------
+
+Should we merge with execute? Not sure. This plugin is about executing programs, not Java classes. 
+Not only the implementation is very different, but the configuration would seem not very compatible.
+
+Nevertheless, I've been asked several time if it could be done. If it was done, here's one way it could end up:
+
+  <mainClass>com.domain.test.Test</mainClass>
+  <arguments>
+    <argument>...</argument>
+    <argument>...</argument>
+    <argument>...</argument>
+  </arguments>
+
+Given the configuration proposal above (for handling classpath), we would have the following notes:
+- <mainClass> and <executable> mutually exclusive
+- <classpath> not allowed within <arguments> when using <mainClass>
