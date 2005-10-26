@@ -8,14 +8,16 @@
 
 Maven Exec Plugin
 
- A plugin to execute an external program.
+ A plugin to execute an external program (inside a new Process).
 
  Note: this is a very early release. Potential improvements include depending on the Jakarta commons-exec lib when it is released.
 
  You can use the plugin in one of two ways, formally specifying all the relevant
  information in the plugin configuration or through the use of system variables.
  Using the system variable you would just execute it like the following example.
- 
+
+ Special treatment of some arguments help running Java programs.
+
 -----
 > mvn org.codehaus.mojo:exec-maven-plugin:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 -----
@@ -46,8 +48,8 @@ Exec Plugin Configuration
           <!-- optional -->
           <workingdir>/tmp</workingdir>
           <arguments>
-            <java.lang.String>-X</java.lang.String>
-            <java.lang.String>myproject:dist</java.lang.String>
+            <argument>-X</argument>
+            <argument>myproject:dist</argument>
             ...
           </arguments>
         </configuration>
@@ -56,5 +58,37 @@ Exec Plugin Configuration
   </build>
    ...
 </project>
+-------------------
+
+To execute Java programs, the exec plugin will also help by allowing the <classpath> argument:
+
+-------------------
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-Dmyproperty=myvalue</argument>
+            <argument>-classpath</classpath>
+            <classpath/> <!-- automatically creates the classpath using all project dependencies -->
+            <argument>mypackage.MyClass</argument>
+            ...
+          </arguments>
+        </configuration>
+-------------------
+
+or if one wants to restrict the dependencies in the classpath:
+
+-------------------
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-Dmyproperty=myvalue</argument>
+            <argument>-classpath</classpath>
+            <classpath>
+              <dependency>commons-io:commons-io</dependency>
+              <dependency>commons-lang:commons-lang</dependency>
+            <argument>mypackage.MyClass</argument>
+            ...
+          </arguments>
+        </configuration>
 -------------------
 
