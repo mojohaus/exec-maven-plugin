@@ -67,7 +67,7 @@ To execute Java programs, the exec plugin will also help by allowing the <classp
           <executable>java</executable>
           <arguments>
             <argument>-Dmyproperty=myvalue</argument>
-            <argument>-classpath</classpath>
+            <argument>-classpath</argument>
             <classpath/> <!-- automatically creates the classpath using all project dependencies -->
             <argument>mypackage.MyClass</argument>
             ...
