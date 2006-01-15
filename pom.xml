@@ -1,9 +1,9 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>mojo</artifactId>
+    <artifactId>mojo-sandbox</artifactId>
     <groupId>org.codehaus.mojo</groupId>
-    <version>5</version>
+    <version>1</version>
   </parent>
   <artifactId>exec-maven-plugin</artifactId>
   <version>0.4-SNAPSHOT</version>
