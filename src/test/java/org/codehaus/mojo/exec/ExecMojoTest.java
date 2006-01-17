@@ -47,7 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
- * @version $Id:$
+ * @version $Id$
  * @todo we depend too much on Commandline.toString()
  */
 public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
@@ -240,16 +240,6 @@ public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
         mojo.execute();
 
         checkMojo( "mvn -f pom.xml" );
-    }
-
-    /**
-     */
-    public void testOverrides2() throws MojoExecutionException
-    {
-        mojo.systemProperties.put( "exec.executable", "/bin/mvn" );
-        mojo.execute();
-
-        checkMojo( File.separator + "bin" + File.separator + "mvn --version" );
     }
 
     /**

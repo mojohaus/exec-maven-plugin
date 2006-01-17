@@ -47,21 +47,24 @@ import java.util.StringTokenizer;
  * @requiresDependencyResolution
  * @description Program Execution plugin
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
- * @version $Id:$
+ * @version $Id$
  */
 public class ExecMojo extends AbstractMojo {
 
     /**
-     * @parameter
+     * @parameter expression="${exec.executable}"
+     * @required
      */
     private String executable;
   
     /**
-     * @parameter
+     * @parameter expression="${exec.workingdir}
      */
     private File workingDirectory;
 
     /**
+     * Can be of type <code>&lt;argument&gt;</code> or <code>&lt;classpath&gt;</code>
+     * Can be overriden using "exec.args" env. variable
      * @parameter
      */
     public List arguments;
@@ -88,29 +91,6 @@ public class ExecMojo extends AbstractMojo {
             throw new IllegalStateException( "basedir is null. Should not be possible." );  
         }
 
-
-        // FIXME use configuration annotations to implement overrides
-
-        String executableProp = getSystemProperty( "exec.executable" );
-         
-        if ( ! isEmpty(executableProp) ) {
-
-            getLog().debug( "got an executable from system properties: " + executableProp );
-
-            executable = executableProp;
-
-        }
-         
-        String workingDirProp = getSystemProperty( "exec.workingdir" );
-         
-        if ( ! isEmpty(workingDirProp) ) {
-
-            getLog().debug( "got a workingdir from system properties: " + workingDirProp );
-
-            workingDirectory = new File(workingDirProp);
-
-        }
-
         String argsProp = getSystemProperty( "exec.args" );
 
         List commandArguments = new ArrayList();
@@ -127,16 +107,18 @@ public class ExecMojo extends AbstractMojo {
             if ( arguments != null ) {
                 for ( int i = 0; i < arguments.size(); i++) {
                     Object argument = arguments.get( i );
+                    String arg;
                     if ( argument instanceof Classpath ) {
                          Classpath classpath = (Classpath) argument;
                          Collection artifacts = project.getArtifacts();
                          if ( classpath.getDependencies() != null ) {
                              artifacts = filterArtifacts( artifacts, classpath.getDependencies() );
                          }
-                         commandArguments.add( computeClasspath( artifacts ) );
+                         arg = computeClasspath( artifacts );
                     } else {
-                         commandArguments.add( argument.toString() );
+                         arg = argument.toString();
                     }
+                    commandArguments.add( arg );
                 }
             }
         }
@@ -173,6 +155,8 @@ public class ExecMojo extends AbstractMojo {
         }
 
         // FIXME what about redirecting the output to getLog() ??
+        // what about consuming the input just to be on the safe side ?
+        // what about allowing parametrization of the class name that acts as consumer?
         StreamConsumer consumer = new StreamConsumer() {
             public void consumeLine ( String line ) {
                 getLog().info( line );
@@ -206,11 +190,18 @@ public class ExecMojo extends AbstractMojo {
             theClasspath.append( artifact.getFile().getAbsolutePath() );
         }
         // FIXME check project current phase?
+        // we should probably add the output and testoutput dirs based on the Project's phase
         if ( true ) {
              if ( theClasspath.length() > 0 ) {
                   theClasspath.append( File.pathSeparator );
              }
              theClasspath.append( project.getBuild().getOutputDirectory() );
+        }
+        if ( false ) {
+             if ( theClasspath.length() > 0 ) {
+                  theClasspath.append( File.pathSeparator );
+             }
+             theClasspath.append( project.getBuild().getTestOutputDirectory() );
         }
 
         return theClasspath.toString();
