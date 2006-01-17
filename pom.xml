@@ -10,6 +10,7 @@
   <packaging>maven-plugin</packaging>
   <name>Maven Exec Plugin</name>
   <inceptionYear>2005</inceptionYear>
+  <url>http://mojo.codehaus.org/exec-maven-plugin</url>
   <licenses>
     <license>
       <name>Apache License 2</name>
