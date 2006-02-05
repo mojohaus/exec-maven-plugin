@@ -29,7 +29,7 @@ import java.util.Properties;
 
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
- * @version $Id:$
+ * @version $Id$
  * @todo we depend too much on Commandline.toString()
  */
 public class Test
