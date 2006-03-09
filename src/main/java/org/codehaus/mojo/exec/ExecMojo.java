@@ -123,19 +123,6 @@ public class ExecMojo extends AbstractMojo {
             }
         }
       
-        if (getLog().isDebugEnabled()) {
-            getLog().debug( "executable: " + executable );
-            getLog().debug( "basedir: " + basedir );
-            getLog().debug( "workingDirectory: " + (workingDirectory == null ? null :workingDirectory.getAbsolutePath()) );
-            if ( commandArguments.size() > 0 ) {
-                for ( Iterator i = commandArguments.iterator() ; i.hasNext() ; ) {
-                    getLog().debug( "argument: " + (String) i.next() );
-                }
-            } else {
-                getLog().debug( "no arguments specified" );
-            }
-        }
-
         Commandline commandLine = new Commandline();
 
         commandLine.setExecutable( executable );

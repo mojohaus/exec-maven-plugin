@@ -29,7 +29,7 @@ import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 
-import org.codehaus.plexus.ArtifactEnabledPlexusTestCase;
+import org.codehaus.plexus.PlexusTestCase;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -50,7 +50,7 @@ import java.util.Arrays;
  * @version $Id$
  * @todo we depend too much on Commandline.toString()
  */
-public class ExecMojoTest extends ArtifactEnabledPlexusTestCase
+public class ExecMojoTest extends PlexusTestCase
 
 {
     private MockExecMojo mojo;
