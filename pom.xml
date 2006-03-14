@@ -6,7 +6,7 @@
     <version>2-SNAPSHOT</version>
   </parent>
   <artifactId>exec-maven-plugin</artifactId>
-  <version>0.4-SNAPSHOT</version>
+  <version>0.5-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>Maven Exec Plugin</name>
   <inceptionYear>2005</inceptionYear>
