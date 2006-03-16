@@ -105,7 +105,7 @@ public class ExecMojoTest extends PlexusTestCase
      * - compile the Test class using mvn clean compile
      * - run the test file using java, use it to generate a file whose contains are compared to expected output
      */
-    public void testRunOKWithAutoComputedClasspath() throws MojoExecutionException, Exception
+  /*  public void testRunOKWithAutoComputedClasspath() throws MojoExecutionException, Exception
     {
         String projectName = "project1";
 
@@ -167,7 +167,7 @@ public class ExecMojoTest extends PlexusTestCase
         assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
                           getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
     }
-
+         */
     private void setUpProject( String projectName, ExecMojo mojo ) throws Exception 
     {
         MavenProjectBuilder builder = (MavenProjectBuilder) lookup( MavenProjectBuilder.ROLE );	
