@@ -1,28 +1,20 @@
-<project>
-  <modelVersion>4.0.0</modelVersion>
+<?xml version="1.0" encoding="UTF-8"?><project>
   <parent>
     <artifactId>mojo</artifactId>
     <groupId>org.codehaus.mojo</groupId>
     <version>7</version>
   </parent>
+  <modelVersion>4.0.0</modelVersion>
   <artifactId>exec-maven-plugin</artifactId>
-  <version>1.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>Maven Exec Plugin</name>
-  <inceptionYear>2005</inceptionYear>
+  <version>1.0</version>
   <url>http://mojo.codehaus.org/exec-maven-plugin</url>
-  <licenses>
-    <license>
-      <name>Apache License 2</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
+  <inceptionYear>2005</inceptionYear>
   <developers>
     <developer>
-      <name>Jerome Lacoste</name>
       <id>jerome</id>
+      <name>Jerome Lacoste</name>
       <email>jerome@coffeebreaks.org</email>
       <organization>CoffeeBreaks</organization>
       <organizationUrl>http://www.coffeebreaks.org</organizationUrl>
@@ -32,23 +24,29 @@
       <timezone>+1</timezone>
     </developer>
   </developers>
-
+  <licenses>
+    <license>
+      <name>Apache License 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-project</artifactId>
       <version>2.0</version>
-    </dependency>      
+    </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
       <version>2.0</version>
-    </dependency>      
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-utils</artifactId>
       <version>1.1</version>
-    </dependency>      
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-container-default</artifactId>
@@ -56,5 +54,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
 </project>
