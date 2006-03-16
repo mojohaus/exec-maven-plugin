@@ -32,9 +32,9 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Executes the supplied java class with the enclosing project's 
+ * Executes the supplied java class with the enclosing project's
  * dependencies as classpath.
- *   
+ *
  * @goal java
  * @requiresDependencyResolution runtime
  * @execute phase="validate"
@@ -47,7 +47,7 @@ public class ExecJavaMojo
 
     /**
      * The enclosing project.
-     * 
+     *
      * @parameter expression="${project}"
      * @required
      * @readonly
@@ -56,7 +56,7 @@ public class ExecJavaMojo
 
     /**
      * The main class to execute.
-     * 
+     *
      * @parameter expression="${exec.mainClass}"
      * @required
      */
@@ -64,14 +64,14 @@ public class ExecJavaMojo
 
     /**
      * The class arguments.
-     * 
+     *
      * @parameter expression="${exec.arguments}"
      */
     private String[] arguments;
 
     /**
      * A list of system properties to be passed..
-     * 
+     *
      * @parameter
      */
     private Property[] systemProperties;
@@ -79,14 +79,14 @@ public class ExecJavaMojo
     /**
      * Indicates if mojo should be kept running after the mainclass terminates.
      * Usefull for serverlike apps with deamonthreads.
-     *  
+     *
      * @parameter expression="${exec.keepAlive}" default-value="false"
      */
     private boolean keepAlive;
 
     /**
      * Keep the program running for n millis before terminating.
-     * 
+     *
      * @parameter expression="${exec.killAfter}" default-value="-1"
      */
     private long killAfter;
@@ -97,6 +97,8 @@ public class ExecJavaMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        ClassLoader origClassLoader = Thread.currentThread().getContextClassLoader();
+
         ClassLoader myClassLoader = getClassLoader();
         Thread.currentThread().setContextClassLoader( myClassLoader );
 
@@ -143,6 +145,8 @@ public class ExecJavaMojo
             waitForever();
         }
 
+        Thread.currentThread().setContextClassLoader( origClassLoader );
+
     }
 
     /**
@@ -162,7 +166,7 @@ public class ExecJavaMojo
     /**
      * Set up a classloader for the execution of the
      * main class.
-     * 
+     *
      * @return
      * @throws MojoExecutionException
      */
@@ -217,7 +221,7 @@ public class ExecJavaMojo
     }
 
     /**
-     * Stop program execution for nn millis. 
+     * Stop program execution for nn millis.
      * @param millis
      */
     private void waitFor( long millis )
@@ -236,7 +240,7 @@ public class ExecJavaMojo
     }
 
     /**
-     * 
+     *
      *
      */
     public class IsolatedClassLoader
