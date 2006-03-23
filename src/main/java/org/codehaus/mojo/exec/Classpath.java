@@ -17,22 +17,51 @@ package org.codehaus.mojo.exec;
  */
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  *
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  */
-public class Classpath {
+public class Classpath
+{
     /**
      * @parameter dependency
      */
     private Collection dependencies;
 
-    public void setDependencies( Collection dependencies ) {
+    public void setDependencies( Collection dependencies )
+    {
         this.dependencies = dependencies;
     }
 
-    public Collection getDependencies() {
+    public void setDependency( String dependency )
+    {
+        // Is the the correct thing to do? See MOJO-348
+        if (dependencies == null)
+        {
+            setDependencies(new java.util.ArrayList());
+        }
+        dependencies.add(dependency);
+    }
+
+    public Collection getDependencies()
+    {
         return dependencies;
+    }
+
+    public String toString() 
+    {
+        StringBuffer buffer = new StringBuffer("classpath {");
+        
+        if (dependencies != null)
+        {
+            for (Iterator it = dependencies.iterator(); it.hasNext();)
+            {
+                buffer.append(" ").append(it.next());
+            }
+        }
+        buffer.append("}");
+        return buffer.toString();
     }
 }
