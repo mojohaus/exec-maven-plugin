@@ -1,4 +1,4 @@
-package org.codehaus.mojo.exec.test;
+package org.codehaus.mojo.exec.test1;
 
 /*
  * Copyright 2005 The Codehaus.

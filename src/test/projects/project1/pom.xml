@@ -43,9 +43,9 @@
 
   <build>
     <!-- for manual tests. Can't be automated in the unit tests as the plugin's not installed. What about integration tests? -->
-    <!--plugins>
+    <plugins>
       <plugin>
-       <groupId>org.codehaus.mojo</groupId>
+        <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
            <execution>
@@ -61,14 +61,14 @@
             <argument>-Dproject.env1=value1</argument>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.codehaus.mojo.exec.test.Test</argument>
+            <argument>org.codehaus.mojo.exec.test1.Test</argument>
             <argument>target/exec/output.txt</argument>
             <argument>arg1</argument>
             <argument>arg2</argument>
           </arguments>
         </configuration>
       </plugin>
-    </plugins-->
+    </plugins>
     <!--extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
