@@ -115,7 +115,7 @@ public class ExecMojoTest extends PlexusTestCase
 
         // compile project
         mojo.setExecutable( "mvn" );
-        mojo.setWorkingDir( new File( "src/test/projects/" + projectName + "/") );
+        mojo.setWorkingDirectory( new File( "src/test/projects/" + projectName + "/") );
         mojo.setArguments( Arrays.asList( new String[] { "clean", "compile" } ) );
 
         mojo.execute();
@@ -125,7 +125,7 @@ public class ExecMojoTest extends PlexusTestCase
 
         // the command executes the test class
         mojo.setExecutable( "java" );
-        mojo.setWorkingDir( (File) null );
+        mojo.setWorkingDirectory( (File) null );
         Classpath classpath = new Classpath();
         mojo.setArguments( Arrays.asList( 
             new Object[] { "-Dproject.env1=value1", 
@@ -146,7 +146,7 @@ public class ExecMojoTest extends PlexusTestCase
 
         // the command executes the test class, this time specifying the dependencies
         mojo.setExecutable( "java" );
-        mojo.setWorkingDir( (File) null );
+        mojo.setWorkingDirectory( (File) null );
         classpath = new Classpath();
         List dependencies = new ArrayList();
         dependencies.add( "commons-io:commons-io" );

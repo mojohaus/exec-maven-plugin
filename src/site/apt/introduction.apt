@@ -46,7 +46,7 @@ Exec Plugin Configuration
         <configuration>
           <executable>maven</executable>
           <!-- optional -->
-          <workingdir>/tmp</workingdir>
+          <workingDirectory>/tmp</workingDirectory>
           <arguments>
             <argument>-X</argument>
             <argument>myproject:dist</argument>
@@ -68,7 +68,7 @@ To execute Java programs, the exec plugin will also help by allowing the <classp
           <arguments>
             <argument>-Dmyproperty=myvalue</argument>
             <argument>-classpath</argument>
-            <classpath/> <!-- automatically creates the classpath using all project dependencies -->
+            <classpath/> <!-- automatically creates the classpath using all project dependencies, also adding the project build directory -->
             <argument>mypackage.MyClass</argument>
             ...
           </arguments>

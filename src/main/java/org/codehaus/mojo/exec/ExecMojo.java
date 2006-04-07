@@ -231,11 +231,11 @@ public class ExecMojo extends AbstractMojo {
         this.executable = executable;
     }
 
-    void setWorkingDir( String workingDir ) {
-        setWorkingDir( new File( workingDir ) );
+    void setWorkingDirectory( String workingDir ) {
+        setWorkingDirectory( new File( workingDir ) );
     }
 
-    void setWorkingDir( File workingDir ) {
+    void setWorkingDirectory( File workingDir ) {
         this.workingDirectory = workingDir;
     }
 

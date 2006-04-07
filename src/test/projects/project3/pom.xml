@@ -63,6 +63,7 @@
            </execution>
         </executions>
         <configuration>
+          <workingDirectory>target</workingDirectory>
           <executable>java</executable>
           <arguments>
             <argument>-Dproject.env1=value1</argument>
@@ -72,7 +73,7 @@
               <dependency>commons-logging:commons-logging</dependency>
             </classpath>
             <argument>org.codehaus.mojo.exec.test3.Test</argument>
-            <argument>target/exec/output.txt</argument>
+            <argument>exec/output.txt</argument>
           </arguments>
         </configuration>
       </plugin>

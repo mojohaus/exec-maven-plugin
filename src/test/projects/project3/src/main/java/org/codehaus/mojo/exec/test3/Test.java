@@ -57,8 +57,8 @@ public class Test
                   myProperties.add( key + "=" + systemProperties.get( key ) );
               }
          }
-         String key = "java.class.path";
-         myProperties.add(key + "=" + systemProperties.get( key ));
+         myProperties.add("user.dir=" + systemProperties.get( "user.dir" ));
+         myProperties.add("java.class.path=" + systemProperties.get( "java.class.path" ));
 
          Collections.sort( myProperties );
          File toFile = new File( args[0] );
