@@ -1,7 +1,7 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.cb.maven.plugins.exec</groupId>
-  <artifactId>test1</artifactId>
+  <artifactId>project3</artifactId>
   <version>0.1</version>
   <packaging>jar</packaging>
   <name>Maven Exec Plugin</name>
