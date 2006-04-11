@@ -155,12 +155,13 @@ public class ExecJavaMojo
      */
     private void setSystemProperties()
     {
-        for ( int i = 0; i < systemProperties.length; i++ )
-        {
-            Property systemProperty = systemProperties[i];
-            System.setProperty( systemProperty.getKey(), systemProperty.getValue() );
+        if ( systemProperties != null ) {
+            for ( int i = 0; i < systemProperties.length; i++ )
+            {
+                Property systemProperty = systemProperties[i];
+                System.setProperty( systemProperty.getKey(), systemProperty.getValue() );
+            }
         }
-
     }
 
     /**
