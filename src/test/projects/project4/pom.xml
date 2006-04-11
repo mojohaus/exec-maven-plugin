@@ -1,0 +1,37 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.cb.maven.plugins.exec</groupId>
+  <artifactId>project4</artifactId>
+  <version>0.1</version>
+  <packaging>jar</packaging>
+  <name>Maven Exec Plugin</name>
+  <inceptionYear>2005</inceptionYear>
+  <licenses>
+    <license>
+      <name>Apache License 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+           <execution>
+              <phase>test</phase>
+              <goals>
+                 <goal>java</goal>
+              </goals>
+           </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.codehaus.mojo.exec.DummyMain</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
