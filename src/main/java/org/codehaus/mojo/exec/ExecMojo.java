@@ -51,6 +51,11 @@ import java.util.StringTokenizer;
  */
 public class ExecMojo extends AbstractMojo {
 
+   /**
+    * @parameter expression="${skip}" default-value="false"
+    */
+   private boolean skip;
+
     /**
      * @parameter expression="${exec.executable}"
      * @required
@@ -85,6 +90,12 @@ public class ExecMojo extends AbstractMojo {
      * priority in the execute method will be to use System properties arguments over the pom specification.
      */
     public void execute() throws MojoExecutionException {
+
+        if ( skip )
+        {  
+           getLog().info( "skipping execute as per configuraion" );
+           return;
+        }
 
         if ( basedir == null ) {
             throw new IllegalStateException( "basedir is null. Should not be possible." );  
