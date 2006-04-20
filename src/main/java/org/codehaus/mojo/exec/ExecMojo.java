@@ -78,7 +78,6 @@ public class ExecMojo extends AbstractMojo {
     /**
      * @parameter expression="${basedir}"
      * @required
-     * @readonly
      */
     private File basedir;
 
