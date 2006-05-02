@@ -55,7 +55,7 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase
             System.setOut(out);
         }
 
-        assertEquals("Hello\n", stringOutputStream.toString());
+        assertEquals("Hello" + System.getProperty( "line.separator" ), stringOutputStream.toString());
     }
 
     private void setUpProject( File pomFile, AbstractMojo mojo ) throws Exception
