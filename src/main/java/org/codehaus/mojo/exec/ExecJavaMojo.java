@@ -32,7 +32,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Executes the supplied java class with the enclosing project's
+ * Executes the supplied java class in the current VM with the enclosing project's
  * dependencies as classpath.
  *
  * @goal java
@@ -86,6 +86,7 @@ public class ExecJavaMojo
 
     /**
      * Keep the program running for n millis before terminating.
+     * Note: putting 0 here has the same effect as setting keepAlive to true.
      *
      * @parameter expression="${exec.killAfter}" default-value="-1"
      */
@@ -142,7 +143,7 @@ public class ExecJavaMojo
         }
         else if ( keepAlive )
         {
-            waitForever();
+            waitFor( 0 );
         }
 
         Thread.currentThread().setContextClassLoader( origClassLoader );
@@ -202,28 +203,11 @@ public class ExecJavaMojo
         }
     }
 
-    /**
-     * Stop program execution in infinity.
-     *
-     */
-    private void waitForever()
-    {
-        Object lock = new Object();
-        synchronized ( lock )
-        {
-            try
-            {
-                lock.wait();
-            }
-            catch ( InterruptedException e )
-            {
-            }
-        }
-    }
 
     /**
      * Stop program execution for nn millis.
-     * @param millis
+     * @param millis the number of millis-seconds to wait for, 
+     *       <code>0</code> stops program forever.
      */
     private void waitFor( long millis )
     {
