@@ -6,7 +6,7 @@
  </bannerLeft>
  <bannerRight>
   <name>Codehaus</name>
-  <src>http://mojo.codehaus.org/images/codehaus-small.png</src>
+  <src>/images/codehaus-small.png</src>
   <href>http://www.codehaus.org</href>
  </bannerRight>
  <body>
@@ -14,8 +14,10 @@
    <item name="Mojo" href="http://mojo.codehaus.org"/>
    <item name="Maven" href="http://maven.apache.org/maven2"/>
   </links>
-  <menu name="Maven Webstart Quickstart">
+  <menu name="Maven Exec Quickstart">
+    <item name="Plugin Goals" href="index.html"/>
     <item name="Introduction" href="introduction.html"/>
+    <item name="Javadoc" href="apidocs/index.html"/>
   </menu>
   ${reports}
  </body>

@@ -8,18 +8,21 @@
 
 Maven Exec Plugin
 
- A plugin to execute an external program (inside a new Process).
+ The plugin provides 2 goals to make execution of programs. The exec goals allow to execute programs and Java programs 
+in a separate process, while the java goal focuses on running Java programs in the same VM using the autom.
 
- Note: this is a very early release. Potential improvements include depending on the Jakarta commons-exec lib when it is released.
+
+Exec goal
 
  You can use the plugin in one of two ways, formally specifying all the relevant
  information in the plugin configuration or through the use of system variables.
  Using the system variable you would just execute it like the following example.
 
- Special treatment of some arguments help running Java programs.
+ The configuration accepts a list of <arguments>. Special treatment of some arguments, facilitate the running of 
+Java programs in external processes.
 
 -----
-> mvn org.codehaus.mojo:exec-maven-plugin:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
+> mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 -----
  
 Exec Plugin Configuration
@@ -36,8 +39,7 @@ Exec Plugin Configuration
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>myexecution</id>
-            <phase>package</phase>
+            ...
             <goals>
               <goal>exec</goal>
             </goals>
@@ -60,7 +62,7 @@ Exec Plugin Configuration
 </project>
 -------------------
 
-To execute Java programs, the exec plugin will also help by allowing the <classpath> argument:
+To execute Java programs, the exec plugin helps by allowing the <classpath> argument:
 
 -------------------
         <configuration>
@@ -93,3 +95,49 @@ or if one wants to restrict the dependencies in the classpath:
         </configuration>
 -------------------
 
+
+Java goal
+
+  If you want to execute Java programs in the same VM, you can either use the command line version
+
+-----
+> mvn exec:java -Dexec.mainClass="com.example.Hello" [-Dexec.arguments="argument1"] [-DkillAfter=60000] ...
+-----
+ 
+  either configure the plugin in your pom:
+
+-------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            ...
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>com.example.Main</mainClass>
+          <arguments>
+            <argument>argument1</argument>
+            ...
+          </arguments>
+          <systemProperties>
+            <systemProperty>
+              <key>theKey</key>
+              <value>theValue</value>
+            </systemProperty>
+            ...
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+   ...
+</project>
+-------------------
