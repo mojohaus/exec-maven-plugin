@@ -54,17 +54,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven</groupId>
+      <groupId>org.apache.maven.shared</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0-beta-1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <repositories>
-    <repository>
-      <id>snapshots</id>
-      <name>Apache Central Development Repository</name>
-      <url>http://cvs.apache.org/maven-snapshot-repository</url>
-    </repository>
-  </repositories>
 </project>
