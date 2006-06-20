@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><project>
+<?xml version="1.0" encoding="UTF-8"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <artifactId>mojo</artifactId>
     <groupId>org.codehaus.mojo</groupId>
@@ -8,7 +8,7 @@
   <artifactId>exec-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>Maven Exec Plugin</name>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.1</version>
   <url>http://mojo.codehaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
   <developers>
@@ -71,4 +71,10 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <scm>
+    <connection>scm:svn:https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.0.1</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.0.1</developerConnection>
+    <url>https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.0.1</url>
+  </scm>
 </project>
