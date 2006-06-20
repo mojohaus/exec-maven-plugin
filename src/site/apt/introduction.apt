@@ -10,7 +10,7 @@ Maven Exec Plugin
 
  The plugin provides 2 goals to make execution of programs. The {{{exec-mojo.html} exec}} 
  goal allow to execute programs and Java programs in a separate process, while the 
- The {{{java-mojo.html} java}} goal focuses on running Java programs in the same VM using the autom.
+ The {{{java-mojo.html} java}} goal focuses on running Java programs in the same VM.
 
 
 Exec goal
