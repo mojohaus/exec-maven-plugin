@@ -16,32 +16,32 @@ package org.codehaus.mojo.exec;
  * limitations under the License.
  */
 
-
-
 /**
  * Wrapper class for the systemPropery argument type.
- * 
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
  *
+ * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
  */
-
 public class Property
 {
     private String key;
+
     private String value;
-    
+
     public String getKey()
     {
         return key;
     }
+
     public void setKey( String key )
     {
         this.key = key;
     }
+
     public String getValue()
     {
         return value;
     }
+
     public void setValue( String value )
     {
         this.value = value;

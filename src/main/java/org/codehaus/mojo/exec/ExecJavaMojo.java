@@ -1,7 +1,7 @@
 package org.codehaus.mojo.exec;
 
 /*
- * Copyright 2005 The Codehaus.
+ * Copyright 2005-2006 The Codehaus.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@ package org.codehaus.mojo.exec;
  * limitations under the License.
  */
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -25,26 +31,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
-
 /**
  * Executes the supplied java class in the current VM with the enclosing project's
  * dependencies as classpath.
  *
+ * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
  * @goal java
  * @requiresDependencyResolution runtime
  * @execute phase="validate"
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
- *
  */
 public class ExecJavaMojo
     extends AbstractMojo
 {
-
     /**
      * The enclosing project.
      *
@@ -109,6 +107,7 @@ public class ExecJavaMojo
         argtypes[0] = String[].class;
 
         Method main;
+
         try
         {
             main = myClassLoader.loadClass( mainClass ).getMethod( "main", argtypes );
@@ -119,6 +118,7 @@ public class ExecJavaMojo
         }
 
         Object[] args = new Object[1];
+
         if ( null == arguments )
         {
             args[0] = new String[0];
@@ -147,16 +147,15 @@ public class ExecJavaMojo
         }
 
         Thread.currentThread().setContextClassLoader( origClassLoader );
-
     }
 
     /**
      * Pass any given system properties to the java system properties.
-     *
      */
     private void setSystemProperties()
     {
-        if ( systemProperties != null ) {
+        if ( systemProperties != null )
+        {
             for ( int i = 0; i < systemProperties.length; i++ )
             {
                 Property systemProperty = systemProperties[i];
@@ -189,7 +188,7 @@ public class ExecJavaMojo
 
             Set dependencies = project.getArtifacts();
             Iterator iter = dependencies.iterator();
-            while (iter.hasNext())
+            while ( iter.hasNext() )
             {
                 Artifact classPathElement = (Artifact) iter.next();
                 getLog().debug( "Adding artifact: " + classPathElement.getArtifactId() + " to classpath" );
@@ -203,11 +202,11 @@ public class ExecJavaMojo
         }
     }
 
-
     /**
      * Stop program execution for nn millis.
-     * @param millis the number of millis-seconds to wait for, 
-     *       <code>0</code> stops program forever.
+     *
+     * @param millis the number of millis-seconds to wait for,
+     *               <code>0</code> stops program forever.
      */
     private void waitFor( long millis )
     {

@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- *
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  */
 public class Classpath
@@ -38,11 +37,11 @@ public class Classpath
     public void setDependency( String dependency )
     {
         // Is the the correct thing to do? See MOJO-348
-        if (dependencies == null)
+        if ( dependencies == null )
         {
-            setDependencies(new java.util.ArrayList());
+            setDependencies( new java.util.ArrayList() );
         }
-        dependencies.add(dependency);
+        dependencies.add( dependency );
     }
 
     public Collection getDependencies()
@@ -50,18 +49,18 @@ public class Classpath
         return dependencies;
     }
 
-    public String toString() 
+    public String toString()
     {
-        StringBuffer buffer = new StringBuffer("classpath {");
-        
-        if (dependencies != null)
+        StringBuffer buffer = new StringBuffer( "Classpath {" );
+
+        if ( dependencies != null )
         {
-            for (Iterator it = dependencies.iterator(); it.hasNext();)
+            for ( Iterator it = dependencies.iterator(); it.hasNext(); )
             {
-                buffer.append(" ").append(it.next());
+                buffer.append( " " ).append( it.next() );
             }
         }
-        buffer.append("}");
+        buffer.append( "}" );
         return buffer.toString();
     }
 }
