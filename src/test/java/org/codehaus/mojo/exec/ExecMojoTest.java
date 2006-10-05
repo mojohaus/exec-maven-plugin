@@ -45,13 +45,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
  * @todo we depend too much on Commandline.toString()
  */
 public class ExecMojoTest extends PlexusTestCase
-
 {
     private MockExecMojo mojo;
 
@@ -80,7 +80,7 @@ public class ExecMojoTest extends PlexusTestCase
     public void setUp() throws Exception {
         super.setUp();
         mojo = new MockExecMojo();
-        mojo.setExecutable("mvn");
+        mojo.setExecutable(new File("mvn"));
         mojo.setArguments( Arrays.asList( new String[] { "--version" } ) );
         mojo.executeResult = 0;
         mojo.setBasedir( File.createTempFile( "mvn-temp" , "txt").getParentFile() );
@@ -210,7 +210,7 @@ public class ExecMojoTest extends PlexusTestCase
            mojo.execute();
            fail( "expected failure" );
         } catch ( MojoExecutionException e ) {
-            assertEquals( "Result of mvn --version execution is: '1'.", e.getMessage() );
+            assertEquals( "Result of " + getTestFile( "" ) + File.separator + "mvn --version execution is: '1'.", e.getMessage() );
         }
 
         checkMojo( "mvn --version" );
@@ -226,7 +226,7 @@ public class ExecMojoTest extends PlexusTestCase
             mojo.execute();
             fail( "expected failure" );
         } catch ( MojoExecutionException e ) {
-            assertEquals( "command execution failed", e.getMessage() );
+            assertEquals( "Command execution failed.", e.getMessage() );
         }
 
         checkMojo( "mvn --version" );
@@ -259,6 +259,7 @@ public class ExecMojoTest extends PlexusTestCase
     }
 
     private void checkMojo( String expectedCommandLine) {
+        expectedCommandLine = getTestPath( "" ) + File.separator + expectedCommandLine;
         assertEquals( 1, mojo.commandLines.size() );
         assertEquals( expectedCommandLine, ((Commandline) mojo.commandLines.get(0)).toString() );
     }

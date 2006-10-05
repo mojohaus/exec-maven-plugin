@@ -60,7 +60,7 @@ public class ExecMojo extends AbstractMojo {
      * @parameter expression="${exec.executable}"
      * @required
      */
-    private String executable;
+    private File executable;
   
     /**
      * @parameter expression="${exec.workingdir}
@@ -118,7 +118,10 @@ public class ExecMojo extends AbstractMojo {
                 for ( int i = 0; i < arguments.size(); i++) {
                     Object argument = arguments.get( i );
                     String arg;
-                    if ( argument instanceof Classpath ) {
+                    if ( argument == null ) {
+                         throw new MojoExecutionException("Misconfigured argument, value is null. Set the argument to an empty value if this is the required behaviour.");
+                    }
+                    else if ( argument instanceof Classpath ) {
                          Classpath classpath = (Classpath) argument;
                          Collection artifacts = project.getArtifacts();
                          if ( classpath.getDependencies() != null ) {
@@ -135,21 +138,24 @@ public class ExecMojo extends AbstractMojo {
       
         Commandline commandLine = new Commandline();
 
-        commandLine.setExecutable( executable );
+        commandLine.setExecutable( executable.getAbsolutePath() );
 
         for ( Iterator it = commandArguments.iterator() ; it.hasNext() ; ) {
             commandLine.createArgument().setValue( it.next().toString() );
         }
 
-        if ( workingDirectory != null ) {
-
-            commandLine.setWorkingDirectory( workingDirectory.getAbsolutePath() );
-
-        } else {
-
-            commandLine.setWorkingDirectory( basedir.getAbsolutePath() );
-
+        if ( workingDirectory == null ) {
+            workingDirectory = basedir;
         }
+
+        if ( !workingDirectory.exists() ) {
+            getLog().debug( "Making working directory '" + workingDirectory.getAbsolutePath() + "'." );
+            if ( !workingDirectory.mkdirs() ) {
+                throw new MojoExecutionException( "Could not make working directory: '" + workingDirectory.getAbsolutePath() + "'" );
+            }
+        }
+
+        commandLine.setWorkingDirectory( workingDirectory.getAbsolutePath() );
 
         // FIXME what about redirecting the output to getLog() ??
         // what about consuming the input just to be on the safe side ?
@@ -166,12 +172,12 @@ public class ExecMojo extends AbstractMojo {
             
             if ( result != 0 )
             {
-                throw new MojoExecutionException("Result of " + commandLine + " execution is: \'" + result + "\'." );
+                throw new MojoExecutionException("Result of " + commandLine + " execution is: '" + result + "'." );
             }
         }
         catch ( CommandLineException e )
         {
-            throw new MojoExecutionException( "command execution failed", e );
+            throw new MojoExecutionException( "Command execution failed.", e );
         }
     }
 
@@ -237,7 +243,7 @@ public class ExecMojo extends AbstractMojo {
         return CommandLineUtils.executeCommandLine( commandLine, stream1, stream2 );
     }
 
-    void setExecutable( String executable ) {
+    void setExecutable( File executable ) {
         this.executable = executable;
     }
 
