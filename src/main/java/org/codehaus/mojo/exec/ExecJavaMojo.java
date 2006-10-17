@@ -159,7 +159,8 @@ public class ExecJavaMojo
             for ( int i = 0; i < systemProperties.length; i++ )
             {
                 Property systemProperty = systemProperties[i];
-                System.setProperty( systemProperty.getKey(), systemProperty.getValue() );
+                String value = systemProperty.getValue();
+                System.setProperty( systemProperty.getKey(), value == null ? "" : value );
             }
         }
     }

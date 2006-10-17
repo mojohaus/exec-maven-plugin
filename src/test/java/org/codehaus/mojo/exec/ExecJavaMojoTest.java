@@ -45,9 +45,40 @@ public class ExecJavaMojoTest
     {
         File pom = new File( getBasedir(), "src/test/projects/project4/pom.xml" );
 
+        String output = execute( pom, "java" );
+
+        assertEquals( "Hello" + System.getProperty( "line.separator" ), output );
+    }
+
+    /**
+     * MEXEC-10 Check that an execution with no arguments and an system property with no value
+     * produces the expected result
+     * <p/>
+     * we load the config from a pom file and fill up the MavenProject property ourselves
+     */
+    public void testEmptySystemProperty()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project5/pom.xml" );
+
+        assertNull( "System property not yet created",
+                     System.getProperty( "project5.property.with.no.value" ) );
+
+        execute( pom, "java" );
+
+        assertEquals( "System property now empty",
+                       "",
+                       System.getProperty( "project5.property.with.no.value" ) );
+    }
+
+    /**
+     * @return output
+     */
+    private String execute( File pom, String goal ) throws Exception {
+
         ExecJavaMojo mojo;
 
-        mojo = (ExecJavaMojo) lookupMojo( "java", pom );
+        mojo = (ExecJavaMojo) lookupMojo( goal, pom );
 
         setUpProject( pom, mojo );
 
@@ -78,7 +109,7 @@ public class ExecJavaMojoTest
             System.setOut( out );
         }
 
-        assertEquals( "Hello" + System.getProperty( "line.separator" ), stringOutputStream.toString() );
+        return stringOutputStream.toString();
     }
 
     private void setUpProject( File pomFile, AbstractMojo mojo )
