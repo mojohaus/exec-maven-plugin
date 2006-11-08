@@ -55,7 +55,7 @@ public class ExecMojo
      * @parameter expression="${exec.executable}"
      * @required
      */
-    private File executable;
+    private String executable;
 
     /**
      * @parameter expression="${exec.workingdir}
@@ -255,16 +255,17 @@ public class ExecMojo
 
     String getExecutablePath()
     {
+        File execFile = new File( executable );
         // if the file doesn't exist, the exec is probably in the PATH...
         // we should probably also test for isFile and canExecute, but the second one is only
         // available in SDK 6.
-        if ( executable.exists() )
+        if ( execFile.exists() )
         {
-            return executable.getAbsolutePath();
+            return execFile.getAbsolutePath();
         } else
         {
             getLog().debug( "executable " + executable + " not found in place, assuming it is in the PATH." );
-            return executable.toString();
+            return executable;
         }
     }
 
@@ -284,12 +285,12 @@ public class ExecMojo
         return CommandLineUtils.executeCommandLine( commandLine, stream1, stream2 );
     }
 
-    void setExecutable( File executable )
+    void setExecutable( String executable )
     {
         this.executable = executable;
     }
 
-    File getExecutable()
+    String getExecutable()
     {
         return executable;
     }

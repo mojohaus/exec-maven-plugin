@@ -83,7 +83,7 @@ public class ExecMojoTest
         mojo = new MockExecMojo();
         // note: most of the tests below assume that the specified 
         // executable path is not fully specicied. See ExecMojo#getExecutablePath
-        mojo.setExecutable( new File( "mvn" ) );
+        mojo.setExecutable( "mvn" );
         mojo.setArguments( Arrays.asList( new String[]{"--version"} ) );
         mojo.executeResult = 0;
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
@@ -200,7 +200,7 @@ public class ExecMojoTest
         assertTrue( "file created...", f.createNewFile() ); 
         assertTrue( "file exists...", f.exists() ); 
 
-        realMojo.setExecutable( f );
+        realMojo.setExecutable( myJavaPath );
 
         assertTrue( "File exists so path is absolute",
                     realMojo.getExecutablePath().startsWith( System.getProperty( "user.dir" ) ) );
