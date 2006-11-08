@@ -81,6 +81,8 @@ public class ExecMojoTest
     {
         super.setUp();
         mojo = new MockExecMojo();
+        // note: most of the tests below assume that the specified 
+        // executable path is not fully specicied. See ExecMojo#getExecutablePath
         mojo.setExecutable( new File( "mvn" ) );
         mojo.setArguments( Arrays.asList( new String[]{"--version"} ) );
         mojo.executeResult = 0;
@@ -188,6 +190,27 @@ public class ExecMojoTest
         } );
     }
 
+    // MEXEC-12
+    public void testGetExecutablePath() throws IOException
+    {
+        ExecMojo realMojo = new ExecMojo();
+
+        String myJavaPath = "target" + File.separator + "java";
+        File f = new File( myJavaPath );
+        assertTrue( "file created...", f.createNewFile() ); 
+        assertTrue( "file exists...", f.exists() ); 
+
+        realMojo.setExecutable( f );
+
+        assertTrue( "File exists so path is absolute",
+                    realMojo.getExecutablePath().startsWith( System.getProperty( "user.dir" ) ) );
+
+        f.delete();
+        assertFalse( "file deleted...", f.exists() ); 
+        assertEquals( "File doesn't exist. Let the system find it (in that PATH?)",
+                    myJavaPath, realMojo.getExecutablePath() );
+    }
+
     public void testRunFailure()
     {
         mojo.executeResult = 1;
@@ -199,7 +222,7 @@ public class ExecMojoTest
         }
         catch ( MojoExecutionException e )
         {
-            assertEquals( "Result of " + getTestFile( "" ) + File.separator + "mvn --version execution is: '1'.",
+            assertEquals( "Result of mvn --version execution is: '1'.",
                           e.getMessage() );
         }
 
@@ -249,7 +272,6 @@ public class ExecMojoTest
 
     private void checkMojo( String expectedCommandLine )
     {
-        expectedCommandLine = getTestPath( "" ) + File.separator + expectedCommandLine;
         assertEquals( 1, mojo.commandLines.size() );
         assertEquals( expectedCommandLine, ( (Commandline) mojo.commandLines.get( 0 ) ).toString() );
     }
