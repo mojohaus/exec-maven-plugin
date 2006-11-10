@@ -164,7 +164,8 @@ public class ExecMojo
             getLog().debug( "Making working directory '" + workingDirectory.getAbsolutePath() + "'." );
             if ( !workingDirectory.mkdirs() )
             {
-                throw new MojoExecutionException( "Could not make working directory: '" + workingDirectory.getAbsolutePath() + "'" );
+                throw new MojoExecutionException(
+                    "Could not make working directory: '" + workingDirectory.getAbsolutePath() + "'" );
             }
         }
 
@@ -262,7 +263,8 @@ public class ExecMojo
         if ( execFile.exists() )
         {
             return execFile.getAbsolutePath();
-        } else
+        }
+        else
         {
             getLog().debug( "executable " + executable + " not found in place, assuming it is in the PATH." );
             return executable;
