@@ -17,18 +17,27 @@ package org.codehaus.mojo.exec;
  */
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.artifact.MavenMetadataSource;
 
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -44,6 +53,36 @@ public class ExecJavaMojo
     extends AbstractMojo
 {
     /**
+     * @component
+     */
+    private ArtifactResolver artifactResolver;
+
+    /**
+     * @component
+     */
+    private ArtifactFactory artifactFactory;
+
+    /**
+     * @component
+     */
+    private ArtifactMetadataSource metadataSource;
+
+    /**
+     * @parameter expression="${localRepository}"
+     */
+    private ArtifactRepository localRepository;
+
+    /**
+     * @parameter expression="${project.remoteArtifactRepositories}"
+     */
+    private List remoteRepositories;
+
+    /**
+     * @component
+     */
+    private MavenProjectBuilder projectBuilder;
+
+    /**
      * The enclosing project.
      *
      * @parameter expression="${project}"
@@ -51,6 +90,12 @@ public class ExecJavaMojo
      * @readonly
      */
     protected MavenProject project;
+
+    /**
+     * @parameter expression="${plugin.artifacts}"
+     * @readonly
+     */
+    private List pluginDependencies;
 
     /**
      * The main class to execute.
@@ -81,6 +126,42 @@ public class ExecJavaMojo
      * @parameter expression="${exec.keepAlive}" default-value="false"
      */
     private boolean keepAlive;
+
+    /**
+     * Indicates if the project dependencies should be used when executing
+     * the main class.
+     *
+     * @parameter expression="${exec.includeProjectDependencies}" default-value="true"
+     */
+    private boolean includeProjectDependencies;
+
+    /**
+     * Indicates if this plugin's dependencies should be used when executing
+     * the main class.
+     * <p/>
+     * This is useful when project dependencies are not appropriate.  Using only
+     * the plugin dependencies can be particularly useful when the project is
+     * not a java project.  For example a mvn project using the csharp plugins
+     * only expects to see dotnet libraries as dependencies.
+     *
+     * @parameter expression="${exec.includePluginDependencies}" default-value="false"
+     */
+    private boolean includePluginDependencies;
+
+    /**
+     * If provided the ExecutableDependency identifies which of the plugin dependencies
+     * contains the executable class.  This will have the affect of only including
+     * plugin dependencies required by the identified ExecutableDependency.
+     * <p/>
+     * If includeProjectDependencies is set to true, all of the project dependencies
+     * will be included on the executable's classpath.  Whether a particular project
+     * dependency is a dependency of the identified ExecutableDependency will be
+     * irrelevant to its inclusion in the classpath.
+     *
+     * @parameter
+     * @optional
+     */
+    private ExecutableDependency executableDependency;
 
     /**
      * Keep the program running for n millis before terminating.
@@ -175,32 +256,208 @@ public class ExecJavaMojo
     private IsolatedClassLoader getClassLoader()
         throws MojoExecutionException
     {
+        IsolatedClassLoader appClassloader = new IsolatedClassLoader( this.getClass().getClassLoader() );
+        this.addRelevantPluginDependenciesToIsolatedClassLoader( appClassloader );
+        this.addRelevantProjectDependenciesToIsolatedClassLoader( appClassloader );
+        return appClassloader;
+    }
+
+    /**
+     * Add any relevant project dependencies to the IsolatedClassLoader.
+     * Indirectly takes includePluginDependencies and ExecutableDependency into consideration.
+     *
+     * @param appClassloader
+     * @throws MojoExecutionException
+     */
+    private void addRelevantPluginDependenciesToIsolatedClassLoader( IsolatedClassLoader appClassloader )
+        throws MojoExecutionException
+    {
+        Set dependencies = this.determineRelevantPluginDependencies();
+
         try
         {
-            IsolatedClassLoader appClassloader = new IsolatedClassLoader( this.getClass().getClassLoader() );
-
-            URL mainClasses = new File( project.getBuild().getOutputDirectory() ).toURL();
-            getLog().debug( "Adding to classpath : " + mainClasses );
-            appClassloader.addURL( mainClasses );
-
-            URL testClasses = new File( project.getBuild().getTestOutputDirectory() ).toURL();
-            getLog().debug( "Adding to classpath : " + testClasses );
-            appClassloader.addURL( testClasses );
-
-            Set dependencies = project.getArtifacts();
             Iterator iter = dependencies.iterator();
             while ( iter.hasNext() )
             {
                 Artifact classPathElement = (Artifact) iter.next();
-                getLog().debug( "Adding artifact: " + classPathElement.getArtifactId() + " to classpath" );
+                getLog().debug(
+                    "Adding plugin dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
                 appClassloader.addURL( classPathElement.getFile().toURL() );
             }
-            return appClassloader;
         }
         catch ( MalformedURLException e )
         {
             throw new MojoExecutionException( "Error during setting up classpath", e );
         }
+
+    }
+
+    /**
+     * Add any relevant project dependencies to the IsolatedClassLoader.
+     * Takes includeProjectDependencies into consideration.
+     *
+     * @param appClassloader
+     * @throws MojoExecutionException
+     */
+    private void addRelevantProjectDependenciesToIsolatedClassLoader( IsolatedClassLoader appClassloader )
+        throws MojoExecutionException
+    {
+        if ( this.includeProjectDependencies )
+        {
+            try
+            {
+                getLog().debug( "Project Dependencies will be included." );
+
+                URL mainClasses = new File( project.getBuild().getOutputDirectory() ).toURL();
+                getLog().debug( "Adding to classpath : " + mainClasses );
+                appClassloader.addURL( mainClasses );
+
+                URL testClasses = new File( project.getBuild().getTestOutputDirectory() ).toURL();
+                getLog().debug( "Adding to classpath : " + testClasses );
+                appClassloader.addURL( testClasses );
+
+                Set dependencies = project.getArtifacts();
+                Iterator iter = dependencies.iterator();
+                while ( iter.hasNext() )
+                {
+                    Artifact classPathElement = (Artifact) iter.next();
+                    getLog().debug(
+                        "Adding project dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
+                    appClassloader.addURL( classPathElement.getFile().toURL() );
+                }
+            }
+            catch ( MalformedURLException e )
+            {
+                throw new MojoExecutionException( "Error during setting up classpath", e );
+            }
+        }
+        else
+        {
+            getLog().debug( "Project Dependencies will be excluded." );
+        }
+
+    }
+
+    /**
+     * Determine all plugin dependencies relevant to the executable.
+     * Takes includePlugins, and the executableDependency into consideration.
+     *
+     * @return a set of Artifact objects.
+     *         (Empty set is returned if there are no relevant plugin dependencies.)
+     * @throws MojoExecutionException
+     */
+    private Set determineRelevantPluginDependencies()
+        throws MojoExecutionException
+    {
+        Set relevantDependencies;
+        if ( this.includePluginDependencies )
+        {
+            if ( this.executableDependency == null )
+            {
+                getLog().debug( "All Plugin Dependencies will be included." );
+                relevantDependencies = new HashSet( this.pluginDependencies );
+            }
+            else
+            {
+                getLog().debug( "Selected plugin Dependencies will be included." );
+                Artifact executableArtifact = this.findExecutableArtifact();
+                Artifact executablePomArtifact = this.getExecutablePomArtifact( executableArtifact );
+                relevantDependencies = this.resolveExecutableDependencies( executablePomArtifact );
+            }
+        }
+        else
+        {
+            relevantDependencies = Collections.EMPTY_SET;
+            getLog().debug( "Plugin Dependencies will be excluded." );
+        }
+        return relevantDependencies;
+    }
+
+    /**
+     * Get the artifact which refers to the POM of the executable artifact.
+     *
+     * @param executableArtifact this artifact refers to the actual assembly.
+     * @return an artifact which refers to the POM of the executable artifact.
+     */
+    private Artifact getExecutablePomArtifact( Artifact executableArtifact )
+    {
+        return this.artifactFactory.createBuildArtifact( executableArtifact.getGroupId(),
+                                                         executableArtifact.getArtifactId(),
+                                                         executableArtifact.getVersion(), "pom" );
+    }
+
+    /**
+     * Examine the plugin dependencies to find the executable artifact.
+     *
+     * @return an artifact which refers to the actual executable tool (not a POM)
+     * @throws MojoExecutionException
+     */
+    private Artifact findExecutableArtifact()
+        throws MojoExecutionException
+    {
+        //ILimitedArtifactIdentifier execToolAssembly = this.getExecutableToolAssembly();
+
+        Artifact executableTool = null;
+        for ( Iterator iter = this.pluginDependencies.iterator(); iter.hasNext(); )
+        {
+            Artifact pluginDep = (Artifact) iter.next();
+            if ( this.executableDependency.matches( pluginDep ) )
+            {
+                executableTool = pluginDep;
+                break;
+            }
+        }
+
+        if ( executableTool == null )
+        {
+            throw new MojoExecutionException(
+                "No dependency of the plugin matches the specified executableDependency." +
+                    "  Specified executableToolAssembly is: " + executableDependency.toString() );
+        }
+
+        return executableTool;
+    }
+
+    private Set resolveExecutableDependencies( Artifact executablePomArtifact )
+        throws MojoExecutionException
+    {
+
+        Set executableDependencies;
+        try
+        {
+            MavenProject executableProject = this.projectBuilder.buildFromRepository( executablePomArtifact,
+                                                                                      this.remoteRepositories,
+                                                                                      this.localRepository );
+
+            //get all of the dependencies for the executable project
+            List dependencies = executableProject.getDependencies();
+
+            //make Artifacts of all the dependencies
+            Set dependencyArtifacts =
+                MavenMetadataSource.createArtifacts( this.artifactFactory, dependencies, null, null, null );
+
+            //not forgetting the Artifact of the project itself
+            dependencyArtifacts.add( executableProject.getArtifact() );
+
+            //resolve all dependencies transitively to obtain a comprehensive list of assemblies
+            ArtifactResolutionResult result = artifactResolver.resolveTransitively( dependencyArtifacts,
+                                                                                    executablePomArtifact,
+                                                                                    Collections.EMPTY_MAP,
+                                                                                    this.localRepository,
+                                                                                    this.remoteRepositories,
+                                                                                    metadataSource, null,
+                                                                                    Collections.EMPTY_LIST );
+            executableDependencies = result.getArtifacts();
+
+        }
+        catch ( Exception ex )
+        {
+            throw new MojoExecutionException(
+                "Encountered problems resolving dependencies of the executable " + "in preparation for its execution.",
+                ex );
+        }
+
+        return executableDependencies;
     }
 
     /**
@@ -288,4 +545,5 @@ public class ExecJavaMojo
             this.parent = parent;
         }
     }
+
 }

@@ -160,3 +160,86 @@ MAVEN_OPTS=-Xmx1024m
 -------------------
 
   Otherwise consider using the exec goal.
+
+* Using Plugin Dependencies Instead of Project Dependencies
+
+  Ocassionally it is desirable to execute a java class without affecting your project's dependencies.
+  For example, if you are using the maven csharp plugins, adding java dependencies to your project
+  will upset the csharp compiler.  Therefore the maven exec plugin allows you specify dependencies of
+  your executable class as plugin dependencies.  Since maven takes plugin dependencies into consideration
+  when determining build order for a multi-module project your build order should automatically be
+  appropriately adjusted (I think).
+
+  If you specify your executable class dependencies as plugin dependencies, you may end up with extraneous
+  undesirable dependences required by the maven exec plugin but not by your executable class.  If this
+  causes a problem, or if you simply prefer to avoid the extraneous dependencies you can use the
+  executableDependency configuration element.  The executableDependency element allows you to identify
+  the particular artifact in the list of the plugin's dependencies which contains your executable class.
+  The maven exec plugin will ensure that only the selected artifact identified by the executableDependency
+  configuration element and the selected artifact's transitive dependencies are used when the mainClass
+  is executed.
+
+  Although the use of the executableDependency configuration element will prevent the java class being
+  executed from seeing extraneous classes, the maven exec plugin itself will still see all of the plugin
+  dependencies.  For example if your executable java class has a dependency upon a brand new version of
+  org.codehaus.plexus:plexus-utils and you specify this as a plugin dependency then the maven exec plugin,
+  which already has a transitive dependency upon org.codehaus.plexus:plexus-utils, will end up using
+  the brand new version you explictly supplied.  It is unlikely you will encounter a situation
+  where this will be a problem, but hopefully this knowledge will help you diagnose such a problem if
+  it occurs.  None of this is relevant unless your using the plugin dependencies for your
+  executable (includePluginDependencies=true).
+
+** Example POM Configuration using Plugin Dependencies
+
+-------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            ...
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+	  <includeProjectDependencies>false</includeProjectDependencies>
+	  <includePluginDependencies>true</includePluginDependencies>
+          <executableDependency>
+              <groupId>com.example.myproject</groupId>
+              <artifactId>mylib</artifactId>
+	  </executableDependency>
+          <!--assume this starts some server process used in an integration test-->
+          <keepAlive>true</keepAlive>
+          <mainClass>com.example.Main</mainClass>
+          <arguments>
+            <argument>argument1</argument>
+            ...
+          </arguments>
+          <systemProperties>
+            <systemProperty>
+              <key>myproperty</key>
+              <value>myvalue</value>
+            </systemProperty>
+            ...
+        </configuration>
+	<dependencies>
+           <dependency>
+              <groupId>com.example.myproject</groupId>
+              <artifactId>mylib</artifactId>
+              <version>1.3.5</version>
+              <type>jar</type>
+            </dependency>
+	</dependencies>
+      </plugin>
+    </plugins>
+  </build>
+   ...
+</project>
+-------------------
+
