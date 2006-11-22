@@ -202,11 +202,26 @@ public class ExecJavaMojo
 
         if ( null == arguments )
         {
-            args[0] = new String[0];
+            arguments = new String[0];
         }
-        else
+
+        args[0] = arguments;
+
+        if ( getLog().isDebugEnabled() )
         {
-            args[0] = arguments;
+            StringBuffer msg = new StringBuffer( "Invoking : " );
+            msg.append( mainClass );
+            msg.append( ".main(" );
+            for ( int i = 0; i < arguments.length; i++ )
+            {
+                if ( i > 0 )
+                {
+                    msg.append( ", " );
+                }
+                msg.append( arguments[i] );
+            }
+            msg.append( ")" );
+            getLog().debug(  msg );
         }
 
         try
