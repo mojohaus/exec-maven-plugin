@@ -19,7 +19,7 @@ package org.codehaus.mojo.exec;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
-import org.apache.maven.plugin.AbstractMojo;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.cli.CommandLineException;
@@ -29,6 +29,7 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -44,7 +45,7 @@ import java.util.StringTokenizer;
  * @description Program Execution plugin
  */
 public class ExecMojo
-    extends AbstractMojo
+    extends AbstractExecMojo
 {
     /**
      * @parameter expression="${skip}" default-value="false"
@@ -103,7 +104,11 @@ public class ExecMojo
 
         List commandArguments = new ArrayList();
 
-        if ( !isEmpty( argsProp ) )
+        if ( hasCommandlineArgs() )
+        {
+            commandArguments.addAll( Arrays.asList( parseCommandlineArgs() ) );
+        }
+        else if ( !isEmpty( argsProp ) )
         {
             getLog().debug( "got arguments from system properties: " + argsProp );
 

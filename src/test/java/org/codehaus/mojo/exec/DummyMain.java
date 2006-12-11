@@ -19,7 +19,7 @@ class DummyMain
 
         for ( int i = 0; i < args.length; i++ )
         {
-            buffer.append( ' ' ).append( args[i] );
+            buffer.append( System.getProperty( "line.separator" ) ).append( args[i] );
         }
 
         System.out.println( buffer.toString() );
