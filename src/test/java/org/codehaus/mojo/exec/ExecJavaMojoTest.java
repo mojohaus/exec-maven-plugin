@@ -72,6 +72,20 @@ public class ExecJavaMojoTest
     }
 
     /**
+     * For cases where the Java code spawns Threads and main returns soon.
+     * See <a href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
+     */
+    public void testWaitNoDaemonThreads()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project7/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        assertEquals( MainWithThreads.SUCCESS, output.trim() );
+    }
+
+    /**
      * @return output
      */
     private String execute( File pom, String goal ) throws Exception {

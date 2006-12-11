@@ -39,12 +39,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Properties;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's
  * dependencies as classpath.
  *
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
+ * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>, <a href="mailto:dsmiley@mitre.org">David Smiley</a>
  * @goal java
  * @requiresDependencyResolution runtime
  * @execute phase="validate"
@@ -164,12 +165,12 @@ public class ExecJavaMojo
     private ExecutableDependency executableDependency;
 
     /**
-     * Keep the program running for n millis before terminating.
-     * Note: putting 0 here has the same effect as setting keepAlive to true.
+     * Deprecated this is not needed anymore.
      *
      * @parameter expression="${exec.killAfter}" default-value="-1"
      */
     private long killAfter;
+    private Properties originalSystemProperties;
 
     /**
      * Execute goal.
@@ -177,35 +178,15 @@ public class ExecJavaMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
-        ClassLoader origClassLoader = Thread.currentThread().getContextClassLoader();
-
-        ClassLoader myClassLoader = getClassLoader();
-        Thread.currentThread().setContextClassLoader( myClassLoader );
-
-        setSystemProperties();
-
-        Class[] argtypes = new Class[1];
-        argtypes[0] = String[].class;
-
-        Method main;
-
-        try
+        if ( killAfter != -1 )
         {
-            main = myClassLoader.loadClass( mainClass ).getMethod( "main", argtypes );
+            getLog().warn( "Warning: killAfter is now deprecated. Do you need it ? Please comment on MEXEC-6." );
         }
-        catch ( Exception e )
-        {
-            throw new MojoExecutionException( "Could not load main class. Terminating", e );
-        }
-
-        Object[] args = new Object[1];
 
         if ( null == arguments )
         {
             arguments = new String[0];
         }
-
-        args[0] = arguments;
 
         if ( getLog().isDebugEnabled() )
         {
@@ -224,27 +205,147 @@ public class ExecJavaMojo
             getLog().debug(  msg );
         }
 
-        try
+        IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /*name*/ );
+        Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
-            main.invoke( null, args );
-        }
-        catch ( Exception e )
-        {
-            throw new MojoExecutionException( "Exception during program execution", e );
-        }
+            public void run()
+            {
+                try
+                {
+                    Method main = Thread.currentThread().getContextClassLoader().loadClass( mainClass )
+                        .getMethod( "main", new Class[]{String[].class} );
+                    main.invoke( main, new Object[]{arguments} );
+                }
+                catch ( Exception e )
+                {   // just pass it on
+                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
+                }
+            }
+        }, mainClass /*name*/ );
+        bootstrapThread.setContextClassLoader( getClassLoader() );
+        setSystemProperties();
 
-        if ( killAfter > -1 )
-        {
-            waitFor( killAfter );
-        }
-        else if ( keepAlive )
+        bootstrapThread.start();
+        joinNonDaemonThreads( threadGroup );
+
+        if ( keepAlive )
         {
             waitFor( 0 );
         }
 
-        Thread.currentThread().setContextClassLoader( origClassLoader );
+        terminateThreads( threadGroup );
+
+        if ( originalSystemProperties != null )
+        {
+            System.setProperties( originalSystemProperties );
+        }
+
+        synchronized (threadGroup)
+        {
+            if ( threadGroup.uncaughtException != null )
+            {
+                throw new MojoExecutionException( null, threadGroup.uncaughtException );
+            }
+        }
     }
 
+    class IsolatedThreadGroup extends ThreadGroup
+    {
+        Throwable uncaughtException;
+
+        public IsolatedThreadGroup( String name )
+        {
+            super( name );
+        }
+
+        public void uncaughtException( Thread thread, Throwable throwable )
+        {
+            if ( throwable instanceof ThreadDeath )
+            {
+                return; //harmless
+            }
+            boolean doLog = false;
+            synchronized ( this )
+            {
+                if ( uncaughtException == null ) // only remember the first one
+                {
+                    uncaughtException = throwable; // will be reported eventually
+                }
+                else
+                {
+                    doLog = true;
+                }
+            }
+            if ( doLog )
+            {
+                getLog().warn( "additional exceptions thrown:", throwable );
+            }
+        }
+    }
+
+    private void joinNonDaemonThreads( ThreadGroup threadGroup )
+    {
+        Thread[] threads = new Thread[ threadGroup.activeCount() ];
+        threadGroup.enumerate( threads );
+        boolean foundNonDaemon = false;
+        for ( int i = 0; i < threads.length; i++ )
+        {
+            Thread thread = threads[i];
+            if ( thread == null )
+            {
+                break;
+            }
+            if ( thread.isDaemon() )
+            {
+                continue;
+            }
+            foundNonDaemon = true;
+            joinThread( thread );
+        }
+
+        //try again; maybe more threads were created while we were busy
+        if ( foundNonDaemon )
+        {
+            joinNonDaemonThreads( threadGroup );
+        }
+    }
+
+    private void joinThread( Thread thread )
+    {
+        try
+       {
+            thread.join();
+        }
+        catch ( InterruptedException e )
+        {
+           getLog().warn( "interrupted while joining against thread " + thread, e );
+        }
+    }
+
+    private void terminateThreads( ThreadGroup threadGroup )
+    {
+        // this gets one active thread at a time. New threads might be created at
+        // any time, so this logic is good.
+        Thread[] thread = new Thread[1];
+        while ( true )
+        {
+            if ( threadGroup.enumerate( thread ) == 0 )//places at most one active thread into the list
+            {
+                break;
+            }
+            thread[0].interrupt();
+            joinThread( thread[0] );
+        }
+
+        if ( threadGroup.activeCount() != 0 )
+        {
+
+           getLog().error( "assertion failed: " + threadGroup.activeCount()
+                         + " thread(s) still active in the group." );
+
+        }
+    }
+ 
     /**
      * Pass any given system properties to the java system properties.
      */
@@ -258,6 +359,7 @@ public class ExecJavaMojo
                 String value = systemProperty.getValue();
                 System.setProperty( systemProperty.getKey(), value == null ? "" : value );
             }
+            originalSystemProperties = System.getProperties();
         }
     }
 
@@ -492,6 +594,7 @@ public class ExecJavaMojo
             }
             catch ( InterruptedException e )
             {
+                getLog().warn( "Spuriously interrupted while waiting for " + millis + "ms", e);
             }
         }
     }
