@@ -72,12 +72,6 @@ public class ExecMojo
     public List arguments;
 
     /**
-     * @parameter expression="${project}"
-     * @required
-     */
-    private MavenProject project;
-
-    /**
      * @parameter expression="${basedir}"
      * @required
      */
@@ -200,6 +194,8 @@ public class ExecMojo
         {
             throw new MojoExecutionException( "Command execution failed.", e );
         }
+
+        registerSourceRoots();
     }
 
     private String computeClasspath( Collection artifacts )

@@ -1,20 +1,50 @@
 package org.codehaus.mojo.exec;
 
+import java.io.File;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 
 /**
- * This class is used for parsing the arguments for multiple mojos of the exec plugin. It is intended to unify the way
- * commandline arguments are passed to the mojos via a system property.
+ * This class is used for unifying functionality between the 2 mojo exec plugins ('java' and 'exec').
+ * It handles parsing the arguments and adding source/test folders.
  * 
  * @author Philippe Jacot (PJA)
+ * @author Jerome Lacoste
  */
 public abstract class AbstractExecMojo extends AbstractMojo
 {
+    /**
+     * The enclosing project.
+     *
+     * @parameter expression="${project}"
+     * @required
+     * @readonly
+     */
+    protected MavenProject project;
+
+    /**
+     * This folder is added to the list of those folders
+     * containing source to be compiled. Use this if your
+     * plugin generates source code.
+     *
+     * @parameter expression="${sourceRoot}"
+     */
+    private File sourceRoot;
+
+    /**
+     * This folder is added to the list of those folders
+     * containing source to be compiled for testing. Use this if your
+     * plugin generates test source code.
+     *
+     * @parameter expression="${testSourceRoot}"
+     */
+    private File testSourceRoot;
 
     /**
      * Arguments for the executed program
@@ -126,5 +156,20 @@ public abstract class AbstractExecMojo extends AbstractMojo
     protected boolean hasCommandlineArgs()
     {
         return ( commandline_args != null );
+    }
+
+    protected void registerSourceRoots()
+    {
+        if ( sourceRoot != null )
+        {
+            getLog().info( "Registering compile source root " + sourceRoot );
+            project.addCompileSourceRoot( sourceRoot.toString() );
+        }
+
+        if ( testSourceRoot != null )
+        {
+            getLog().info( "Registering compile test source root " + testSourceRoot );
+            project.addTestCompileSourceRoot( testSourceRoot.toString() );
+        }
     }
 }

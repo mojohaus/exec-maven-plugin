@@ -78,15 +78,6 @@ public class ExecJavaMojo
     private MavenProjectBuilder projectBuilder;
 
     /**
-     * The enclosing project.
-     *
-     * @parameter expression="${project}"
-     * @required
-     * @readonly
-     */
-    protected MavenProject project;
-
-    /**
      * @parameter expression="${plugin.artifacts}"
      * @readonly
      */
@@ -254,6 +245,8 @@ public class ExecJavaMojo
                 throw new MojoExecutionException( null, threadGroup.uncaughtException );
             }
         }
+
+        registerSourceRoots();
     }
 
     class IsolatedThreadGroup extends ThreadGroup
