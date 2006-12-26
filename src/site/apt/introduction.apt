@@ -108,7 +108,7 @@ Java goal
   If you want to execute Java programs in the same VM, you can either use the command line version
 
 -----
-> mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.arguments="argument1"] [-DkillAfter=60000] ...
+> mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] [-DkillAfter=60000] ...
 -----
 
 * Java Plugin Configuration
