@@ -6,7 +6,7 @@ package org.codehaus.mojo.exec;
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
  */
-class DummyMain
+public class DummyMain
 {
     /**
      * Prints Hello followed by each argument, then a new line. Use a space character as separator.

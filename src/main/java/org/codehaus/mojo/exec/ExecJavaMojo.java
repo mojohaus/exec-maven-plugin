@@ -33,12 +33,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's
@@ -213,6 +208,11 @@ public class ExecJavaMojo
                 {
                     Method main = Thread.currentThread().getContextClassLoader().loadClass( mainClass )
                         .getMethod( "main", new Class[]{String[].class} );
+                    if ( ! main.isAccessible() )
+                    {
+                        getLog().debug( "Setting accessibility to true in order to invoke main()." );
+                        main.setAccessible(true);
+                    }
                     main.invoke( main, new Object[]{arguments} );
                 }
                 catch ( Exception e )
@@ -233,6 +233,14 @@ public class ExecJavaMojo
         }
 
         terminateThreads( threadGroup );
+        try
+        {
+            threadGroup.destroy();
+        }
+        catch (IllegalThreadStateException e)
+        {
+            getLog().warn( "Couldn't destroy threadgroup " + threadGroup, e );
+        }
 
         if ( originalSystemProperties != null )
         {
@@ -250,7 +258,7 @@ public class ExecJavaMojo
 
     class IsolatedThreadGroup extends ThreadGroup
     {
-        Throwable uncaughtException;
+        Throwable uncaughtException; //synchronize access to this
 
         public IsolatedThreadGroup( String name )
         {
@@ -277,15 +285,15 @@ public class ExecJavaMojo
             }
             if ( doLog )
             {
-                getLog().warn( "additional exceptions thrown:", throwable );
+                getLog().warn( "an additional exception was thrown", throwable );
             }
         }
     }
 
     private void joinNonDaemonThreads( ThreadGroup threadGroup )
     {
-        Thread[] threads = new Thread[ threadGroup.activeCount() ];
-        threadGroup.enumerate( threads );
+        Thread[] threads = new Thread[ threadGroup.activeCount() ]; //activeCount includes subgroups
+        threadGroup.enumerate( threads ); //enumerate includes subgroups
         boolean foundNonDaemon = false;
         for ( int i = 0; i < threads.length; i++ )
         {
@@ -312,8 +320,9 @@ public class ExecJavaMojo
     private void joinThread( Thread thread )
     {
         try
-       {
-            thread.join();
+        {
+           getLog().debug( "joining on thread " + thread );
+           thread.join();
         }
         catch ( InterruptedException e )
         {
@@ -332,19 +341,21 @@ public class ExecJavaMojo
             {
                 break;
             }
+            getLog().debug( "interrupting thread " + thread[0] );
             thread[0].interrupt();
             joinThread( thread[0] );
         }
 
-        if ( threadGroup.activeCount() != 0 )
+        int activeCount = threadGroup.activeCount();
+        if ( activeCount != 0 )
         {
-
-           getLog().error( "assertion failed: " + threadGroup.activeCount()
-                         + " thread(s) still active in the group." );
-
+            //TODO this may be nothing; continue on anyway; perhaps don't even log in future
+            threadGroup.enumerate(thread);
+            getLog().debug( "strange; " + activeCount
+                    + " thread(s) still active in the group " + threadGroup +" such as " + thread[0] );
         }
     }
- 
+
     /**
      * Pass any given system properties to the java system properties.
      */
@@ -352,13 +363,13 @@ public class ExecJavaMojo
     {
         if ( systemProperties != null )
         {
+            originalSystemProperties = System.getProperties();
             for ( int i = 0; i < systemProperties.length; i++ )
             {
                 Property systemProperty = systemProperties[i];
                 String value = systemProperty.getValue();
                 System.setProperty( systemProperty.getKey(), value == null ? "" : value );
             }
-            originalSystemProperties = System.getProperties();
         }
     }
 
@@ -369,27 +380,26 @@ public class ExecJavaMojo
      * @return
      * @throws MojoExecutionException
      */
-    private IsolatedClassLoader getClassLoader()
+    private ClassLoader getClassLoader()
         throws MojoExecutionException
     {
-        IsolatedClassLoader appClassloader = new IsolatedClassLoader( this.getClass().getClassLoader() );
-        this.addRelevantPluginDependenciesToIsolatedClassLoader( appClassloader );
-        this.addRelevantProjectDependenciesToIsolatedClassLoader( appClassloader );
-        return appClassloader;
+        List classpathURLs = new ArrayList();
+        this.addRelevantPluginDependenciesToClasspath( classpathURLs );
+        this.addRelevantProjectDependenciesToClasspath( classpathURLs );
+        return new URLClassLoader((URL[]) classpathURLs.toArray( new URL[ classpathURLs.size() ] )/*,
+                ClassLoader.getSystemClassLoader()*/);
     }
 
     /**
-     * Add any relevant project dependencies to the IsolatedClassLoader.
+     * Add any relevant project dependencies to the classpath.
      * Indirectly takes includePluginDependencies and ExecutableDependency into consideration.
      *
-     * @param appClassloader
+     * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException
      */
-    private void addRelevantPluginDependenciesToIsolatedClassLoader( IsolatedClassLoader appClassloader )
+    private void addRelevantPluginDependenciesToClasspath( List path )
         throws MojoExecutionException
     {
-        Set dependencies = this.determineRelevantPluginDependencies();
-
         if ( hasCommandlineArgs() )
         {
             arguments = parseCommandlineArgs();
@@ -397,13 +407,13 @@ public class ExecJavaMojo
 
         try
         {
-            Iterator iter = dependencies.iterator();
+            Iterator iter = this.determineRelevantPluginDependencies().iterator();
             while ( iter.hasNext() )
             {
                 Artifact classPathElement = (Artifact) iter.next();
                 getLog().debug(
                     "Adding plugin dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
-                appClassloader.addURL( classPathElement.getFile().toURL() );
+                path.add( classPathElement.getFile().toURL() );
             }
         }
         catch ( MalformedURLException e )
@@ -414,13 +424,13 @@ public class ExecJavaMojo
     }
 
     /**
-     * Add any relevant project dependencies to the IsolatedClassLoader.
+     * Add any relevant project dependencies to the classpath.
      * Takes includeProjectDependencies into consideration.
      *
-     * @param appClassloader
+     * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException
      */
-    private void addRelevantProjectDependenciesToIsolatedClassLoader( IsolatedClassLoader appClassloader )
+    private void addRelevantProjectDependenciesToClasspath( List path )
         throws MojoExecutionException
     {
         if ( this.includeProjectDependencies )
@@ -431,11 +441,11 @@ public class ExecJavaMojo
 
                 URL mainClasses = new File( project.getBuild().getOutputDirectory() ).toURL();
                 getLog().debug( "Adding to classpath : " + mainClasses );
-                appClassloader.addURL( mainClasses );
+                path.add( mainClasses );
 
                 URL testClasses = new File( project.getBuild().getTestOutputDirectory() ).toURL();
                 getLog().debug( "Adding to classpath : " + testClasses );
-                appClassloader.addURL( testClasses );
+                path.add( testClasses );
 
                 Set dependencies = project.getArtifacts();
                 Iterator iter = dependencies.iterator();
@@ -444,7 +454,7 @@ public class ExecJavaMojo
                     Artifact classPathElement = (Artifact) iter.next();
                     getLog().debug(
                         "Adding project dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
-                    appClassloader.addURL( classPathElement.getFile().toURL() );
+                    path.add( classPathElement.getFile().toURL() );
                 }
             }
             catch ( MalformedURLException e )
@@ -600,71 +610,6 @@ public class ExecJavaMojo
             {
                 getLog().warn( "Spuriously interrupted while waiting for " + millis + "ms", e);
             }
-        }
-    }
-
-    /**
-     *
-     *
-     */
-    public class IsolatedClassLoader
-        extends URLClassLoader
-    {
-        private ClassLoader parent;
-
-        private Set urls = new HashSet();
-
-        public IsolatedClassLoader()
-        {
-            super( new URL[0] );
-            this.parent = ClassLoader.getSystemClassLoader();
-        }
-
-        public void addURL( URL url )
-        {
-            if ( !urls.contains( url ) )
-            {
-                super.addURL( url );
-            }
-            else
-            {
-                urls.add( url );
-            }
-        }
-
-        public synchronized Class loadClass( String className )
-            throws ClassNotFoundException
-        {
-            Class c = findLoadedClass( className );
-            ClassNotFoundException ex = null;
-            if ( c == null )
-            {
-                try
-                {
-                    c = findClass( className );
-                }
-                catch ( ClassNotFoundException e )
-                {
-                    ex = e;
-                    if ( parent != null )
-                    {
-                        c = parent.loadClass( className );
-                    }
-                }
-            }
-
-            if ( c == null )
-            {
-                throw ex;
-            }
-
-            return c;
-        }
-
-        public IsolatedClassLoader( ClassLoader parent )
-        {
-            this();
-            this.parent = parent;
         }
     }
 

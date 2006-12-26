@@ -29,6 +29,7 @@
         </executions>
         <configuration>
           <mainClass>org.codehaus.mojo.exec.DummyMain</mainClass>
+          <commandline_args>"Arg1" "Arg2a Arg2b"</commandline_args>
         </configuration>
       </plugin>
     </plugins>

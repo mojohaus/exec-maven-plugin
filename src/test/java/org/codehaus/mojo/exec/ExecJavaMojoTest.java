@@ -23,7 +23,10 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.monitor.logging.DefaultLog;
 import org.codehaus.plexus.util.StringOutputStream;
+import org.codehaus.plexus.logging.Logger;
+import org.codehaus.plexus.logging.console.ConsoleLogger;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -86,19 +89,32 @@ public class ExecJavaMojoTest
     }
 
     /**
-     * @return output
+     * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
+     */
+    public void testRunWithArgs() throws Exception
+    {
+
+        String resultString = execute( new File( getBasedir(), "src/test/projects/project8/pom.xml" ), "java" );
+
+        String LS = System.getProperty("line.separator");
+        String expectedResult = "Hello" + LS + "Arg1" + LS +"Arg2a Arg2b" + LS;
+        assertEquals( expectedResult, resultString );
+    }
+
+    /**
+     * @return output from System.out during mojo execution
      */
     private String execute( File pom, String goal ) throws Exception {
 
         ExecJavaMojo mojo;
-
         mojo = (ExecJavaMojo) lookupMojo( goal, pom );
 
         setUpProject( pom, mojo );
 
         MavenProject project = (MavenProject) getVariableValueFromObject( mojo, "project" );
 
-        // why isn't this set up by the harmess based on the default-value?
+        // why isn't this set up by the harness based on the default-value?  TODO get to bottom of this!
+        setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
         setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
 
         assertNotNull( mojo );
@@ -108,6 +124,8 @@ public class ExecJavaMojoTest
         PrintStream out = System.out;
         StringOutputStream stringOutputStream = new StringOutputStream();
         System.setOut( new PrintStream( stringOutputStream ) );
+        // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
+        mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR,"exec:java")));
 
         try
         {
@@ -140,6 +158,8 @@ public class ExecJavaMojoTest
             new File( path ).getAbsolutePath(), localRepositoryLayout );
 
         MavenProject project = builder.buildWithDependencies( pomFile, localRepository, null );
+        //this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
+        project.getBuild().setOutputDirectory( new File("target/test-classes").getAbsolutePath() );
         setVariableValueToObject( mojo, "project", project );
     }
 }

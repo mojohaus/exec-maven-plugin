@@ -69,11 +69,5 @@
       <version>1.0-beta-1</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-embedder</artifactId>
-      <version>2.0.4</version>
-      <scope>test</scope> 
-    </dependency>
   </dependencies>
 </project>
