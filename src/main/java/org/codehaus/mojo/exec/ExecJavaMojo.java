@@ -99,7 +99,8 @@ public class ExecJavaMojo
     private String[] arguments;
 
     /**
-     * A list of system properties to be passed..
+     * A list of system properties to be passed. Note: as the execution is not forked, some system properties
+     * required by the JVM cannot be passed here. Use MAVEN_OPTS or the exec:exec instead. See the user guide for more information.
      *
      * @parameter
      */
@@ -330,7 +331,7 @@ public class ExecJavaMojo
         Thread[] thread = new Thread[1];
         while ( true )
         {
-            if ( threadGroup.enumerate( thread ) == 0 )//places at most one active thread into the list
+            if ( threadGroup.enumerate( thread ) == 0 ) //places at most one active thread into the list
             {
                 break;
             }
