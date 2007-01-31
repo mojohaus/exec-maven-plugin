@@ -134,6 +134,32 @@ public class ExecJavaMojoTest
     }
 
     /**
+     * See <a href="http://jira.codehaus.org/browse/MEXEC-17">MEXEC-17</a>.
+     */
+    /**
+    This test doesn't work because the sun.tools.javac.Main class referenced in the
+    project pom is found even if the system scope dependencies are not added by the plugin.
+    The class was probably loaded by another plugin ?!
+
+    To fix the test we have to:
+    - maybe use a different system scope dependency/class to load.
+    - find a different way to test.
+
+    When ran manually, the test works though (i.e. removing the code that manually adds
+    the system scope dependencies make the test fail).
+
+    public void testSystemDependencyFound()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project11/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        assertEquals( FindClassInClasspath.FOUND_ALL, output.trim() );
+    }
+    */
+
+    /**
      * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
      */
     public void testRunWithArgs() throws Exception

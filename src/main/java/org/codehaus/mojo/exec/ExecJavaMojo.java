@@ -28,6 +28,13 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.artifact.MavenMetadataSource;
 
+import org.apache.maven.model.Dependency; 
+import org.apache.maven.model.Exclusion;
+import org.apache.maven.artifact.resolver.filter.ArtifactFilter; 
+import org.apache.maven.artifact.resolver.filter.ExcludesArtifactFilter;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRange; 
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -64,6 +71,8 @@ public class ExecJavaMojo
 
     /**
      * @parameter expression="${localRepository}"
+     * @required
+     * @readonly
      */
     private ArtifactRepository localRepository;
 
@@ -218,7 +227,7 @@ public class ExecJavaMojo
                 try
                 {
                     Method main = Thread.currentThread().getContextClassLoader().loadClass( mainClass )
-                        .getMethod( "main", new Class[]{String[].class} );
+                        .getMethod( "main", new Class[]{ String[].class } );
                     if ( ! main.isAccessible() )
                     {
                         getLog().debug( "Setting accessibility to true in order to invoke main()." );
@@ -231,7 +240,7 @@ public class ExecJavaMojo
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
                 }
             }
-        }, mainClass + ".main()" /*name*/ );
+        }, mainClass + ".main()" );
         bootstrapThread.setContextClassLoader( getClassLoader() );
         setSystemProperties();
 
@@ -524,6 +533,10 @@ public class ExecJavaMojo
                 path.add( testClasses );
 
                 Set dependencies = project.getArtifacts();
+
+                // system scope dependencies are not returned by maven 2.0. See MEXEC-17
+                dependencies.addAll( getSystemScopeDependencies() );
+
                 Iterator iter = dependencies.iterator();
                 while ( iter.hasNext() )
                 {
@@ -532,6 +545,7 @@ public class ExecJavaMojo
                         "Adding project dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
                     path.add( classPathElement.getFile().toURL() );
                 }
+
             }
             catch ( MalformedURLException e )
             {
@@ -543,6 +557,82 @@ public class ExecJavaMojo
             getLog().debug( "Project Dependencies will be excluded." );
         }
 
+    }
+
+    private Collection getSystemScopeDependencies() throws MojoExecutionException
+    {
+        List systemScopeArtifacts = new ArrayList();
+
+        for ( Iterator artifacts = getAllDependencies().iterator(); artifacts.hasNext(); ) 
+        {
+            Artifact artifact = (Artifact) artifacts.next();
+
+            if ( artifact.getScope().equals( Artifact.SCOPE_SYSTEM ) )
+            {
+                systemScopeArtifacts.add( artifact );
+            }
+        }
+        return systemScopeArtifacts;
+    }
+
+    // generic method to retrieve all the transitive dependencies
+    private Collection getAllDependencies() throws MojoExecutionException
+    {
+        List artifacts = new ArrayList();
+            
+        for ( Iterator dependencies = project.getDependencies().iterator(); dependencies.hasNext(); ) 
+        {
+            Dependency dependency = (Dependency) dependencies.next();
+
+            String groupId = dependency.getGroupId();
+            String artifactId = dependency.getArtifactId();
+
+            VersionRange versionRange;
+            try
+            {
+                versionRange = VersionRange.createFromVersionSpec( dependency.getVersion() );
+            }
+            catch ( InvalidVersionSpecificationException e )
+            {
+                throw new MojoExecutionException( "unable to parse version", e );
+            }
+
+            String type = dependency.getType();
+            if ( type == null )
+            {
+                type = "jar"; //$NON-NLS-1$
+            }
+            String classifier = dependency.getClassifier();
+            boolean optional = dependency.isOptional();
+            String scope = dependency.getScope();
+            if ( scope == null )
+            {
+                scope = Artifact.SCOPE_COMPILE;
+            }
+
+            Artifact art = this.artifactFactory.createDependencyArtifact( groupId, artifactId, versionRange, type, classifier,
+                                                             scope, optional );
+
+            if ( scope.equalsIgnoreCase( Artifact.SCOPE_SYSTEM ) )
+            {
+                art.setFile( new File( dependency.getSystemPath() ) );
+            } 
+
+            List exclusions = new ArrayList();
+            for ( Iterator j = dependency.getExclusions().iterator(); j.hasNext(); )
+            {
+                Exclusion e = (Exclusion) j.next();
+                exclusions.add( e.getGroupId() + ":" + e.getArtifactId() ); //$NON-NLS-1$
+            }
+
+            ArtifactFilter newFilter = new ExcludesArtifactFilter( exclusions );
+
+            art.setDependencyFilter( newFilter );
+
+            artifacts.add( art );
+        }
+
+        return artifacts;
     }
 
     /**

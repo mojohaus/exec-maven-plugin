@@ -1,0 +1,56 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.cb.maven.plugins.exec</groupId>
+  <artifactId>project11</artifactId>
+  <version>0.1</version>
+  <packaging>jar</packaging>
+  <name>Maven Exec Plugin</name>
+  <description>Make sure system scope dependencies are added</description>
+  <inceptionYear>2005</inceptionYear>
+  <licenses>
+    <license>
+      <name>Apache License 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+           <execution>
+              <phase>test</phase>
+              <goals>
+                 <goal>java</goal>
+              </goals>
+           </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.codehaus.mojo.exec.FindClassInClasspath</mainClass>
+          <arguments>
+            <argument>sun.tools.javac.Main</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.sun</groupId>
+      <artifactId>tools</artifactId>
+      <version>1.5</version>
+      <scope>system</scope>
+      <systemPath>${java.home}/../lib/tools.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>1.0.1</version>
+    </dependency>    
+  </dependencies>
+
+</project>
