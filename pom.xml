@@ -40,6 +40,17 @@
       <timezone>+1</timezone>
     </developer>
   </developers>
+
+  <contributors>
+    <contributor>
+      <name>David Smiley</name>
+      <email>protected</email>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+    </contributor>
+  </contributors>
+
   <licenses>
     <license>
       <name>Apache License 2</name>
