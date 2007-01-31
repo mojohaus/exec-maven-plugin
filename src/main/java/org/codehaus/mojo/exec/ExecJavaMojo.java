@@ -151,6 +151,25 @@ public class ExecJavaMojo
     private ExecutableDependency executableDependency;
 
     /**
+     * The number of milliseconds to wait for threads to quit following interrupting all known threads. All
+     * known threads are interrupted once all known threads are daemon threads.
+     * A value <= 0 means to not timeout.  Following a timeout, a warning will be logged.
+     * Unfortunately, some programers don't code to treat interruption as a signal to quit, and so this timeout is
+     * necessary to avoid hanging maven.
+     * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="0"
+     */
+    private long daemonThreadJoinTimeout;
+
+    /**
+     * Wether to call Thread.stop() following a timing out of waiting for an interrupted thread to
+     * finish.  If this is false, or if Thread.stop() fails to get the thread to stop, then
+     * a warning is logged and Maven will continue on while the affected threads (and related objects in memory)
+     * linger on.
+     * @parameter expression="${exec.stopUnresponsiveDaemonThreads} default-value="false"
+     */
+    private boolean stopUnresponsiveDaemonThreads;
+
+    /**
      * Deprecated this is not needed anymore.
      *
      * @parameter expression="${exec.killAfter}" default-value="-1"
@@ -212,15 +231,18 @@ public class ExecJavaMojo
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
                 }
             }
-        }, mainClass /*name*/ );
+        }, mainClass + ".main()" /*name*/ );
         bootstrapThread.setContextClassLoader( getClassLoader() );
         setSystemProperties();
 
         bootstrapThread.start();
         joinNonDaemonThreads( threadGroup );
-
+        // It's plausible that spontaneously a non-daemon thread might be created as we try and shut down,
+        // but it's too late since the termination condition (only daemon threads) has been triggered.
         if ( keepAlive )
         {
+            getLog().warn(
+                "Warning: keepAlive is now deprecated and obsolete. Do you need it? Please comment on MEXEC-6." );
             waitFor( 0 );
         }
 
@@ -286,68 +308,128 @@ public class ExecJavaMojo
 
     private void joinNonDaemonThreads( ThreadGroup threadGroup )
     {
-        Thread[] threads = new Thread[ threadGroup.activeCount() ]; //activeCount includes subgroups
-        threadGroup.enumerate( threads ); //enumerate includes subgroups
-        boolean foundNonDaemon = false;
-        for ( int i = 0; i < threads.length; i++ )
-        {
-            Thread thread = threads[i];
-            if ( thread == null )
+        boolean foundNonDaemon;
+        do {
+            foundNonDaemon = false;
+            Collection threads = getActiveThreads( threadGroup );
+            for ( Iterator iter = threads.iterator(); iter.hasNext(); )
             {
-                break;
+                Thread thread = (Thread) iter.next();
+                if ( thread.isDaemon() )
+                {
+                    continue;
+                }
+                foundNonDaemon = true;//try again; maybe more threads were created while we were busy
+                joinThread( thread, 0 );
             }
-            if ( thread.isDaemon() )
-            {
-                continue;
-            }
-            foundNonDaemon = true;
-            joinThread( thread );
-        }
-
-        //try again; maybe more threads were created while we were busy
-        if ( foundNonDaemon )
-        {
-            joinNonDaemonThreads( threadGroup );
-        }
+        } while (foundNonDaemon);
     }
 
-    private void joinThread( Thread thread )
+    private void joinThread( Thread thread, long timeout_msecs )
     {
         try
         {
-           getLog().debug( "joining on thread " + thread );
-           thread.join();
+            getLog().debug( "joining on thread " + thread );
+            thread.join( timeout_msecs );
         }
         catch ( InterruptedException e )
         {
-           getLog().warn( "interrupted while joining against thread " + thread, e );
+            Thread.currentThread().interrupt();//good practice if don't throw
+            getLog().warn( "interrupted while joining against thread " + thread, e );//not expected!
+        }
+        if ( thread.isAlive() ) //generally abnormal
+        {
+            getLog().warn( "thread " + thread + " was interrupted but is still alive after waiting at least "
+                + timeout_msecs + "msecs" );
         }
     }
 
     private void terminateThreads( ThreadGroup threadGroup )
     {
-        // this gets one active thread at a time. New threads might be created at
-        // any time, so this logic is good.
-        Thread[] thread = new Thread[1];
-        while ( true )
+        // interrupt all threads we know about as of this instant
+        Collection threads = getActiveThreads( threadGroup );
+        for ( Iterator iter = threads.iterator(); iter.hasNext(); )
         {
-            if ( threadGroup.enumerate( thread ) == 0 ) //places at most one active thread into the list
-            {
-                break;
-            }
-            getLog().debug( "interrupting thread " + thread[0] );
-            thread[0].interrupt();
-            joinThread( thread[0] );
+            Thread thread = (Thread) iter.next();
+            getLog().debug( "interrupting thread " + thread );
+            thread.interrupt(); // harmless if for some reason already interrupted or if suddenly not alive.
         }
 
-        int activeCount = threadGroup.activeCount();
-        if ( activeCount != 0 )
+        long startTime = System.currentTimeMillis();
+        Set uncooperativeThreads = new HashSet( threads.size() ); // these were not responsive to interruption
+        for ( ; !threads.isEmpty();
+              threads = getActiveThreads( threadGroup ), threads.removeAll( uncooperativeThreads ) )
         {
-            //TODO this may be nothing; continue on anyway; perhaps don't even log in future
-            threadGroup.enumerate(thread);
-            getLog().debug( "strange; " + activeCount
-                    + " thread(s) still active in the group " + threadGroup +" such as " + thread[0] );
+            for ( Iterator iter = threads.iterator(); iter.hasNext(); )
+            {
+                Thread thread = (Thread) iter.next();
+                if ( ! thread.isAlive() )
+                {
+                    continue;
+                }
+                if ( ! thread.isInterrupted() )
+                {
+                    // for uncooperative threads, this might be the 2nd time, but who cares.
+                    getLog().debug( "interrupting thread " + thread );
+                    thread.interrupt();
+                }
+                if ( daemonThreadJoinTimeout <= 0 )
+                {
+                    joinThread( thread, 0 );
+                    continue;
+                }
+                long timeout = daemonThreadJoinTimeout 
+                               - ( System.currentTimeMillis() - startTime );
+                if ( timeout > 0 )
+                {
+                    joinThread( thread, timeout );
+                }
+                if ( ! thread.isAlive() )
+                {
+                    continue;
+                }
+                uncooperativeThreads.add( thread ); // ensure we don't process again
+                if ( stopUnresponsiveDaemonThreads )
+                {
+                    getLog().warn( "thread " + thread + " will be Thread.stop()'ed" );
+                    thread.stop();
+                }
+                else
+                {
+                    getLog().warn( "thread " + thread + " will linger despite being asked to die via interruption" );
+                }
+            }
         }
+        if ( ! uncooperativeThreads.isEmpty() )
+        {
+            getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to "
+                + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
+                + " Although not serious, it should be remedied.");
+        }
+        else
+        {
+            int activeCount = threadGroup.activeCount();
+            if ( activeCount != 0 )
+            {
+                // TODO this may be nothing; continue on anyway; perhaps don't even log in future
+                Thread[] threadsArray = new Thread[1];
+                threadGroup.enumerate( threadsArray );
+                getLog().debug( "strange; " + activeCount
+                        + " thread(s) still active in the group " + threadGroup +" such as " + threadsArray[0] );
+            }
+        }
+    }
+
+    private Collection getActiveThreads( ThreadGroup threadGroup )
+    {
+        Thread[] threads = new Thread[ threadGroup.activeCount() ];
+        int numThreads = threadGroup.enumerate( threads );
+        Collection result = new ArrayList( numThreads );
+        for ( int i = 0; i < threads.length && threads[i] != null; i++ )
+        {
+            result.add( threads[i] );
+        }
+        return result;//note: result should be modifiable
     }
 
     /**
@@ -602,6 +684,7 @@ public class ExecJavaMojo
             }
             catch ( InterruptedException e )
             {
+                Thread.currentThread().interrupt(); // good practice if don't throw
                 getLog().warn( "Spuriously interrupted while waiting for " + millis + "ms", e);
             }
         }

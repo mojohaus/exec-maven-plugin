@@ -1,11 +1,11 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.cb.maven.plugins.exec</groupId>
-  <artifactId>project7</artifactId>
+  <artifactId>project9</artifactId>
   <version>0.1</version>
   <packaging>jar</packaging>
   <name>Maven Exec Plugin</name>
-  <description>Make sure correctly written daemon threads are automatically handled</description>
+  <description>Allow the user to time out when the code to be run is buggy or improperly written with regards to Thread termination</description>
   <inceptionYear>2005</inceptionYear>
   <licenses>
     <license>
@@ -30,8 +30,9 @@
         </executions>
         <configuration>
           <mainClass>org.codehaus.mojo.exec.MainWithThreads</mainClass>
+          <daemonThreadJoinTimeout>4000</daemonThreadJoinTimeout>
           <arguments>
-            <argument>cancelTimer</argument>
+            <!--argument>cancelTimer</argument-->
           </arguments>
         </configuration>
       </plugin>

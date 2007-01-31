@@ -1,11 +1,10 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.cb.maven.plugins.exec</groupId>
-  <artifactId>project7</artifactId>
+  <artifactId>project9</artifactId>
   <version>0.1</version>
   <packaging>jar</packaging>
   <name>Maven Exec Plugin</name>
-  <description>Make sure correctly written daemon threads are automatically handled</description>
   <inceptionYear>2005</inceptionYear>
   <licenses>
     <license>
@@ -29,10 +28,9 @@
            </execution>
         </executions>
         <configuration>
-          <mainClass>org.codehaus.mojo.exec.MainWithThreads</mainClass>
-          <arguments>
-            <argument>cancelTimer</argument>
-          </arguments>
+          <mainClass>org.codehaus.mojo.exec.MainUncooperative</mainClass>
+          <daemonThreadJoinTimeout>3000</daemonThreadJoinTimeout>
+          <stopUnresponsiveDaemonThreads>true</stopUnresponsiveDaemonThreads>
         </configuration>
       </plugin>
     </plugins>

@@ -11,6 +11,7 @@ import com.sun.java_cup.internal.runtime.Symbol;
 public class App 
 {
     static Logger log = Logger.getLogger(App.class);
+
     public static void main( String[] args )
     {
         System.out.println("I was started. So obviously I found the main class");
@@ -26,7 +27,7 @@ public class App
         }
         catch ( Exception e )
         {
-            System.out.println( "Did not find the compile dependency" );
+            System.out.println( "ERROR: Did not find the compile dependency" );
         }
         
         try
@@ -34,12 +35,12 @@ public class App
             Class testCase = app.getClass().getClassLoader().loadClass( "junit.framework.TestCase" );
             if ( null != testCase )
             {
-                System.out.println( "Found the test dependency" );
+                System.out.println( "ERROR: Found the test dependency (should only be test scope)" );
             }
         }
         catch ( Exception e )
         {
-            System.out.println( "Did not found the test dependency" );
+            System.out.println( "Did not find the test dependency" );
         }
         
         try
@@ -52,14 +53,35 @@ public class App
         }
         catch ( Exception e )
         {
-            System.out.println( "Did not find the runtime dependency" );
+            System.out.println( "ERROR: Did not find the runtime dependency" );
         }
         
         
         String value = System.getProperty("propkey");        
-        if (null != value)
+        if ( "propvalue".equals( value ) )
         {
-            System.out.println("Found the system propery passed");
+            System.out.println("Found the passed system propery");
+        } else {
+            System.out.println( "ERROR: Did not find the specified system property" );
+        }
+
+        value = System.getProperty("com.sun.management.jmxremote");        
+        if ( value == null )
+        {
+            System.out.println( "Did not find the specified system property. This property can only be passed to the java mojo by using MAVEN_OPTS" );
+        } else {
+            System.out.println("ERROR: Unexpected: found the passed system propery. This property cannot be passed from the POM");
+        }
+
+        if ( "argument1".equals( args[0] ) ) {
+            System.out.println("Found the first argument");
+        } else {
+            System.out.println( "ERROR: Did not find the first argument" );
+        }
+        if ( "argument2".equals( args[1] ) ) {
+            System.out.println("Found the second argument");
+        } else {
+            System.out.println( "ERROR: Did not find the second argument" );
         }
     }
 }

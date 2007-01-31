@@ -19,6 +19,7 @@ package org.codehaus.mojo.exec;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
@@ -38,6 +39,22 @@ import java.io.PrintStream;
 public class ExecJavaMojoTest
     extends AbstractMojoTestCase
 {
+
+    /*
+    This one won't work yet
+    public void xxtestSimpleRunPropertiesAndArguments()
+        throws MojoExecutionException, Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project2/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        System.out.println(output);
+
+        assertEquals( -1, output.trim().indexOf( "ERROR" ) );
+    }
+    */
+
     /**
      * Check that a simple execution with no arguments and no system properties produces the expected result
      * <p/>
@@ -85,7 +102,35 @@ public class ExecJavaMojoTest
 
         String output = execute( pom, "java" );
 
-        assertEquals( MainWithThreads.SUCCESS, output.trim() );
+        assertEquals( MainWithThreads.ALL_EXITED, output.trim() );
+    }
+
+    /**
+     * For cases where the Java code spawns Threads and main returns soon, but code contains non interruptible threads.
+     * User is required to timeout the execution, otherwise it will hang.
+     * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
+     */
+    public void testWaitNonInterruptibleDaemonThreads()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project9/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        assertEquals( MainWithThreads.TIMER_IGNORED, output.trim() );
+    }
+
+    /**
+     * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
+     */
+    public void testUncooperativeThread()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project10/pom.xml" );
+        String output = execute( pom, "java" );
+        // note: execute() will wait a little bit before returning the output,
+        // thereby allowing the stop()'ed thread to output the final "(f)".
+        assertEquals( MainUncooperative.SUCCESS, output.trim() );
     }
 
     /**
@@ -125,7 +170,7 @@ public class ExecJavaMojoTest
         StringOutputStream stringOutputStream = new StringOutputStream();
         System.setOut( new PrintStream( stringOutputStream ) );
         // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
-        mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR,"exec:java")));
+        mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_ERROR, "exec:java" ) ) );
 
         try
         {
@@ -138,6 +183,8 @@ public class ExecJavaMojoTest
         }
         finally
         {
+            // see testUncooperativeThread() for explaination
+            Thread.sleep( 150 ); // time seems about right
             System.setOut( out );
         }
 
@@ -158,8 +205,8 @@ public class ExecJavaMojoTest
             new File( path ).getAbsolutePath(), localRepositoryLayout );
 
         MavenProject project = builder.buildWithDependencies( pomFile, localRepository, null );
-        //this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
-        project.getBuild().setOutputDirectory( new File("target/test-classes").getAbsolutePath() );
+        // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
+        project.getBuild().setOutputDirectory( new File( "target/test-classes" ).getAbsolutePath() );
         setVariableValueToObject( mojo, "project", project );
     }
 }

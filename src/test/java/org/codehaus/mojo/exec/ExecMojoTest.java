@@ -32,11 +32,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import org.codehaus.plexus.util.StringOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.codehaus.plexus.logging.Logger;
+import org.codehaus.plexus.logging.console.ConsoleLogger;
+import org.apache.maven.monitor.logging.DefaultLog;
+import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
@@ -44,7 +50,7 @@ import java.util.Map;
  * @todo we depend too much on Commandline.toString()
  */
 public class ExecMojoTest
-    extends PlexusTestCase
+    extends AbstractMojoTestCase
 {
     private MockExecMojo mojo;
 
@@ -98,6 +104,23 @@ public class ExecMojoTest
 
         checkMojo( "mvn --version" );
     }
+
+    /*
+    This one won't work yet
+    public void xxtestSimpleRunPropertiesAndArguments()
+        throws MojoExecutionException, Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project1/pom.xml" );
+
+        String output = execute( pom, "exec" );
+
+        System.out.println(" OUTPUT" + output + "\n\n\n");
+
+        String expectedOutput = "arg.arg1\narg.arg2\nproject.env1=value1"; // FIXME should work on Windows as well
+
+        assertEquals( expectedOutput, output );
+    }
+    */
 
     /**
      * integration test...
@@ -161,7 +184,52 @@ public class ExecMojoTest
                           getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
     }
 */
-    private void setUpProject( String projectName, ExecMojo mojo )
+
+    /**
+     * @return output from System.out during mojo execution
+     */
+    private String execute( File pom, String goal ) throws Exception {
+
+        ExecMojo mojo;
+        mojo = (ExecMojo) lookupMojo( goal, pom );
+
+        setUpProject( pom, mojo );
+
+        MavenProject project = (MavenProject) getVariableValueFromObject( mojo, "project" );
+
+        // why isn't this set up by the harness based on the default-value?  TODO get to bottom of this!
+        // setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
+        // setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
+
+        assertNotNull( mojo );
+        assertNotNull( project );
+
+        // trap System.out
+        PrintStream out = System.out;
+        StringOutputStream stringOutputStream = new StringOutputStream();
+        System.setOut( new PrintStream( stringOutputStream ) );
+        // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
+        mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_ERROR, "exec:exec" ) ) );
+
+        try
+        {
+            mojo.execute();
+        }
+        catch ( Throwable e )
+        {
+            e.printStackTrace( System.err );
+            fail( e.getMessage() );
+        }
+        finally
+        {
+            System.setOut( out );
+        }
+
+        return stringOutputStream.toString();
+    }
+
+
+    private void setUpProject( File pomFile, ExecMojo mojo )
         throws Exception
     {
         MavenProjectBuilder builder = (MavenProjectBuilder) lookup( MavenProjectBuilder.ROLE );
@@ -176,8 +244,10 @@ public class ExecMojoTest
 
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
 
-        MavenProject project = builder.buildWithDependencies(
-            getTestFile( "src/test/projects/" + projectName + "/pom.xml" ), localRepository, null );
+        MavenProject project = builder.buildWithDependencies( pomFile, localRepository, null );
+
+        // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
+        project.getBuild().setOutputDirectory( new File( "target/test-classes" ).getAbsolutePath() );
 
         mojo.setProject( project );
 
