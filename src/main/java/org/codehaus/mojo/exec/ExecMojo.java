@@ -76,6 +76,12 @@ public class ExecMojo
      * @required
      */
     private File basedir;
+    
+    /**
+     * if exec.args expression is used when invokign the exec:exec goal,
+     * any occurence of %classpath argument is replaced by the actual project dependency classpath.
+     */ 
+    public static final String CLASSPATH_TOKEN = "%classpath"; 
 
     /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
@@ -100,7 +106,19 @@ public class ExecMojo
 
         if ( hasCommandlineArgs() )
         {
-            commandArguments.addAll( Arrays.asList( parseCommandlineArgs() ) );
+            String[] args = parseCommandlineArgs();
+            for ( int i = 0; i < args.length; i++ ) 
+            {
+                if ( CLASSPATH_TOKEN.equals( args[i] ) ) 
+                {
+                    Collection artifacts = project.getArtifacts();
+                    commandArguments.add( computeClasspath( artifacts ) );
+                } 
+                else 
+                {
+                    commandArguments.add( args[i] );
+                }
+            }
         }
         else if ( !isEmpty( argsProp ) )
         {

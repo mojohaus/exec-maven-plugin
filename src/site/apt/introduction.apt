@@ -27,6 +27,10 @@ Java programs in external processes.
 -----
 > mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 -----
+
+ If specified as part of the exec.args argument, the special string %classpath 
+ will be replaced by the project classpath as computed by maven.
+ 
  
 * Exec Plugin Configuration
 
