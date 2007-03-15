@@ -122,6 +122,7 @@ public class ExecJavaMojoTest
 
     /**
      * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
+     * FIXME: this sometimes fail with unit.framework.ComparisonFailure: expected:<...> but was:<...3(f)>
      */
     public void testUncooperativeThread()
         throws Exception
@@ -187,6 +188,7 @@ public class ExecJavaMojoTest
         // why isn't this set up by the harness based on the default-value?  TODO get to bottom of this!
         setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
         setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
+        setVariableValueToObject( mojo, "cleanupDaemonThreads", Boolean.TRUE );
 
         assertNotNull( mojo );
         assertNotNull( project );
