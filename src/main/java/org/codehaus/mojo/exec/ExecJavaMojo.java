@@ -149,7 +149,7 @@ public class ExecJavaMojo
      * contains the executable class.  This will have the affect of only including
      * plugin dependencies required by the identified ExecutableDependency.
      * <p/>
-     * If includeProjectDependencies is set to true, all of the project dependencies
+     * If includeProjectDependencies is set to <code>true</code>, all of the project dependencies
      * will be included on the executable's classpath.  Whether a particular project
      * dependency is a dependency of the identified ExecutableDependency will be
      * irrelevant to its inclusion in the classpath.
@@ -160,18 +160,36 @@ public class ExecJavaMojo
     private ExecutableDependency executableDependency;
 
     /**
-     * The number of milliseconds to wait for threads to quit following interrupting all known threads. All
-     * known threads are interrupted once all known threads are daemon threads.
-     * A value <= 0 means to not timeout.  Following a timeout, a warning will be logged.
-     * Unfortunately, some programers don't code to treat interruption as a signal to quit, and so this timeout is
-     * necessary to avoid hanging maven.
-     * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="0"
+     * Wether to interrupt/join and possibly stop the daemon threads upon quitting. <br/> If this is <code>false</code>,
+     *  nothing is done and the behavior is similar to what happens if the executed class was run directly in the VM.
+    * <p>
+     * If you need to mimic the exact same behavior of the VM, disable this. In certain cases (in particular if maven is embedded),
+     *  you might need to keep this enabled to make sure threads are properly cleaned up.
+     * In that case, see <a href="#daemonThreadJoinTimeout"><code>daemonThreadJoinTimeout</code></a> and 
+     * <a href="#stopUnresponsiveDaemonThreads"><code>stopUnresponsiveDaemonThreads</code></a> for further tuning.
+     * </p>
+     * @parameter expression="${exec.cleanupDaemonThreads} default-value="true"
+     */
+     private boolean cleanupDaemonThreads;
+
+     /**
+     * This defines the number of milliseconds to wait for daemon threads to quit following their interruption.<br/>
+     * This is only taken into accout if <a href="#cleanupDaemonThreads"><code>cleanupDaemonThreads</code></a> is <code>true</code>.
+     * <p>Daemon threads are interrupted once all known threads are daemon threads.
+     * A value &lt; 0 means to not timeout, a value of 0 means infinite wait on join. Following a timeout, a warning will be logged.</p>
+     * <p>Note: all threads should properly terminate upon interruption but daemon threads may prove problematic:
+     *  as the VM does not usualy join on daemon threads, the code may not have been written to handle interruption properly.
+     * For example java.util.Timer is known to not handle interruptions in JDK &lt;= 1.6.
+     * So it is not possible for us to infinitely wait by default otherwise maven could hang. A  sensible default value has been chosen, 
+     * but this default value <i>may change</i> in the future based on user feedback.</p>
+     * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="15000"
      */
     private long daemonThreadJoinTimeout;
 
     /**
-     * Wether to call Thread.stop() following a timing out of waiting for an interrupted thread to
-     * finish.  If this is false, or if Thread.stop() fails to get the thread to stop, then
+     * Wether to call Thread.stop() following a timing out of waiting for an interrupted thread to finish.
+     * This is only taken into accout if <a href="#cleanupDaemonThreads"><code>cleanupDaemonThreads</code></a> is <code>true</code>.
+     * If this is <code>false</code>, or if Thread.stop() fails to get the thread to stop, then
      * a warning is logged and Maven will continue on while the affected threads (and related objects in memory)
      * linger on.
      * @parameter expression="${exec.stopUnresponsiveDaemonThreads} default-value="false"
@@ -184,6 +202,7 @@ public class ExecJavaMojo
      * @parameter expression="${exec.killAfter}" default-value="-1"
      */
     private long killAfter;
+        
     private Properties originalSystemProperties;
 
     /**
@@ -255,15 +274,20 @@ public class ExecJavaMojo
             waitFor( 0 );
         }
 
-        terminateThreads( threadGroup );
-        try
-        {
-            threadGroup.destroy();
+        if ( cleanupDaemonThreads ) {
+        
+            terminateThreads( threadGroup );
+            
+            try
+            {
+                threadGroup.destroy();
+            }
+            catch (IllegalThreadStateException e)
+            {
+                getLog().warn( "Couldn't destroy threadgroup " + threadGroup, e );
+            }
         }
-        catch (IllegalThreadStateException e)
-        {
-            getLog().warn( "Couldn't destroy threadgroup " + threadGroup, e );
-        }
+        
 
         if ( originalSystemProperties != null )
         {

@@ -107,12 +107,39 @@ Java programs in external processes.
 
 Java goal
 
+General notes
+
+  This mojo helps you run a Java program within the same VM as maven.
+
+* Differences compared to plain command line
+  
+  The mojo goes to great length to try to mimic the way the VM works, but there are some small subttle differences.
+  Today all differences come from the way the mojo deals with <<thread management>>.
+  
+*--------------------------------------+------------------------------------------+
+|                command line          |           Java Mojo                      |
+*--------------------------------------+------------------------------------------+
+| the VM exits as soon as the only     |  By default daemon threads are joined    |
+| remaining threads are daemon threads | and interrupted once all known non       |
+|                                      | daemon threads have quitted. The join    |
+|                                      | timeout is customisable                  |
+|                                      | The user might wish to further cleanup   |
+|                                      | cleanup by stopping the unresponsive     |
+|                                      | threads.                                 |
+|                                      | The user can disable the full extra      |
+|                                      | thread management (interrupt/join/[stop])|
+*--------------------------------------+------------------------------------------+
+  
+  Read the {{{java-mojo.html} java}} for more information on how to configure this behavior. 
+  
+  If you find out that these differences are unacceptable for your case, you may need to use the exec mojo to wrap your java executable.
+  
 * Command line
 
   If you want to execute Java programs in the same VM, you can either use the command line version
 
 -----
-> mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] [-DkillAfter=60000] ...
+> mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] ...
 -----
 
 * Java Plugin Configuration
@@ -212,12 +239,12 @@ MAVEN_OPTS=-Xmx1024m
           </execution>
         </executions>
         <configuration>
-	  <includeProjectDependencies>false</includeProjectDependencies>
-	  <includePluginDependencies>true</includePluginDependencies>
+          <includeProjectDependencies>false</includeProjectDependencies>
+          <includePluginDependencies>true</includePluginDependencies>
           <executableDependency>
               <groupId>com.example.myproject</groupId>
               <artifactId>mylib</artifactId>
-	  </executableDependency>
+          </executableDependency>
           <!--assume this starts some server process used in an integration test-->
           <keepAlive>true</keepAlive>
           <mainClass>com.example.Main</mainClass>
@@ -232,14 +259,14 @@ MAVEN_OPTS=-Xmx1024m
             </systemProperty>
             ...
         </configuration>
-	<dependencies>
+        <dependencies>
            <dependency>
               <groupId>com.example.myproject</groupId>
               <artifactId>mylib</artifactId>
               <version>1.3.5</version>
               <type>jar</type>
             </dependency>
-	</dependencies>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
