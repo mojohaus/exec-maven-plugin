@@ -29,7 +29,6 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -69,13 +68,19 @@ public class ExecMojo
      *
      * @parameter
      */
-    public List arguments;
+    private List arguments;
 
     /**
      * @parameter expression="${basedir}"
      * @required
      */
     private File basedir;
+    
+    /**
+     * if exec.args expression is used when invokign the exec:exec goal,
+     * any occurence of %classpath argument is replaced by the actual project dependency classpath.
+     */ 
+    public static final String CLASSPATH_TOKEN = "%classpath"; 
 
     /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
@@ -100,7 +105,19 @@ public class ExecMojo
 
         if ( hasCommandlineArgs() )
         {
-            commandArguments.addAll( Arrays.asList( parseCommandlineArgs() ) );
+            String[] args = parseCommandlineArgs();
+            for ( int i = 0; i < args.length; i++ ) 
+            {
+                if ( CLASSPATH_TOKEN.equals( args[i] ) ) 
+                {
+                    Collection artifacts = project.getArtifacts();
+                    commandArguments.add( computeClasspath( artifacts ) );
+                } 
+                else 
+                {
+                    commandArguments.add( args[i] );
+                }
+            }
         }
         else if ( !isEmpty( argsProp ) )
         {
@@ -123,7 +140,8 @@ public class ExecMojo
                     if ( argument == null )
                     {
                         throw new MojoExecutionException(
-                            "Misconfigured argument, value is null. Set the argument to an empty value if this is the required behaviour." );
+                            "Misconfigured argument, value is null. Set the argument to an empty value"
+                            + " if this is the required behaviour." );
                     }
                     else if ( argument instanceof Classpath )
                     {

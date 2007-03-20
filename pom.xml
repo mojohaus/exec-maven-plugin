@@ -8,7 +8,8 @@
   <artifactId>exec-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>Maven Exec Plugin</name>
-  <version>1.1-SNAPSHOT</version>
+  <description>A plugin to allow execution of system and Java programs</description>
+  <version>1.1-beta-1</version>
   <url>http://mojo.codehaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
   <issueManagement>
@@ -44,6 +45,13 @@
   <contributors>
     <contributor>
       <name>David Smiley</name>
+      <email>protected</email>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Milos Kleint</name>
       <email>protected</email>
       <roles>
         <role>Patch Contributor</role>
@@ -86,4 +94,10 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <scm>
+    <connection>scm:svn:https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.1-beta-1</connection>
+    <developerConnection>scm:svn:https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.1-beta-1</developerConnection>
+    <url>https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.1-beta-1</url>
+  </scm>
 </project>

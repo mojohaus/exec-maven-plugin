@@ -1,245 +1,30 @@
  ------
- Maven Exec Plugin
+ Introduction to $project.name
  ------
  Jerome Lacoste
  ------
  12 Oct 2005
  ------
 
-Maven Exec Plugin
+ ~~ Copyright 2006 The Codehaus
+ ~~
+ ~~ Licensed under the Apache License, Version 2.0 (the "License");
+ ~~ you may not use this file except in compliance with the License.
+ ~~ You may obtain a copy of the License at
+ ~~
+ ~~      http://www.apache.org/licenses/LICENSE-2.0
+ ~~
+ ~~ Unless required by applicable law or agreed to in writing, software
+ ~~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~~ See the License for the specific language governing permissions and
+ ~~ limitations under the License.
+
+ ~~ NOTE: For help with the syntax of this file, see:
+ ~~ http://maven.apache.org/guides/mini/guide-apt-format.html
+ 
+Maven 2 Exec Plugin
 
  The plugin provides 2 goals to make execution of programs. The {{{exec-mojo.html} exec}} 
  goal allow to execute programs and Java programs in a separate process, while the 
  The {{{java-mojo.html} java}} goal focuses on running Java programs in the same VM.
-
-
-Exec goal
-
- You can use the plugin in one of two ways, formally specifying all the relevant
- information in the plugin configuration or through the use of system variables.
- Using the system variable you would just execute it like the following example.
-
-* Command line
-
- The configuration accepts a list of <arguments>. Special treatment of some arguments, facilitate the running of 
-Java programs in external processes.
-
------
-> mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
------
- 
-* Exec Plugin Configuration
-
- Add configuration similar to the following to your POM:
-
--------------------
-<project>
-  ...
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            ...
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>maven</executable>
-          <!-- optional -->
-          <workingDirectory>/tmp</workingDirectory>
-          <arguments>
-            <argument>-X</argument>
-            <argument>myproject:dist</argument>
-            ...
-          </arguments>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-   ...
-</project>
--------------------
-
- To execute Java programs, the exec plugin helps by allowing the <classpath> argument:
-
--------------------
-        <configuration>
-          <executable>java</executable>
-          <arguments>
-            <argument>-Dmyproperty=myvalue</argument>
-            <argument>-classpath</argument>
-            <!-- automatically creates the classpath using all project dependencies, 
-                 also adding the project build directory -->
-            <classpath/>
-            <argument>com.example.Main</argument>
-            ...
-          </arguments>
-        </configuration>
--------------------
-
- or if one wants to restrict the dependencies in the classpath:
-
--------------------
-        <configuration>
-          <executable>java</executable>
-          <arguments>
-            <argument>-Dmyproperty=myvalue</argument>
-            <argument>-classpath</argument>
-            <classpath>
-              <dependency>commons-io:commons-io</dependency>
-              <dependency>commons-lang:commons-lang</dependency>
-            </classpath>
-            <argument>com.example.Main</argument>
-            ...
-          </arguments>
-        </configuration>
--------------------
-
-
-Java goal
-
-* Command line
-
-  If you want to execute Java programs in the same VM, you can either use the command line version
-
------
-> mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] [-DkillAfter=60000] ...
------
-
-* Java Plugin Configuration
- 
-  either configure the plugin in your pom:
-
--------------------
-<project>
-  ...
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            ...
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <mainClass>com.example.Main</mainClass>
-          <arguments>
-            <argument>argument1</argument>
-            ...
-          </arguments>
-          <systemProperties>
-            <systemProperty>
-              <key>myproperty</key>
-              <value>myvalue</value>
-            </systemProperty>
-            ...
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-   ...
-</project>
--------------------
-
-  Note: the java goal doesn't spawn a new process. Any VM specific option that you want to pass to the executed class must be passed to the maven VM using
-  the MAVEN_OPTS environment variable.
-  E.g.
-
--------------------
-MAVEN_OPTS=-Xmx1024m 
--------------------
-
-  Otherwise consider using the exec goal.
-
-* Using Plugin Dependencies Instead of Project Dependencies
-
-  Ocassionally it is desirable to execute a java class without affecting your project's dependencies.
-  For example, if you are using the maven csharp plugins, adding java dependencies to your project
-  will upset the csharp compiler.  Therefore the maven exec plugin allows you specify dependencies of
-  your executable class as plugin dependencies.  Since maven takes plugin dependencies into consideration
-  when determining build order for a multi-module project your build order should automatically be
-  appropriately adjusted (I think).
-
-  If you specify your executable class dependencies as plugin dependencies, you may end up with extraneous
-  undesirable dependences required by the maven exec plugin but not by your executable class.  If this
-  causes a problem, or if you simply prefer to avoid the extraneous dependencies you can use the
-  executableDependency configuration element.  The executableDependency element allows you to identify
-  the particular artifact in the list of the plugin's dependencies which contains your executable class.
-  The maven exec plugin will ensure that only the selected artifact identified by the executableDependency
-  configuration element and the selected artifact's transitive dependencies are used when the mainClass
-  is executed.
-
-  Although the use of the executableDependency configuration element will prevent the java class being
-  executed from seeing extraneous classes, the maven exec plugin itself will still see all of the plugin
-  dependencies.  For example if your executable java class has a dependency upon a brand new version of
-  org.codehaus.plexus:plexus-utils and you specify this as a plugin dependency then the maven exec plugin,
-  which already has a transitive dependency upon org.codehaus.plexus:plexus-utils, will end up using
-  the brand new version you explictly supplied.  It is unlikely you will encounter a situation
-  where this will be a problem, but hopefully this knowledge will help you diagnose such a problem if
-  it occurs.  None of this is relevant unless your using the plugin dependencies for your
-  executable (includePluginDependencies=true).
-
-** Example POM Configuration using Plugin Dependencies
-
--------------------
-<project>
-  ...
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            ...
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-	  <includeProjectDependencies>false</includeProjectDependencies>
-	  <includePluginDependencies>true</includePluginDependencies>
-          <executableDependency>
-              <groupId>com.example.myproject</groupId>
-              <artifactId>mylib</artifactId>
-	  </executableDependency>
-          <!--assume this starts some server process used in an integration test-->
-          <keepAlive>true</keepAlive>
-          <mainClass>com.example.Main</mainClass>
-          <arguments>
-            <argument>argument1</argument>
-            ...
-          </arguments>
-          <systemProperties>
-            <systemProperty>
-              <key>myproperty</key>
-              <value>myvalue</value>
-            </systemProperty>
-            ...
-        </configuration>
-	<dependencies>
-           <dependency>
-              <groupId>com.example.myproject</groupId>
-              <artifactId>mylib</artifactId>
-              <version>1.3.5</version>
-              <type>jar</type>
-            </dependency>
-	</dependencies>
-      </plugin>
-    </plugins>
-  </build>
-   ...
-</project>
--------------------
-
