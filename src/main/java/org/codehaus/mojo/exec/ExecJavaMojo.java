@@ -116,6 +116,7 @@ public class ExecJavaMojo
     private Property[] systemProperties;
 
     /**
+     * Deprecated; this is not needed anymore.
      * Indicates if mojo should be kept running after the mainclass terminates.
      * Usefull for serverlike apps with deamonthreads.
      *
@@ -161,12 +162,14 @@ public class ExecJavaMojo
 
     /**
      * Wether to interrupt/join and possibly stop the daemon threads upon quitting. <br/> If this is <code>false</code>,
-     *  nothing is done and the behavior is similar to what happens if the executed class was run directly in the VM.
-    * <p>
-     * If you need to mimic the exact same behavior of the VM, disable this. In certain cases (in particular if maven is embedded),
-     *  you might need to keep this enabled to make sure threads are properly cleaned up.
-     * In that case, see <a href="#daemonThreadJoinTimeout"><code>daemonThreadJoinTimeout</code></a> and 
-     * <a href="#stopUnresponsiveDaemonThreads"><code>stopUnresponsiveDaemonThreads</code></a> for further tuning.
+     *  maven does nothing about the daemon threads.  When maven has no more work to do, the VM will normally terminate
+     *  any remaining daemon threads.
+     * <p>
+     * In certain cases (in particular if maven is embedded),
+     *  you might need to keep this enabled to make sure threads are properly cleaned up to ensure they don't interfere
+     * with subsequent activity.
+     * In that case, see {@link #daemonThreadJoinTimeout} and
+     * {@link #stopUnresponsiveDaemonThreads} for further tuning.
      * </p>
      * @parameter expression="${exec.cleanupDaemonThreads} default-value="true"
      */
@@ -174,24 +177,27 @@ public class ExecJavaMojo
 
      /**
      * This defines the number of milliseconds to wait for daemon threads to quit following their interruption.<br/>
-     * This is only taken into accout if <a href="#cleanupDaemonThreads"><code>cleanupDaemonThreads</code></a> is <code>true</code>.
-     * <p>Daemon threads are interrupted once all known threads are daemon threads.
-     * A value &lt; 0 means to not timeout, a value of 0 means infinite wait on join. Following a timeout, a warning will be logged.</p>
-     * <p>Note: all threads should properly terminate upon interruption but daemon threads may prove problematic:
-     *  as the VM does not usualy join on daemon threads, the code may not have been written to handle interruption properly.
+     * This is only taken into account if {@link #cleanupDaemonThreads} is <code>true</code>.
+     * A value &lt;=0 means to not timeout (i.e. wait indefinitely for threads to finish). Following a timeout, a
+     * warning will be logged.
+     * <p>Note: properly coded threads <i>should</i> terminate upon interruption but some threads may prove
+     * problematic:  as the VM does interrupt daemon threads, some code may not have been written to handle interruption properly.
      * For example java.util.Timer is known to not handle interruptions in JDK &lt;= 1.6.
-     * So it is not possible for us to infinitely wait by default otherwise maven could hang. A  sensible default value has been chosen, 
+     * So it is not possible for us to infinitely wait by default otherwise maven could hang. A  sensible default value has been chosen,
      * but this default value <i>may change</i> in the future based on user feedback.</p>
      * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="15000"
      */
     private long daemonThreadJoinTimeout;
 
     /**
-     * Wether to call Thread.stop() following a timing out of waiting for an interrupted thread to finish.
-     * This is only taken into accout if <a href="#cleanupDaemonThreads"><code>cleanupDaemonThreads</code></a> is <code>true</code>.
-     * If this is <code>false</code>, or if Thread.stop() fails to get the thread to stop, then
+     * Wether to call {@link Thread#stop()} following a timing out of waiting for an interrupted thread to finish.
+     * This is only taken into account if {@link #cleanupDaemonThreads} is <code>true</code>
+     * and the {@link #daemonThreadJoinTimeout} threshold has been reached for an uncooperative thread.
+     * If this is <code>false</code>, or if {@link Thread#stop()} fails to get the thread to stop, then
      * a warning is logged and Maven will continue on while the affected threads (and related objects in memory)
-     * linger on.
+     * linger on.  Consider setting this to <code>true</code> if you are invoking problematic code that you can't fix. 
+     * An example is {@link java.util.Timer} which doesn't respond to interruption.  To have <code>Timer</code> fixed, vote for
+     * <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
      * @parameter expression="${exec.stopUnresponsiveDaemonThreads} default-value="false"
      */
     private boolean stopUnresponsiveDaemonThreads;
@@ -379,36 +385,30 @@ public class ExecJavaMojo
 
     private void terminateThreads( ThreadGroup threadGroup )
     {
-        // interrupt all threads we know about as of this instant
-        Collection threads = getActiveThreads( threadGroup );
-        for ( Iterator iter = threads.iterator(); iter.hasNext(); )
-        {
-            Thread thread = (Thread) iter.next();
-            getLog().debug( "interrupting thread " + thread );
-            thread.interrupt(); // harmless if for some reason already interrupted or if suddenly not alive.
-        }
-
         long startTime = System.currentTimeMillis();
-        Set uncooperativeThreads = new HashSet( threads.size() ); // these were not responsive to interruption
-        for ( ; !threads.isEmpty();
+        Set uncooperativeThreads = new HashSet(); // these were not responsive to interruption
+        for ( Collection threads = getActiveThreads( threadGroup ); !threads.isEmpty();
               threads = getActiveThreads( threadGroup ), threads.removeAll( uncooperativeThreads ) )
         {
+            // Interrupt all threads we know about as of this instant (harmless if spuriously went dead (! isAlive())
+            //   or if something else interrupted it ( isInterrupted() ).
+            for ( Iterator iter = threads.iterator(); iter.hasNext(); )
+            {
+                Thread thread = (Thread) iter.next();
+                getLog().debug( "interrupting thread " + thread );
+                thread.interrupt();
+            }
+            // Now join with a timeout and call stop() (assuming flags are set right)
             for ( Iterator iter = threads.iterator(); iter.hasNext(); )
             {
                 Thread thread = (Thread) iter.next();
                 if ( ! thread.isAlive() )
                 {
-                    continue;
-                }
-                if ( ! thread.isInterrupted() )
-                {
-                    // for uncooperative threads, this might be the 2nd time, but who cares.
-                    getLog().debug( "interrupting thread " + thread );
-                    thread.interrupt();
+                    continue; //and, presumably it won't show up in getActiveThreads() next iteration
                 }
                 if ( daemonThreadJoinTimeout <= 0 )
                 {
-                    joinThread( thread, 0 );
+                    joinThread( thread, 0 ); //waits until not alive; no timeout
                     continue;
                 }
                 long timeout = daemonThreadJoinTimeout 
