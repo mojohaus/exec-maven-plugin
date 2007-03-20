@@ -14,9 +14,11 @@
       <item name="Mojo" href="http://mojo.codehaus.org"/>
       <item name="Maven" href="http://maven.apache.org/maven2"/>
     </links>
-    <menu name="Maven Exec Quickstart">
-      <item name="Plugin Goals" href="index.html"/>
+    <menu name="Overview">
       <item name="Introduction" href="introduction.html"/>
+      <item name="Goals" href="plugin-info.html"/>
+      <item name="Usage" href="usage.html"/>
+      <!--item name="FAQ" href="faq.html"/-->
       <item name="Javadoc" href="apidocs/index.html"/>
     </menu>
     ${reports}
