@@ -132,7 +132,7 @@ General notes
   
   Read the {{{java-mojo.html} java}} for more information on how to configure this behavior. 
   
-  If you find out that these differences are unacceptable for your case, you may need to use the exec mojo to wrap your java executable.
+  If you find out that these differences are unacceptable for your case, you may need to use the {{{exec-mojo.html} exec}} mojo to wrap your java executable.
   
 * Command line
 
@@ -242,11 +242,9 @@ MAVEN_OPTS=-Xmx1024m
           <includeProjectDependencies>false</includeProjectDependencies>
           <includePluginDependencies>true</includePluginDependencies>
           <executableDependency>
-              <groupId>com.example.myproject</groupId>
-              <artifactId>mylib</artifactId>
+            <groupId>com.example.myproject</groupId>
+            <artifactId>mylib</artifactId>
           </executableDependency>
-          <!--assume this starts some server process used in an integration test-->
-          <keepAlive>true</keepAlive>
           <mainClass>com.example.Main</mainClass>
           <arguments>
             <argument>argument1</argument>
