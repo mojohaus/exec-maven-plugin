@@ -29,7 +29,6 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -69,7 +68,7 @@ public class ExecMojo
      *
      * @parameter
      */
-    public List arguments;
+    private List arguments;
 
     /**
      * @parameter expression="${basedir}"
@@ -141,7 +140,8 @@ public class ExecMojo
                     if ( argument == null )
                     {
                         throw new MojoExecutionException(
-                            "Misconfigured argument, value is null. Set the argument to an empty value if this is the required behaviour." );
+                            "Misconfigured argument, value is null. Set the argument to an empty value"
+                            + " if this is the required behaviour." );
                     }
                     else if ( argument instanceof Classpath )
                     {

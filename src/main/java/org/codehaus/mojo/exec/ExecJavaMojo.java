@@ -40,7 +40,14 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's
@@ -109,7 +116,8 @@ public class ExecJavaMojo
 
     /**
      * A list of system properties to be passed. Note: as the execution is not forked, some system properties
-     * required by the JVM cannot be passed here. Use MAVEN_OPTS or the exec:exec instead. See the user guide for more information.
+     * required by the JVM cannot be passed here. Use MAVEN_OPTS or the exec:exec instead. See the user guide for
+     * more information.
      *
      * @parameter
      */
@@ -181,10 +189,10 @@ public class ExecJavaMojo
      * A value &lt;=0 means to not timeout (i.e. wait indefinitely for threads to finish). Following a timeout, a
      * warning will be logged.
      * <p>Note: properly coded threads <i>should</i> terminate upon interruption but some threads may prove
-     * problematic:  as the VM does interrupt daemon threads, some code may not have been written to handle interruption properly.
-     * For example java.util.Timer is known to not handle interruptions in JDK &lt;= 1.6.
-     * So it is not possible for us to infinitely wait by default otherwise maven could hang. A  sensible default value has been chosen,
-     * but this default value <i>may change</i> in the future based on user feedback.</p>
+     * problematic:  as the VM does interrupt daemon threads, some code may not have been written to handle
+     * interruption properly. For example java.util.Timer is known to not handle interruptions in JDK &lt;= 1.6.
+     * So it is not possible for us to infinitely wait by default otherwise maven could hang. A  sensible default 
+     * value has been chosen, but this default value <i>may change</i> in the future based on user feedback.</p>
      * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="15000"
      */
     private long daemonThreadJoinTimeout;
@@ -196,8 +204,8 @@ public class ExecJavaMojo
      * If this is <code>false</code>, or if {@link Thread#stop()} fails to get the thread to stop, then
      * a warning is logged and Maven will continue on while the affected threads (and related objects in memory)
      * linger on.  Consider setting this to <code>true</code> if you are invoking problematic code that you can't fix. 
-     * An example is {@link java.util.Timer} which doesn't respond to interruption.  To have <code>Timer</code> fixed, vote for
-     * <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
+     * An example is {@link java.util.Timer} which doesn't respond to interruption.  To have <code>Timer</code>
+     * fixed, vote for <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
      * @parameter expression="${exec.stopUnresponsiveDaemonThreads} default-value="false"
      */
     private boolean stopUnresponsiveDaemonThreads;
@@ -213,6 +221,8 @@ public class ExecJavaMojo
 
     /**
      * Execute goal.
+     * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
+     * @throws MojoFailureException something bad happened...
      */
     public void execute()
         throws MojoExecutionException, MojoFailureException
@@ -256,7 +266,7 @@ public class ExecJavaMojo
                     if ( ! main.isAccessible() )
                     {
                         getLog().debug( "Setting accessibility to true in order to invoke main()." );
-                        main.setAccessible(true);
+                        main.setAccessible( true );
                     }
                     main.invoke( main, new Object[]{arguments} );
                 }
@@ -280,7 +290,8 @@ public class ExecJavaMojo
             waitFor( 0 );
         }
 
-        if ( cleanupDaemonThreads ) {
+        if ( cleanupDaemonThreads )
+        {
         
             terminateThreads( threadGroup );
             
@@ -288,7 +299,7 @@ public class ExecJavaMojo
             {
                 threadGroup.destroy();
             }
-            catch (IllegalThreadStateException e)
+            catch ( IllegalThreadStateException e )
             {
                 getLog().warn( "Couldn't destroy threadgroup " + threadGroup, e );
             }
@@ -300,7 +311,7 @@ public class ExecJavaMojo
             System.setProperties( originalSystemProperties );
         }
 
-        synchronized (threadGroup)
+        synchronized ( threadGroup )
         {
             if ( threadGroup.uncaughtException != null )
             {
@@ -348,7 +359,8 @@ public class ExecJavaMojo
     private void joinNonDaemonThreads( ThreadGroup threadGroup )
     {
         boolean foundNonDaemon;
-        do {
+        do
+        {
             foundNonDaemon = false;
             Collection threads = getActiveThreads( threadGroup );
             for ( Iterator iter = threads.iterator(); iter.hasNext(); )
@@ -358,28 +370,28 @@ public class ExecJavaMojo
                 {
                     continue;
                 }
-                foundNonDaemon = true;//try again; maybe more threads were created while we were busy
+                foundNonDaemon = true;   //try again; maybe more threads were created while we were busy
                 joinThread( thread, 0 );
             }
-        } while (foundNonDaemon);
+        } while ( foundNonDaemon );
     }
 
-    private void joinThread( Thread thread, long timeout_msecs )
+    private void joinThread( Thread thread, long timeoutMsecs )
     {
         try
         {
             getLog().debug( "joining on thread " + thread );
-            thread.join( timeout_msecs );
+            thread.join( timeoutMsecs );
         }
         catch ( InterruptedException e )
         {
-            Thread.currentThread().interrupt();//good practice if don't throw
-            getLog().warn( "interrupted while joining against thread " + thread, e );//not expected!
+            Thread.currentThread().interrupt();   // good practice if don't throw
+            getLog().warn( "interrupted while joining against thread " + thread, e );   // not expected!
         }
         if ( thread.isAlive() ) //generally abnormal
         {
             getLog().warn( "thread " + thread + " was interrupted but is still alive after waiting at least "
-                + timeout_msecs + "msecs" );
+                + timeoutMsecs + "msecs" );
         }
     }
 
@@ -437,7 +449,7 @@ public class ExecJavaMojo
         {
             getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to "
                 + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
-                + " Although not serious, it should be remedied.");
+                + " Although not serious, it should be remedied." );
         }
         else
         {
@@ -448,7 +460,7 @@ public class ExecJavaMojo
                 Thread[] threadsArray = new Thread[1];
                 threadGroup.enumerate( threadsArray );
                 getLog().debug( "strange; " + activeCount
-                        + " thread(s) still active in the group " + threadGroup +" such as " + threadsArray[0] );
+                        + " thread(s) still active in the group " + threadGroup + " such as " + threadsArray[0] );
             }
         }
     }
@@ -483,10 +495,9 @@ public class ExecJavaMojo
     }
 
     /**
-     * Set up a classloader for the execution of the
-     * main class.
+     * Set up a classloader for the execution of the main class.
      *
-     * @return
+     * @return the classloader
      * @throws MojoExecutionException
      */
     private ClassLoader getClassLoader()
@@ -495,8 +506,7 @@ public class ExecJavaMojo
         List classpathURLs = new ArrayList();
         this.addRelevantPluginDependenciesToClasspath( classpathURLs );
         this.addRelevantProjectDependenciesToClasspath( classpathURLs );
-        return new URLClassLoader((URL[]) classpathURLs.toArray( new URL[ classpathURLs.size() ] )/*,
-                ClassLoader.getSystemClassLoader()*/);
+        return new URLClassLoader( ( URL[] ) classpathURLs.toArray( new URL[ classpathURLs.size() ] ) );
     }
 
     /**
@@ -634,8 +644,8 @@ public class ExecJavaMojo
                 scope = Artifact.SCOPE_COMPILE;
             }
 
-            Artifact art = this.artifactFactory.createDependencyArtifact( groupId, artifactId, versionRange, type, classifier,
-                                                             scope, optional );
+            Artifact art = this.artifactFactory.createDependencyArtifact( groupId, artifactId, versionRange,
+                                                              type, classifier, scope, optional );
 
             if ( scope.equalsIgnoreCase( Artifact.SCOPE_SYSTEM ) )
             {
@@ -732,8 +742,8 @@ public class ExecJavaMojo
         if ( executableTool == null )
         {
             throw new MojoExecutionException(
-                "No dependency of the plugin matches the specified executableDependency." +
-                    "  Specified executableToolAssembly is: " + executableDependency.toString() );
+                "No dependency of the plugin matches the specified executableDependency."
+                + "  Specified executableToolAssembly is: " + executableDependency.toString() );
         }
 
         return executableTool;
@@ -799,7 +809,7 @@ public class ExecJavaMojo
             catch ( InterruptedException e )
             {
                 Thread.currentThread().interrupt(); // good practice if don't throw
-                getLog().warn( "Spuriously interrupted while waiting for " + millis + "ms", e);
+                getLog().warn( "Spuriously interrupted while waiting for " + millis + "ms", e );
             }
         }
     }

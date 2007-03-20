@@ -29,9 +29,9 @@ public class Classpath
      */
     private Collection dependencies;
 
-    public void setDependencies( Collection dependencies )
+    public void setDependencies( Collection deps )
     {
-        this.dependencies = dependencies;
+        this.dependencies = deps;
     }
 
     public void setDependency( String dependency )
