@@ -8,6 +8,7 @@
   <artifactId>exec-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>Maven Exec Plugin</name>
+  <description>A plugin to allow execution of system and Java programs</description>
   <version>1.1-beta-1-SNAPSHOT</version>
   <url>http://mojo.codehaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
