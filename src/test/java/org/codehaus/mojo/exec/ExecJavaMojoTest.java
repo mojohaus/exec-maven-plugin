@@ -92,6 +92,23 @@ public class ExecJavaMojoTest
     }
 
     /**
+     * MEXEC-29 exec:java throws NPE if the mainClass main method has not a correct signature
+     * <p/>
+     */
+    public void testIncorrectMainMethodSignature()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project12/pom.xml" );
+
+        try {
+            String output = execute( pom, "java" );
+        } catch (MojoExecutionException e) {
+            assertTrue( e.getMessage().contains( "The specified mainClass doesn't contain a main method with appropriate signature." ) );
+        }
+
+    }
+
+    /**
      * For cases where the Java code spawns Threads and main returns soon.
      * See <a href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
      */
@@ -203,11 +220,6 @@ public class ExecJavaMojoTest
         try
         {
             mojo.execute();
-        }
-        catch ( Throwable e )
-        {
-            e.printStackTrace( System.err );
-            fail( e.getMessage() );
         }
         finally
         {

@@ -13,7 +13,7 @@ package org.codehaus.mojo.exec;
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License.x
  */
 
 import org.apache.maven.artifact.Artifact;
@@ -270,6 +270,10 @@ public class ExecJavaMojo
                     }
                     main.invoke( main, new Object[]{arguments} );
                 }
+                catch ( NoSuchMethodException e )
+                {   // just pass it on
+                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.", e ) );
+                }
                 catch ( Exception e )
                 {   // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
@@ -315,7 +319,9 @@ public class ExecJavaMojo
         {
             if ( threadGroup.uncaughtException != null )
             {
-                throw new MojoExecutionException( null, threadGroup.uncaughtException );
+                throw new MojoExecutionException( "An exception occured while executing the Java class. " 
+                                                  + threadGroup.uncaughtException.getMessage(),
+                                                  threadGroup.uncaughtException );
             }
         }
 
