@@ -47,17 +47,23 @@ public class ExecMojo
     extends AbstractExecMojo
 {
     /**
+     * Skip the execution.
+     *
      * @parameter expression="${skip}" default-value="false"
      */
     private boolean skip;
 
     /**
+     * The executable. Can be a full path or a the name executable. In the latter case, the executable must be in the PATH for the execution to work. 
+     * 
      * @parameter expression="${exec.executable}"
      * @required
      */
     private String executable;
 
     /**
+     * The current working directory. Optional. If not specified, basedir will be used.
+     * 
      * @parameter expression="${exec.workingdir}
      */
     private File workingDirectory;
@@ -73,6 +79,7 @@ public class ExecMojo
     /**
      * @parameter expression="${basedir}"
      * @required
+     * @readonly
      */
     private File basedir;
     

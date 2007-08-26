@@ -12,6 +12,9 @@
   <version>1.1-beta-2-SNAPSHOT</version>
   <url>http://mojo.codehaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
+  <prerequisites>
+    <maven>2.0.4</maven>
+  </prerequisites>
   <issueManagement>
     <system>jira</system>
     <url>http://jira.codehaus.org/browse/MEXEC</url>

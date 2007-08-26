@@ -85,6 +85,8 @@ public class ExecJavaMojo
 
     /**
      * @parameter expression="${project.remoteArtifactRepositories}"
+     * @required
+     * @readonly
      */
     private List remoteRepositories;
 
