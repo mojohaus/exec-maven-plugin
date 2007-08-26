@@ -19,12 +19,12 @@ under the License.
 -->
 <faqs id="FAQ" title="Frequently Asked Questions">
  <part id="General">
-   <!--faq id="question1">
-     <question>bla bla</question>
+   <faq id="question1">
+     <question>How to execute the plugin multiple times ?</question>
      <answer>
-       <p>bla bla
-       </p>
+       <p>Use several _execution_ nodes each with a different _id_. Don't forget to bind each executino to a _phase_.</p>
+       <p>Read <a href="http://article.gmane.org/gmane.comp.java.maven-plugins.mojo.user/1307">the full answer</a>.</p>
      </answer>
-   </faq-->
+   </faq>
  </part>
 </faqs>
