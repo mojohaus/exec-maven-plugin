@@ -103,9 +103,15 @@ public class ExecJavaMojoTest
         try {
             String output = execute( pom, "java" );
         } catch (MojoExecutionException e) {
-            assertTrue( e.getMessage().contains( "The specified mainClass doesn't contain a main method with appropriate signature." ) );
+            assertTrue( stringContains( e.getMessage(), "The specified mainClass doesn't contain a main method with appropriate signature." ) );
         }
 
+    }
+    
+    // java 1.4 compatibility
+    private boolean stringContains( String str, String sequence )
+    {
+        return str.indexOf( sequence ) != -1;
     }
 
     /**
