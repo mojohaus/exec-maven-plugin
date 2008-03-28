@@ -19,7 +19,7 @@ package org.codehaus.mojo.exec;
 
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
- * @version $Id: Test.java 1732 2006-03-23 20:10:21Z lacostej $
+ * @version $Id$
  */
 public class NoMain
 {
