@@ -173,10 +173,14 @@ public class ExecMojo
 
         commandLine.setExecutable( getExecutablePath() );
 
-        for ( Iterator it = commandArguments.iterator(); it.hasNext(); )
+        String [] args = new String[commandArguments.size()];
+        for (int i = 0; i < commandArguments.size(); i++)
         {
-            commandLine.createArgument().setValue( it.next().toString() );
+            args[i] = (String) commandArguments.get(i);
+            
         }
+
+        commandLine.addArguments(args);
 
         if ( workingDirectory == null )
         {

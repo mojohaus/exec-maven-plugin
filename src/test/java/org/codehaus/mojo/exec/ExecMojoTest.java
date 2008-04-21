@@ -47,7 +47,6 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
- * @todo we depend too much on Commandline.toString()
  */
 public class ExecMojoTest
     extends AbstractMojoTestCase
@@ -79,6 +78,14 @@ public class ExecMojoTest
         protected String getSystemProperty( String key )
         {
             return (String) systemProperties.get( key );
+        }
+
+        int getAmountExecutedCommandLines() {
+            return commandLines.size();
+        }
+
+        Commandline getExecutedCommandline( int index ) {
+            return ((Commandline) commandLines.get( index ));
         }
     }
 
@@ -292,7 +299,7 @@ public class ExecMojoTest
         }
         catch ( MojoExecutionException e )
         {
-            assertEquals( "Result of mvn --version execution is: '1'.",
+            assertEquals( "Result of " + mojo.getExecutedCommandline( 0 ) + " execution is: '1'.",
                           e.getMessage() );
         }
 
@@ -342,8 +349,21 @@ public class ExecMojoTest
 
     private void checkMojo( String expectedCommandLine )
     {
-        assertEquals( 1, mojo.commandLines.size() );
-        assertEquals( expectedCommandLine, ( (Commandline) mojo.commandLines.get( 0 ) ).toString() );
+        assertEquals( 1, mojo.getAmountExecutedCommandLines() );
+        Commandline commandline = mojo.getExecutedCommandline( 0 );
+        // do NOT depend on Commandline toString()
+        assertEquals(expectedCommandLine, getCommandLineAsString( commandline ));
+    }
+
+    private String getCommandLineAsString( Commandline commandline ) {
+        String result = commandline.getExecutable();
+        String[] arguments = commandline.getArguments();
+        for (int i = 0; i < arguments.length; i++) 
+        {
+            String arg = arguments[i];
+            result += " " + arg;
+        }
+        return result;
     }
 
     // TAKEN FROM NetbeansFreeformPluginTest - refactor ?
