@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
@@ -93,6 +95,11 @@ public class ExecMojo
      * @readonly
      */
     private File basedir;
+
+    /**
+     * @parameter
+     */
+    private Map environmentVariables = new HashMap();
 
     /**
      * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your needs.
@@ -212,6 +219,17 @@ public class ExecMojo
 
         commandLine.setWorkingDirectory( workingDirectory.getAbsolutePath() );
         
+        if ( environmentVariables != null )
+        {
+            Iterator iter = environmentVariables.keySet().iterator();
+            while ( iter.hasNext() )
+            {
+                String key = (String) iter.next();
+                String value = (String) environmentVariables.get( key );
+                commandLine.addEnvironment( key, value );
+            }
+        }
+
         final Log outputLog = getExecOutputLog();
 
         StreamConsumer stdout = new StreamConsumer()
