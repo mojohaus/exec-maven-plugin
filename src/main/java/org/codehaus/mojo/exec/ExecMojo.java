@@ -20,6 +20,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.cli.CommandLineException;
@@ -28,6 +29,8 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -67,6 +70,14 @@ public class ExecMojo
      * @parameter expression="${exec.workingdir}
      */
     private File workingDirectory;
+
+    /**
+     * Program standard and error output will be redirected to the file specified by this optional field.
+     * If not specified the standard maven logging is used.
+     *
+     * @parameter expression="${exec.outputFile}"
+     */
+    private File outputFile;
 
     /**
      * Can be of type <code>&lt;argument&gt;</code> or <code>&lt;classpath&gt;</code>
@@ -200,21 +211,28 @@ public class ExecMojo
         }
 
         commandLine.setWorkingDirectory( workingDirectory.getAbsolutePath() );
+        
+        final Log outputLog = getExecOutputLog();
 
-        // FIXME what about redirecting the output to getLog() ??
-        // what about consuming the input just to be on the safe side ?
-        // what about allowing parametrization of the class name that acts as consumer?
-        StreamConsumer consumer = new StreamConsumer()
+        StreamConsumer stdout = new StreamConsumer()
+        {
+            public void consumeLine(String line)
+            {
+                outputLog.info(line);
+            }
+        };
+        
+        StreamConsumer stderr = new StreamConsumer()
         {
             public void consumeLine( String line )
             {
-                getLog().info( line );
+                outputLog.info( line );
             }
         };
 
         try
         {
-            int result = executeCommandLine( commandLine, consumer, consumer );
+            int result = executeCommandLine( commandLine, stdout, stderr );
 
             if ( result != 0 )
             {
@@ -227,6 +245,26 @@ public class ExecMojo
         }
 
         registerSourceRoots();
+    }
+
+    private Log getExecOutputLog()
+    {
+        Log log = getLog();
+        if ( outputFile != null )
+        {
+            try
+            {
+                PrintStream stream = new PrintStream( new FileOutputStream( outputFile ) );
+
+                log = new StreamLog( stream );                
+            }
+            catch ( Exception e )
+            {
+                getLog().warn( "Could not open " + outputFile, e );
+            }
+        }
+        
+        return log;
     }
 
     /**
