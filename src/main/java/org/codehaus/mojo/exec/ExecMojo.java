@@ -40,7 +40,7 @@ import java.util.StringTokenizer;
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
  * @goal exec
- * @requiresDependencyResolution
+ * @requiresDependencyResolution test
  * @description Program Execution plugin
  */
 public class ExecMojo
@@ -82,6 +82,13 @@ public class ExecMojo
      * @readonly
      */
     private File basedir;
+
+    /**
+     * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your needs.
+     * @parameter default-value="compile"
+     * @required
+     */
+    private String classpathScope;
     
     /**
      * if exec.args expression is used when invokign the exec:exec goal,
@@ -117,8 +124,7 @@ public class ExecMojo
             {
                 if ( CLASSPATH_TOKEN.equals( args[i] ) ) 
                 {
-                    Collection artifacts = project.getArtifacts();
-                    commandArguments.add( computeClasspath( artifacts ) );
+                    commandArguments.add( computeClasspath( project, null ) );
                 } 
                 else 
                 {
@@ -152,13 +158,9 @@ public class ExecMojo
                     }
                     else if ( argument instanceof Classpath )
                     {
-                        Classpath classpath = (Classpath) argument;
-                        Collection artifacts = project.getArtifacts();
-                        if ( classpath.getDependencies() != null )
-                        {
-                            artifacts = filterArtifacts( artifacts, classpath.getDependencies() );
-                        }
-                        arg = computeClasspath( artifacts );
+                        Classpath specifiedClasspath = (Classpath) argument;
+
+                        arg = computeClasspath( project, specifiedClasspath );
                     }
                     else
                     {
@@ -227,40 +229,60 @@ public class ExecMojo
         registerSourceRoots();
     }
 
-    private String computeClasspath( Collection artifacts )
+    /**
+     * Compute the classpath from the project and the specified Classpath. The computed classpath is based on the classpathScope.
+     * The plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us
+     * he wants the scope in which the plugin is expected to be executed.
+     */ 
+    private String computeClasspath( MavenProject project, Classpath specifiedClasspath )
     {
         StringBuffer theClasspath = new StringBuffer();
 
+        Collection artifacts;
+        if ( "compile".equals( classpathScope ))
+        {
+            artifacts = project.getArtifacts();
+            addToClasspath( theClasspath, project.getBuild().getOutputDirectory() );
+        } else if ( "test".equals( classpathScope ))
+        {
+            artifacts = project.getTestArtifacts();
+            addToClasspath( theClasspath, project.getBuild().getTestOutputDirectory() );
+            addToClasspath( theClasspath, project.getBuild().getOutputDirectory() );
+        } else if ( "runtime".equals( classpathScope ))
+        {
+            artifacts = project.getRuntimeArtifacts();
+        } else if ( "system".equals( classpathScope ))
+        {
+            artifacts = project.getSystemArtifacts();
+        } else
+        {
+            throw new IllegalStateException("Invalid classpath scope: " + classpathScope);
+        }
+
+        System.out.println("artifacts " + artifacts);
+
+        if ( specifiedClasspath != null && specifiedClasspath.getDependencies() != null )
+        {
+            artifacts = filterArtifacts( artifacts, specifiedClasspath.getDependencies() );
+        }
+
         for ( Iterator it = artifacts.iterator(); it.hasNext(); )
         {
-            if ( theClasspath.length() > 0 )
-            {
-                theClasspath.append( File.pathSeparator );
-            }
             Artifact artifact = (Artifact) it.next();
             getLog().debug( "dealing with " + artifact );
-            theClasspath.append( artifact.getFile().getAbsolutePath() );
-        }
-        // FIXME check project current phase?
-        // we should probably add the output and testoutput dirs based on the Project's phase
-        if ( true )
-        {
-            if ( theClasspath.length() > 0 )
-            {
-                theClasspath.append( File.pathSeparator );
-            }
-            theClasspath.append( project.getBuild().getOutputDirectory() );
-        }
-        if ( false )
-        {
-            if ( theClasspath.length() > 0 )
-            {
-                theClasspath.append( File.pathSeparator );
-            }
-            theClasspath.append( project.getBuild().getTestOutputDirectory() );
+            addToClasspath( theClasspath, artifact.getFile().getAbsolutePath() );
         }
 
         return theClasspath.toString();
+    }
+
+    private void addToClasspath( StringBuffer theClasspath, String toAdd )
+    {
+        if ( theClasspath.length() > 0 )
+        {
+            theClasspath.append( File.pathSeparator );
+        }
+        theClasspath.append( toAdd );
     }
 
     private Collection filterArtifacts( Collection artifacts, Collection dependencies )

@@ -79,6 +79,17 @@ Java programs in external processes.
 </project>
 -------------------
 
+ To change the scope of the plugin execution, use *classpathScope*, e.g. for a test scope:
+
+-------------------
+        <configuration>
+            ...
+            <classpathScope>test</classpathScope>
+            ...
+        </configuration>
+-------------------
+
+
  To execute Java programs, the exec plugin helps by allowing the <classpath> argument:
 
 -------------------

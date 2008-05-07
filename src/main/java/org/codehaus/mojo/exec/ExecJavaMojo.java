@@ -574,6 +574,7 @@ public class ExecJavaMojo
                 getLog().debug( "Adding to classpath : " + testClasses );
                 path.add( testClasses );
 
+                // TODO we might want to support multiple classpath scopes as the exec mojo. See MEXEC-26
                 Set dependencies = project.getArtifacts();
 
                 // system scope dependencies are not returned by maven 2.0. See MEXEC-17
