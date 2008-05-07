@@ -107,6 +107,20 @@ public class ExecJavaMojoTest
         }
 
     }
+
+// this test doesn't work as the classpath passed to the project when executing the POM isn't the same as when maven is executed from within the project dir
+// Should be moved as an integration-test
+/*
+    public void testSetClasspathScopeToTest()
+        throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project14/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        assertEquals( "Hello" + System.getProperty( "line.separator" ), output );
+    }
+*/
     
     // java 1.4 compatibility
     private boolean stringContains( String str, String sequence )
@@ -212,6 +226,7 @@ public class ExecJavaMojoTest
         setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
         setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
         setVariableValueToObject( mojo, "cleanupDaemonThreads", Boolean.TRUE );
+        setVariableValueToObject( mojo, "classpathScope", "compile" );
 
         assertNotNull( mojo );
         assertNotNull( project );

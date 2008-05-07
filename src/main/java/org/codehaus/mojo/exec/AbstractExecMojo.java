@@ -18,6 +18,7 @@ package org.codehaus.mojo.exec;
 
 import java.io.File;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,11 +70,49 @@ public abstract class AbstractExecMojo extends AbstractMojo
      */
     private String commandlineArgs;
 
+    /**
+     * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your needs.
+     * @parameter default-value="compile"
+     * @required
+     */
+    protected String classpathScope;
+
     private static final char PARAMETER_DELIMITER = ' ';
 
     private static final char STRING_WRAPPER = '"';
 
     private static final char ESCAPE_CHAR = '\\';
+
+    /**
+     * Collects the project artifacts in the specified List and the project specific classpath 
+     * (build output and build test output) Files in the specified List, depending on the plugin classpathScope value.
+     */
+    protected void collectProjectArtifactsAndClasspath( List artifacts, List theClasspathFiles )
+    {
+        
+        if ( "compile".equals( classpathScope ) )
+        {
+            artifacts.addAll( project.getCompileArtifacts() );
+            theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+        } else if ( "test".equals( classpathScope ) )
+        {
+            artifacts.addAll( project.getTestArtifacts() );
+            theClasspathFiles.add( new File( project.getBuild().getTestOutputDirectory() ) );
+            theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+        } else if ( "runtime".equals( classpathScope ) )
+        {
+            artifacts.addAll( project.getRuntimeArtifacts() );
+        } else if ( "system".equals( classpathScope ) )
+        {
+            artifacts.addAll( project.getSystemArtifacts() );
+        } else
+        {
+            throw new IllegalStateException( "Invalid classpath scope: " + classpathScope );
+        }
+
+        getLog().debug( "Collected project artifacts " + artifacts );
+        getLog().debug( "Collected project classpath " + theClasspathFiles );
+    }
 
     /**
      * Parses the argument string given by the user. Strings are recognized as everything between STRING_WRAPPER.

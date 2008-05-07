@@ -55,7 +55,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>, <a href="mailto:dsmiley@mitre.org">David Smiley</a>
  * @goal java
- * @requiresDependencyResolution runtime
+ * @requiresDependencyResolution test
  * @execute phase="validate"
  */
 public class ExecJavaMojo
@@ -566,21 +566,19 @@ public class ExecJavaMojo
             {
                 getLog().debug( "Project Dependencies will be included." );
 
-                URL mainClasses = new File( project.getBuild().getOutputDirectory() ).toURL();
-                getLog().debug( "Adding to classpath : " + mainClasses );
-                path.add( mainClasses );
+                List artifacts = new ArrayList();
+                List theClasspathFiles = new ArrayList();
+ 
+                collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
-                URL testClasses = new File( project.getBuild().getTestOutputDirectory() ).toURL();
-                getLog().debug( "Adding to classpath : " + testClasses );
-                path.add( testClasses );
+                for ( Iterator it = theClasspathFiles.iterator(); it.hasNext(); )
+                {
+                     URL url = ((File) it.next()).toURL();
+                     getLog().debug( "Adding to classpath : " + url );
+                     path.add( url );
+                }
 
-                // TODO we might want to support multiple classpath scopes as the exec mojo. See MEXEC-33
-                Set dependencies = project.getArtifacts();
-
-                // system scope dependencies are not returned by maven 2.0. See MEXEC-17
-                dependencies.addAll( getSystemScopeDependencies() );
-
-                Iterator iter = dependencies.iterator();
+                Iterator iter = artifacts.iterator();
                 while ( iter.hasNext() )
                 {
                     Artifact classPathElement = (Artifact) iter.next();

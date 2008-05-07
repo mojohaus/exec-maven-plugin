@@ -1,0 +1,3 @@
+arg.arg1
+arg.arg2
+project.env1=value1

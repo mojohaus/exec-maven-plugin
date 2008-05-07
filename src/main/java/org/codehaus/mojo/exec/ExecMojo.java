@@ -100,13 +100,6 @@ public class ExecMojo
      * @parameter
      */
     private Map environmentVariables = new HashMap();
-
-    /**
-     * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your needs.
-     * @parameter default-value="compile"
-     * @required
-     */
-    private String classpathScope;
     
     /**
      * if exec.args expression is used when invokign the exec:exec goal,
@@ -292,34 +285,25 @@ public class ExecMojo
      */ 
     private String computeClasspath( MavenProject project, Classpath specifiedClasspath )
     {
-        StringBuffer theClasspath = new StringBuffer();
-
-        Collection artifacts;
-        if ( "compile".equals( classpathScope ))
-        {
-            artifacts = project.getArtifacts();
-            addToClasspath( theClasspath, project.getBuild().getOutputDirectory() );
-        } else if ( "test".equals( classpathScope ))
-        {
-            artifacts = project.getTestArtifacts();
-            addToClasspath( theClasspath, project.getBuild().getTestOutputDirectory() );
-            addToClasspath( theClasspath, project.getBuild().getOutputDirectory() );
-        } else if ( "runtime".equals( classpathScope ))
-        {
-            artifacts = project.getRuntimeArtifacts();
-        } else if ( "system".equals( classpathScope ))
-        {
-            artifacts = project.getSystemArtifacts();
-        } else
-        {
-            throw new IllegalStateException("Invalid classpath scope: " + classpathScope);
-        }
-
-        System.out.println("artifacts " + artifacts);
+        // TODO we should consider rewriting this bit into something like
+        // List<URL> collectProjectClasspathAsListOfURLs( optionalFilter );
+        // reusable by both mojos
+        List artifacts = new ArrayList();
+        List theClasspathFiles = new ArrayList();
+ 
+        collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
         if ( specifiedClasspath != null && specifiedClasspath.getDependencies() != null )
         {
             artifacts = filterArtifacts( artifacts, specifiedClasspath.getDependencies() );
+        }
+
+        StringBuffer theClasspath = new StringBuffer();
+
+        for ( Iterator it = theClasspathFiles.iterator(); it.hasNext(); )
+        {
+            File f = (File) it.next();
+            addToClasspath( theClasspath, f.getAbsolutePath() );
         }
 
         for ( Iterator it = artifacts.iterator(); it.hasNext(); )
@@ -332,7 +316,7 @@ public class ExecMojo
         return theClasspath.toString();
     }
 
-    private void addToClasspath( StringBuffer theClasspath, String toAdd )
+    private static void addToClasspath( StringBuffer theClasspath, String toAdd )
     {
         if ( theClasspath.length() > 0 )
         {
@@ -341,7 +325,7 @@ public class ExecMojo
         theClasspath.append( toAdd );
     }
 
-    private Collection filterArtifacts( Collection artifacts, Collection dependencies )
+    private List filterArtifacts( List artifacts, Collection dependencies )
     {
         AndArtifactFilter filter = new AndArtifactFilter();
 
