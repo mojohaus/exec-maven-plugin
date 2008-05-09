@@ -46,7 +46,7 @@ import java.util.StringTokenizer;
  * @version $Id$
  * @goal exec
  * @requiresDependencyResolution test
- * @description Program Execution plugin
+ * @since 1.0
  */
 public class ExecMojo
     extends AbstractExecMojo
@@ -55,6 +55,7 @@ public class ExecMojo
      * Skip the execution.
      *
      * @parameter expression="${skip}" default-value="false"
+     * @since 1.0
      */
     private boolean skip;
 
@@ -63,6 +64,7 @@ public class ExecMojo
      * 
      * @parameter expression="${exec.executable}"
      * @required
+     * @since 1.0
      */
     private String executable;
 
@@ -70,6 +72,7 @@ public class ExecMojo
      * The current working directory. Optional. If not specified, basedir will be used.
      * 
      * @parameter expression="${exec.workingdir}
+     * @since 1.0
      */
     private File workingDirectory;
 
@@ -78,6 +81,7 @@ public class ExecMojo
      * If not specified the standard maven logging is used.
      *
      * @parameter expression="${exec.outputFile}"
+     * @since 1.1
      */
     private File outputFile;
 
@@ -86,6 +90,7 @@ public class ExecMojo
      * Can be overriden using "exec.args" env. variable
      *
      * @parameter
+     * @since 1.0
      */
     private List arguments;
 
@@ -93,11 +98,14 @@ public class ExecMojo
      * @parameter expression="${basedir}"
      * @required
      * @readonly
+     * @since 1.0
      */
     private File basedir;
 
     /**
+     * Environment variables to pass to the executed program.
      * @parameter
+     * @since 1.1
      */
     private Map environmentVariables = new HashMap();
     

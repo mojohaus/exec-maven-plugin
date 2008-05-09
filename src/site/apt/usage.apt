@@ -54,6 +54,7 @@ Java programs in external processes.
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1-beta-2</version>
         <executions>
           <execution>
             ...
@@ -175,6 +176,7 @@ General notes
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1-beta-2</version>
         <executions>
           <execution>
             ...
@@ -251,6 +253,7 @@ MAVEN_OPTS=-Xmx1024m
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1-beta-2</version>
         <executions>
           <execution>
             ...

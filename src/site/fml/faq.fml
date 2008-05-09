@@ -22,7 +22,7 @@ under the License.
    <faq id="question1">
      <question>How to execute the plugin multiple times ?</question>
      <answer>
-       <p>Use several _execution_ nodes each with a different _id_. Don't forget to bind each executino to a _phase_.</p>
+       <p>Use several execution nodes each with a different id. Don't forget to bind each execution to a phase.</p>
        <p>Read <a href="http://article.gmane.org/gmane.comp.java.maven-plugins.mojo.user/1307">the full answer</a>.</p>
      </answer>
    </faq>
