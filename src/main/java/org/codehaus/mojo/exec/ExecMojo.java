@@ -265,13 +265,16 @@ public class ExecMojo
         {
             try
             {
+                if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() ) {
+                    getLog().warn( "Could not create non existing parent directories for log file: " + outputFile );
+                }
                 PrintStream stream = new PrintStream( new FileOutputStream( outputFile ) );
 
                 log = new StreamLog( stream );                
             }
             catch ( Exception e )
             {
-                getLog().warn( "Could not open " + outputFile, e );
+                getLog().warn( "Could not open " + outputFile + ". Using default log", e );
             }
         }
         
