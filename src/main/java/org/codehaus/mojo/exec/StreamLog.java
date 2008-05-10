@@ -15,8 +15,10 @@ class StreamLog implements Log
 
     private int level = INFO;
 
-    public void setLevel( int level ) {
-        if ( level < DEBUG || level > ERROR ) {
+    public void setLevel( int level )
+    {
+        if ( level < DEBUG || level > ERROR ) 
+        {
             throw new IllegalStateException( "invalid level: " + level );
         }
         this.level = level;
@@ -29,7 +31,7 @@ class StreamLog implements Log
         this.s = s;
     } 
 
-    public void debug(CharSequence content)
+    public void debug( CharSequence content )
     {
         if ( isDebugEnabled() )
         {
@@ -37,7 +39,7 @@ class StreamLog implements Log
         }
     }
    
-    public void debug(CharSequence content, Throwable error)
+    public void debug( CharSequence content, Throwable error )
     {
         if ( isDebugEnabled() )
         {
@@ -45,7 +47,7 @@ class StreamLog implements Log
         }
     }
    
-    public void debug(Throwable error)
+    public void debug( Throwable error )
     {
         if ( isDebugEnabled() )
         {
@@ -53,7 +55,7 @@ class StreamLog implements Log
         }
     }
    
-    public void error(CharSequence content)
+    public void error( CharSequence content )
     {
         if ( isErrorEnabled() )
         {
@@ -61,13 +63,13 @@ class StreamLog implements Log
         }
     }
    
-    public void error(CharSequence content, Throwable error)
+    public void error( CharSequence content, Throwable error )
     {
         error( content );
         error( error );
     }
    
-    public void error(Throwable error)
+    public void error( Throwable error )
     {
         if ( isErrorEnabled() )
         {
@@ -75,7 +77,7 @@ class StreamLog implements Log
         }
     }
    
-    public void info(CharSequence content)
+    public void info( CharSequence content )
     {
         if ( isInfoEnabled() )
         {
@@ -83,13 +85,13 @@ class StreamLog implements Log
         }
     }
    
-    public void info(CharSequence content, Throwable error)
+    public void info( CharSequence content, Throwable error )
     {
         info( content );
         info( error );
     }
    
-    public void info(Throwable error)
+    public void info( Throwable error )
     {
         if ( isInfoEnabled() )
         {
@@ -117,7 +119,7 @@ class StreamLog implements Log
         return level >= WARN;
     }
    
-    public void warn(CharSequence content)
+    public void warn( CharSequence content )
     {
         if ( isWarnEnabled() )
         {
@@ -125,13 +127,13 @@ class StreamLog implements Log
         }
     }
    
-    public void warn(CharSequence content, Throwable error)
+    public void warn( CharSequence content, Throwable error )
     {
         warn( content );
         warn( error );
     }
    
-    public void warn(Throwable error)
+    public void warn( Throwable error )
     {
         if ( isWarnEnabled() )
         {

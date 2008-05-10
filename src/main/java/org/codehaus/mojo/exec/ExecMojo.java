@@ -60,7 +60,8 @@ public class ExecMojo
     private boolean skip;
 
     /**
-     * The executable. Can be a full path or a the name executable. In the latter case, the executable must be in the PATH for the execution to work. 
+     * The executable. Can be a full path or a the name executable. In the latter case, the executable must be
+     * in the PATH for the execution to work. 
      * 
      * @parameter expression="${exec.executable}"
      * @required
@@ -117,6 +118,7 @@ public class ExecMojo
 
     /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
+     * @throws MojoExecutionException if a failure happens
      */
     public void execute()
         throws MojoExecutionException
@@ -143,7 +145,7 @@ public class ExecMojo
             {
                 if ( CLASSPATH_TOKEN.equals( args[i] ) ) 
                 {
-                    commandArguments.add( computeClasspath( project, null ) );
+                    commandArguments.add( computeClasspath( null ) );
                 } 
                 else 
                 {
@@ -179,7 +181,7 @@ public class ExecMojo
                     {
                         Classpath specifiedClasspath = (Classpath) argument;
 
-                        arg = computeClasspath( project, specifiedClasspath );
+                        arg = computeClasspath( specifiedClasspath );
                     }
                     else
                     {
@@ -194,14 +196,14 @@ public class ExecMojo
 
         commandLine.setExecutable( getExecutablePath() );
 
-        String [] args = new String[commandArguments.size()];
-        for (int i = 0; i < commandArguments.size(); i++)
+        String [] args = new String[ commandArguments.size() ];
+        for ( int i = 0; i < commandArguments.size(); i++ )
         {
-            args[i] = (String) commandArguments.get(i);
+            args[i] = (String) commandArguments.get( i );
             
         }
 
-        commandLine.addArguments(args);
+        commandLine.addArguments( args );
 
         if ( workingDirectory == null )
         {
@@ -235,9 +237,9 @@ public class ExecMojo
 
         StreamConsumer stdout = new StreamConsumer()
         {
-            public void consumeLine(String line)
+            public void consumeLine( String line )
             {
-                outputLog.info(line);
+                outputLog.info( line );
             }
         };
         
@@ -273,7 +275,8 @@ public class ExecMojo
         {
             try
             {
-                if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() ) {
+                if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() )
+                {
                     getLog().warn( "Could not create non existing parent directories for log file: " + outputFile );
                 }
                 PrintStream stream = new PrintStream( new FileOutputStream( outputFile ) );
@@ -290,11 +293,14 @@ public class ExecMojo
     }
 
     /**
-     * Compute the classpath from the project and the specified Classpath. The computed classpath is based on the classpathScope.
+     * Compute the classpath from the specified Classpath. The computed classpath is based on the classpathScope.
      * The plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us
      * he wants the scope in which the plugin is expected to be executed.
+     * @param specifiedClasspath Non null when the user restricted the dependenceis, null otherwise
+             (the default classpath will be used)
+     * @return a platform specific String representation of the classpath
      */ 
-    private String computeClasspath( MavenProject project, Classpath specifiedClasspath )
+    private String computeClasspath( Classpath specifiedClasspath )
     {
         // TODO we should consider rewriting this bit into something like
         // List<URL> collectProjectClasspathAsListOfURLs( optionalFilter );
@@ -341,8 +347,6 @@ public class ExecMojo
         AndArtifactFilter filter = new AndArtifactFilter();
 
         filter.add( new IncludesArtifactFilter( new ArrayList( dependencies ) ) ); // gosh
-
-        StringBuffer theClasspath = new StringBuffer();
 
         List filteredArtifacts = new ArrayList();
         for ( Iterator it = artifacts.iterator(); it.hasNext(); )

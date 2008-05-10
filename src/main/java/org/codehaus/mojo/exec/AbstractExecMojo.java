@@ -18,7 +18,6 @@ package org.codehaus.mojo.exec;
 
 import java.io.File;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,20 +70,27 @@ public abstract class AbstractExecMojo extends AbstractMojo
     private String commandlineArgs;
 
     /**
-     * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your needs.
+     * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending
+     * on your needs.
      * @parameter expression="${exec.classpathScope}" default-value="compile"
      */
     protected String classpathScope;
 
+    /** @see #parseCommandlineArgs */
     private static final char PARAMETER_DELIMITER = ' ';
 
+    /** @see #parseCommandlineArgs */
     private static final char STRING_WRAPPER = '"';
 
+    /** @see #parseCommandlineArgs */
     private static final char ESCAPE_CHAR = '\\';
 
     /**
      * Collects the project artifacts in the specified List and the project specific classpath 
      * (build output and build test output) Files in the specified List, depending on the plugin classpathScope value.
+     * @param artifacts the list where to collect the scope specific artifacts
+     * @param theClasspathFiles the list where to collect the scope specific output directories
+     * @throws NullPointerException if at least one of the parameter is null
      */
     protected void collectProjectArtifactsAndClasspath( List artifacts, List theClasspathFiles )
     {
@@ -93,18 +99,22 @@ public abstract class AbstractExecMojo extends AbstractMojo
         {
             artifacts.addAll( project.getCompileArtifacts() );
             theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
-        } else if ( "test".equals( classpathScope ) )
+        }
+        else if ( "test".equals( classpathScope ) )
         {
             artifacts.addAll( project.getTestArtifacts() );
             theClasspathFiles.add( new File( project.getBuild().getTestOutputDirectory() ) );
             theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
-        } else if ( "runtime".equals( classpathScope ) )
+        }
+        else if ( "runtime".equals( classpathScope ) )
         {
             artifacts.addAll( project.getRuntimeArtifacts() );
-        } else if ( "system".equals( classpathScope ) )
+        }
+        else if ( "system".equals( classpathScope ) )
         {
             artifacts.addAll( project.getSystemArtifacts() );
-        } else
+        }
+        else
         {
             throw new IllegalStateException( "Invalid classpath scope: " + classpathScope );
         }
@@ -147,6 +157,8 @@ public abstract class AbstractExecMojo extends AbstractMojo
                 {
                     // ESCAPE_CHAR is the last character... this should be an error (?)
                     // char is just ignored by now
+                    getLog().warn( ESCAPE_CHAR 
+                        + " was the last character in your command line arguments. Verify your parameters." );
                 }
                 else
                 {
@@ -209,11 +221,17 @@ public abstract class AbstractExecMojo extends AbstractMojo
         return result;
     }
 
+    /**
+     * @return true of the mojo has command line arguments
+     */
     protected boolean hasCommandlineArgs()
     {
         return ( commandlineArgs != null );
     }
 
+    /**
+     * Register compile and compile tests source roots if necessary
+     */
     protected void registerSourceRoots()
     {
         if ( sourceRoot != null )

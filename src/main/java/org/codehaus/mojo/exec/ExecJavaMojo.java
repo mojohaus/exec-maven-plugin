@@ -293,7 +293,11 @@ public class ExecJavaMojo
                 }
                 catch ( NoSuchMethodException e )
                 {   // just pass it on
-                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.", e ) );
+                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), 
+                          new Exception( 
+                               "The specified mainClass doesn't contain a main method with appropriate signature.", e
+                          )
+                       );
                 }
                 catch ( Exception e )
                 {   // just pass it on
@@ -349,9 +353,12 @@ public class ExecJavaMojo
         registerSourceRoots();
     }
 
+    /**
+     * a ThreadGroup to isolate execution and collect exceptions.
+     */
     class IsolatedThreadGroup extends ThreadGroup
     {
-        Throwable uncaughtException; //synchronize access to this
+        Throwable uncaughtException; // synchronize access to this
 
         public IsolatedThreadGroup( String name )
         {
@@ -501,7 +508,7 @@ public class ExecJavaMojo
         {
             result.add( threads[i] );
         }
-        return result;//note: result should be modifiable
+        return result; //note: result should be modifiable
     }
 
     /**
@@ -525,7 +532,7 @@ public class ExecJavaMojo
      * Set up a classloader for the execution of the main class.
      *
      * @return the classloader
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if a problem happens
      */
     private ClassLoader getClassLoader()
         throws MojoExecutionException
@@ -541,7 +548,7 @@ public class ExecJavaMojo
      * Indirectly takes includePluginDependencies and ExecutableDependency into consideration.
      *
      * @param path classpath of {@link java.net.URL} objects
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if a problem happens
      */
     private void addRelevantPluginDependenciesToClasspath( List path )
         throws MojoExecutionException
@@ -574,7 +581,7 @@ public class ExecJavaMojo
      * Takes includeProjectDependencies into consideration.
      *
      * @param path classpath of {@link java.net.URL} objects
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if a problem happens
      */
     private void addRelevantProjectDependenciesToClasspath( List path )
         throws MojoExecutionException
@@ -592,7 +599,7 @@ public class ExecJavaMojo
 
                 for ( Iterator it = theClasspathFiles.iterator(); it.hasNext(); )
                 {
-                     URL url = ((File) it.next()).toURL();
+                     URL url = ( (File) it.next() ).toURL();
                      getLog().debug( "Adding to classpath : " + url );
                      path.add( url );
                 }
@@ -619,89 +626,13 @@ public class ExecJavaMojo
 
     }
 
-    private Collection getSystemScopeDependencies() throws MojoExecutionException
-    {
-        List systemScopeArtifacts = new ArrayList();
-
-        for ( Iterator artifacts = getAllDependencies().iterator(); artifacts.hasNext(); ) 
-        {
-            Artifact artifact = (Artifact) artifacts.next();
-
-            if ( artifact.getScope().equals( Artifact.SCOPE_SYSTEM ) )
-            {
-                systemScopeArtifacts.add( artifact );
-            }
-        }
-        return systemScopeArtifacts;
-    }
-
-    // generic method to retrieve all the transitive dependencies
-    private Collection getAllDependencies() throws MojoExecutionException
-    {
-        List artifacts = new ArrayList();
-            
-        for ( Iterator dependencies = project.getDependencies().iterator(); dependencies.hasNext(); ) 
-        {
-            Dependency dependency = (Dependency) dependencies.next();
-
-            String groupId = dependency.getGroupId();
-            String artifactId = dependency.getArtifactId();
-
-            VersionRange versionRange;
-            try
-            {
-                versionRange = VersionRange.createFromVersionSpec( dependency.getVersion() );
-            }
-            catch ( InvalidVersionSpecificationException e )
-            {
-                throw new MojoExecutionException( "unable to parse version", e );
-            }
-
-            String type = dependency.getType();
-            if ( type == null )
-            {
-                type = "jar"; //$NON-NLS-1$
-            }
-            String classifier = dependency.getClassifier();
-            boolean optional = dependency.isOptional();
-            String scope = dependency.getScope();
-            if ( scope == null )
-            {
-                scope = Artifact.SCOPE_COMPILE;
-            }
-
-            Artifact art = this.artifactFactory.createDependencyArtifact( groupId, artifactId, versionRange,
-                                                              type, classifier, scope, optional );
-
-            if ( scope.equalsIgnoreCase( Artifact.SCOPE_SYSTEM ) )
-            {
-                art.setFile( new File( dependency.getSystemPath() ) );
-            } 
-
-            List exclusions = new ArrayList();
-            for ( Iterator j = dependency.getExclusions().iterator(); j.hasNext(); )
-            {
-                Exclusion e = (Exclusion) j.next();
-                exclusions.add( e.getGroupId() + ":" + e.getArtifactId() ); //$NON-NLS-1$
-            }
-
-            ArtifactFilter newFilter = new ExcludesArtifactFilter( exclusions );
-
-            art.setDependencyFilter( newFilter );
-
-            artifacts.add( art );
-        }
-
-        return artifacts;
-    }
-
     /**
      * Determine all plugin dependencies relevant to the executable.
      * Takes includePlugins, and the executableDependency into consideration.
      *
      * @return a set of Artifact objects.
      *         (Empty set is returned if there are no relevant plugin dependencies.)
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if a problem happens resolving the plufin dependencies
      */
     private Set determineRelevantPluginDependencies()
         throws MojoExecutionException
@@ -747,7 +678,7 @@ public class ExecJavaMojo
      * Examine the plugin dependencies to find the executable artifact.
      *
      * @return an artifact which refers to the actual executable tool (not a POM)
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if no executable artifact was found
      */
     private Artifact findExecutableArtifact()
         throws MojoExecutionException
@@ -775,6 +706,12 @@ public class ExecJavaMojo
         return executableTool;
     }
 
+    /**
+     * Resolve the executable dependencies for the specified project
+     * @param executablePomArtifact the project's POM
+     * @return a set of Artifacts
+     * @throws MojoExecutionException if a failure happens
+     */
     private Set resolveExecutableDependencies( Artifact executablePomArtifact )
         throws MojoExecutionException
     {

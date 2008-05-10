@@ -25,6 +25,28 @@
  
 Maven 2 Exec Plugin
 
- The plugin provides 2 goals to make execution of programs. The {{{exec-mojo.html} exec}} 
- goal allow to execute programs and Java programs in a separate process, while the 
- The {{{java-mojo.html} java}} goal focuses on running Java programs in the same VM.
+ The plugin provides 2 goals to make execution of system and Java programs.
+
+* Goals Overview
+
+  General information about the goals.
+
+  * {{{exec.html}exec::exec}} execute programs and Java programs in a separate process.
+
+  * {{{java.html}exec::java}} execute Java programs in the same VM.
+
+* Usage
+
+  Instructions on how to use the Plugin Name can be found on the {{{usage.html}usage page}}.
+
+* Examples
+
+  To provide you with better understanding of some usages of the Exec Name,
+  you can take a look into the following examples:
+
+  * {{{examples/example-exec-for-java-programs.html} Running java programs with exec::exec}}
+
+  * {{{examples/example-exec-or-java-change-classpath-scope.html} Changing the classpath scope when running Java programs}}
+
+  * {{{examples/example-exec-using-plugin-dependencies.html} Using plugin dependencies with exec:exec}}
+
