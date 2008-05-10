@@ -55,7 +55,7 @@ public class ExecMojo
      * Skip the execution.
      *
      * @parameter expression="${skip}" default-value="false"
-     * @since 1.0
+     * @since 1.0.1
      */
     private boolean skip;
 
@@ -82,7 +82,7 @@ public class ExecMojo
      * If not specified the standard maven logging is used.
      *
      * @parameter expression="${exec.outputFile}"
-     * @since 1.1
+     * @since 1.1-beta-2
      */
     private File outputFile;
 
@@ -106,7 +106,7 @@ public class ExecMojo
     /**
      * Environment variables to pass to the executed program.
      * @parameter
-     * @since 1.1
+     * @since 1.1-beta-2
      */
     private Map environmentVariables = new HashMap();
     

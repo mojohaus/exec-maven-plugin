@@ -64,19 +64,16 @@ public class ExecJavaMojo
 {
     /**
      * @component
-     * @since 1.0
      */
     private ArtifactResolver artifactResolver;
 
     /**
      * @component
-     * @since 1.0
      */
     private ArtifactFactory artifactFactory;
 
     /**
      * @component
-     * @since 1.0
      */
     private ArtifactMetadataSource metadataSource;
 
@@ -92,7 +89,7 @@ public class ExecJavaMojo
      * @parameter expression="${project.remoteArtifactRepositories}"
      * @required
      * @readonly
-     * @since 1.0
+     * @since 1.1-beta-1
      */
     private List remoteRepositories;
 
@@ -105,7 +102,7 @@ public class ExecJavaMojo
     /**
      * @parameter expression="${plugin.artifacts}"
      * @readonly
-     * @since 1.0-FIXME
+     * @since 1.1-beta-1
      */
     private List pluginDependencies;
 
@@ -151,7 +148,7 @@ public class ExecJavaMojo
      * the main class.
      *
      * @parameter expression="${exec.includeProjectDependencies}" default-value="true"
-     * @since 1.1-FIXME
+     * @since 1.1-beta-1
      */
     private boolean includeProjectDependencies;
 
@@ -165,7 +162,7 @@ public class ExecJavaMojo
      * only expects to see dotnet libraries as dependencies.
      *
      * @parameter expression="${exec.includePluginDependencies}" default-value="false"
-     * @since 1.1-FIXME
+     * @since 1.1-beta-1
      */
     private boolean includePluginDependencies;
 
@@ -181,7 +178,7 @@ public class ExecJavaMojo
      *
      * @parameter
      * @optional
-     * @since 1.0-FIXME
+     * @since 1.1-beta-1
      */
     private ExecutableDependency executableDependency;
 
@@ -197,7 +194,7 @@ public class ExecJavaMojo
      * {@link #stopUnresponsiveDaemonThreads} for further tuning.
      * </p>
      * @parameter expression="${exec.cleanupDaemonThreads} default-value="true"
-     * @since 1.1-FIXME
+     * @since 1.1-beta-1
      */
      private boolean cleanupDaemonThreads;
 
@@ -212,7 +209,7 @@ public class ExecJavaMojo
      * So it is not possible for us to infinitely wait by default otherwise maven could hang. A  sensible default 
      * value has been chosen, but this default value <i>may change</i> in the future based on user feedback.</p>
      * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="15000"
-     * @since 1.1-FIXME
+     * @since 1.1-beta-1
      */
     private long daemonThreadJoinTimeout;
 
@@ -226,7 +223,7 @@ public class ExecJavaMojo
      * An example is {@link java.util.Timer} which doesn't respond to interruption.  To have <code>Timer</code>
      * fixed, vote for <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
      * @parameter expression="${exec.stopUnresponsiveDaemonThreads} default-value="false"
-     * @since 1.1-FIXME
+     * @since 1.1-beta-1
      */
     private boolean stopUnresponsiveDaemonThreads;
 
@@ -235,6 +232,7 @@ public class ExecJavaMojo
      *
      * @parameter expression="${exec.killAfter}" default-value="-1"
      * @deprecated since 1.1-alpha-1
+     * @since 1.0
      */
     private long killAfter;
         
