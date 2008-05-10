@@ -31,9 +31,9 @@ Maven 2 Exec Plugin
 
   General information about the goals.
 
-  * {{{exec.html}exec::exec}} execute programs and Java programs in a separate process.
+  * {{{exec-mojo.html}exec::exec}} execute programs and Java programs in a separate process.
 
-  * {{{java.html}exec::java}} execute Java programs in the same VM.
+  * {{{java-mojo.html}exec::java}} execute Java programs in the same VM.
 
 * Usage
 

@@ -25,22 +25,16 @@
  
 Exec goal
 
- You can use the plugin in one of two ways, formally specifying all the relevant
- information in the plugin configuration or through the use of system variables.
- Using the system variable you would just execute it like the following example.
+ You can formally specify all the relevant execution information in the plugin configuration.
+ Depending on your cases, you can also specify some or all information using system properties.
 
 * Command line
 
- The configuration accepts a list of <arguments>. Special treatment of some arguments, facilitate the running of 
-Java programs in external processes.
+ Using the system properties you would just execute it like the following example.
 
 -----
 > mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 -----
-
- If specified as part of the exec.args argument, the special string %classpath 
- will be replaced by the project classpath as computed by maven.
- 
  
 * Exec Plugin Configuration
 
@@ -81,8 +75,6 @@ Java programs in external processes.
 -------------------
 
 Java goal
-
-General notes
 
   This mojo helps you run a Java program within the same VM as maven.
 
