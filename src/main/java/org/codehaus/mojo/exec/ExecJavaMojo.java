@@ -28,13 +28,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.artifact.MavenMetadataSource;
 
-import org.apache.maven.model.Dependency; 
-import org.apache.maven.model.Exclusion;
-import org.apache.maven.artifact.resolver.filter.ArtifactFilter; 
-import org.apache.maven.artifact.resolver.filter.ExcludesArtifactFilter;
-import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
-import org.apache.maven.artifact.versioning.VersionRange; 
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
