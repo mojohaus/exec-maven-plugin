@@ -23,6 +23,7 @@ import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.Toolchain;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -362,20 +363,28 @@ public class ExecMojo
     }
 
     String getExecutablePath()
-    {
-        File execFile = new File( executable );
-        // if the file doesn't exist, the exec is probably in the PATH...
-        // we should probably also test for isFile and canExecute, but the second one is only
-        // available in SDK 6.
-        if ( execFile.exists() )
+    { 
+    	File execFile = new File( executable );
+    	if ( execFile.exists() )
         {
+        	getLog().warn( "Toolchains are ignored, 'executable' parameter is set to " + executable );
             return execFile.getAbsolutePath();
-        }
-        else
-        {
-            getLog().debug( "executable " + executable + " not found in place, assuming it is in the PATH." );
-            return executable;
-        }
+        } 
+    	else
+    	{
+	        Toolchain tc = getToolchain();
+	        
+	        // if the file doesn't exist & toolchain is null, the exec is probably in the PATH...
+	        // we should probably also test for isFile and canExecute, but the second one is only
+	        // available in SDK 6.
+	        if ( tc != null ) 
+	        {
+	            getLog().info( "Toolchain in exec-maven-plugin: " + tc );	
+	            executable = tc.findTool( executable );                	            	            
+	        }	        
+    	}
+
+        return executable;        
     }
 
 
