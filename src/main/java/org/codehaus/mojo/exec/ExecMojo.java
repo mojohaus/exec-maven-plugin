@@ -367,7 +367,7 @@ public class ExecMojo
     	File execFile = new File( executable );
     	if ( execFile.exists() )
         {
-        	getLog().warn( "Toolchains are ignored, 'executable' parameter is set to " + executable );
+        	getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
             return execFile.getAbsolutePath();
         } 
     	else
