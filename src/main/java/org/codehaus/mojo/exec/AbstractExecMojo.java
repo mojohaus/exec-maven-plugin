@@ -22,13 +22,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.ToolchainManager;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 
 /**
  * This class is used for unifying functionality between the 2 mojo exec plugins ('java' and 'exec').
@@ -73,16 +69,6 @@ public abstract class AbstractExecMojo extends AbstractMojo
      */
     private String commandlineArgs;
     
-    /**
-     * The current build session instance. This is used for
-     * toolchain manager API calls.
-     *
-     * @parameter expression="${session}"
-     * @required
-     * @readonly
-     */
-    private MavenSession session;
-
     /**
      * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending
      * on your needs.
@@ -259,32 +245,6 @@ public abstract class AbstractExecMojo extends AbstractMojo
             getLog().info( "Registering compile test source root " + testSourceRoot );
             project.addTestCompileSourceRoot( testSourceRoot.toString() );
         }
-    }
-    
-    //TODO remove the part with ToolchainManager lookup once we depend on
-    //2.0.9 (have it as prerequisite). Define as regular component field then.
-    protected Toolchain getToolchain()
-    {
-        Toolchain tc = null;
-
-        try
-        {
-            if ( session != null ) // session is null in tests..
-            {
-                ToolchainManager toolchainManager =
-                    (ToolchainManager) session.getContainer().lookup( ToolchainManager.ROLE );
-
-                if ( toolchainManager != null )
-                {                    
-                    tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
-                }
-            }
-        }
-        catch ( ComponentLookupException componentLookupException )
-        {
-            // just ignore, could happen in pre-2.0.9 builds..
-        }
-        return tc;
     }
 
 }

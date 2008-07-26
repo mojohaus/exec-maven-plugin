@@ -19,11 +19,14 @@ package org.codehaus.mojo.exec;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
+import org.apache.maven.execution.MavenSession;
 
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -110,6 +113,16 @@ public class ExecMojo
      * @since 1.1-beta-2
      */
     private Map environmentVariables = new HashMap();
+
+    /**
+     * The current build session instance. This is used for
+     * toolchain manager API calls.
+     *
+     * @parameter expression="${session}"
+     * @required
+     * @readonly
+     */
+    private MavenSession session;
     
     /**
      * if exec.args expression is used when invokign the exec:exec goal,
@@ -387,7 +400,6 @@ public class ExecMojo
         return executable;        
     }
 
-
     private static boolean isEmpty( String string )
     {
         return string == null || string.length() == 0;
@@ -441,5 +453,29 @@ public class ExecMojo
     protected String getSystemProperty( String key )
     {
         return System.getProperty( key );
+    }
+
+    private Toolchain getToolchain()
+    {
+        Toolchain tc = null;
+    
+        try
+        {
+            if ( session != null ) // session is null in tests..
+            {
+                ToolchainManager toolchainManager =
+                    (ToolchainManager) session.getContainer().lookup( ToolchainManager.ROLE );
+    
+                if ( toolchainManager != null )
+                {                    
+                    tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
+                }
+            }
+        }
+        catch ( ComponentLookupException componentLookupException )
+        {
+            // just ignore, could happen in pre-2.0.9 builds..
+        }
+        return tc;
     }
 }
