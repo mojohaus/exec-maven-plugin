@@ -3,7 +3,7 @@
  ------
  Jerome Lacoste
  ------
- 12 Oct 2005
+ 2008-10-10
  ------
 
  ~~ Copyright 2006 The Codehaus
@@ -22,23 +22,25 @@
 
  ~~ NOTE: For help with the syntax of this file, see:
  ~~ http://maven.apache.org/doxia/references/apt-format.html
- 
-Exec goal
+
+Usage
+
+* Exec goal
 
  You can formally specify all the relevant execution information in the plugin configuration.
- Depending on your cases, you can also specify some or all information using system properties.
+ Depending on your use case, you can also specify some or all information using system properties.
 
-* Command line
+** Command line
 
- Using the system properties you would just execute it like the following example.
+ Using system properties you would just execute it like in the following example.
 
 -----
-> mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
+mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 -----
- 
-* Exec Plugin Configuration
 
- Add configuration similar to the following to your POM:
+** POM Configuration
+
+ Add a configuration similar to the following to your POM:
 
 -------------------
 <project>
@@ -48,7 +50,7 @@ Exec goal
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1-beta-2</version>
+        <version>1.1</version>
         <executions>
           <execution>
             ...
@@ -74,19 +76,19 @@ Exec goal
 </project>
 -------------------
 
-Java goal
+* Java goal
 
-  This mojo helps you run a Java program within the same VM as maven.
+  This goal helps you run a Java program within the same VM as Maven.
 
-* Differences compared to plain command line
-  
-  The mojo goes to great length to try to mimic the way the VM works, but there are some small subttle differences.
-  Today all differences come from the way the mojo deals with <<thread management>>.
-  
+** Differences compared to plain command line
+
+  The goal goes to great length to try to mimic the way the VM works, but there are some small subttle differences.
+  Today all differences come from the way the goal deals with <<thread management>>.
+
 *--------------------------------------+------------------------------------------+
 |                command line          |           Java Mojo                      |
 *--------------------------------------+------------------------------------------+
-| the VM exits as soon as the only     |  By default daemon threads are joined    |
+| The VM exits as soon as the only     |  By default daemon threads are joined    |
 | remaining threads are daemon threads | and interrupted once all known non       |
 |                                      | daemon threads have quitted. The join    |
 |                                      | timeout is customisable                  |
@@ -96,22 +98,22 @@ Java goal
 |                                      | The user can disable the full extra      |
 |                                      | thread management (interrupt/join/[stop])|
 *--------------------------------------+------------------------------------------+
-  
-  Read the {{{java-mojo.html} java}} for more information on how to configure this behavior. 
-  
-  If you find out that these differences are unacceptable for your case, you may need to use the {{{exec-mojo.html} exec}} mojo to wrap your java executable.
-  
-* Command line
+
+  Read the documentation for the {{{java-mojo.html}java goal}} for more information on how to configure this behavior.
+
+  If you find out that these differences are unacceptable for your case, you may need to use the {{{exec-mojo.html} exec goal}} to wrap your Java executable.
+
+** Command line
 
   If you want to execute Java programs in the same VM, you can either use the command line version
 
 -----
-> mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] ...
+mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] ...
 -----
 
-* Java Plugin Configuration
- 
-  either configure the plugin in your pom:
+** POM Configuration
+
+  or you can configure the plugin in your POM:
 
 -------------------
 <project>
@@ -121,7 +123,7 @@ Java goal
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1-beta-2</version>
+        <version>1.1</version>
         <executions>
           <execution>
             ...
@@ -142,6 +144,7 @@ Java goal
               <value>myvalue</value>
             </systemProperty>
             ...
+          </systemProperties>
         </configuration>
       </plugin>
     </plugins>
@@ -150,13 +153,12 @@ Java goal
 </project>
 -------------------
 
-  Note: the java goal doesn't spawn a new process. Any VM specific option that you want to pass to the executed class must be passed to the maven VM using
-  the MAVEN_OPTS environment variable.
+  <<Note:>> The <<<java>>> goal doesn't spawn a new process. Any VM specific option that you want to pass to the executed class must be passed to the Maven VM using
+  the <<<MAVEN_OPTS>>> environment variable.
   E.g.
 
 -------------------
-MAVEN_OPTS=-Xmx1024m 
+MAVEN_OPTS=-Xmx1024m
 -------------------
 
-  Otherwise consider using the exec goal.
-
+  Otherwise consider using the <<<exec>>> goal.

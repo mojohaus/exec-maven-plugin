@@ -1,9 +1,9 @@
  ------
- Example: Changing the classpathScope
+ Changing the classpath scope
  ------
  Jerome Lacoste
  ------
- 10 May 2008
+ 2008-10-10
  ------
 
  ~~ Copyright 2008 The Codehaus
@@ -25,19 +25,20 @@
 
 Changing the classpath scope when running Java programs
 
-  Whether you use the java mojo or the special support of Java for the exec mojo, you might want 
-  to change the scope of the plugin execution. This can be achieved using the *classpathScope* configuration element, e.g. for a test scope:
+  Whether you use the <<<java>>> goal or the special support of Java for the <<<exec>>> goal, you might want
+  to change the scope of the plugin execution. This can be achieved using the <<<classpathScope>>> configuration element,
+  e.g. for a <<<test>>> scope:
 
 -------------------
         <configuration>
-            ...
-            <classpathScope>test</classpathScope>
-            ...
+          ...
+          <classpathScope>test</classpathScope>
+          ...
         </configuration>
 -------------------
 
-  or, on the command line, 
+  or, on the command line,
 
 -----
-> mvn exec:exec [...] -Dexec.classpathScope="java"
+mvn exec:exec [...] -Dexec.classpathScope="java"
 -----

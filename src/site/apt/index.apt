@@ -3,7 +3,7 @@
  ------
  Jerome Lacoste
  ------
- 12 Oct 2005
+ 2008-10-10
  ------
 
  ~~ Copyright 2006 The Codehaus
@@ -22,31 +22,30 @@
 
  ~~ NOTE: For help with the syntax of this file, see:
  ~~ http://maven.apache.org/doxia/references/apt-format.html
- 
-Maven 2 Exec Plugin
 
- The plugin provides 2 goals to make execution of system and Java programs.
+Exec Maven Plugin
+
+ The plugin provides 2 goals to help execute system and Java programs.
 
 * Goals Overview
 
   General information about the goals.
 
-  * {{{exec-mojo.html}exec::exec}} execute programs and Java programs in a separate process.
+  * {{{exec-mojo.html}exec:exec}} execute programs and Java programs in a separate process.
 
-  * {{{java-mojo.html}exec::java}} execute Java programs in the same VM.
+  * {{{java-mojo.html}exec:java}} execute Java programs in the same VM.
 
 * Usage
 
-  Instructions on how to use the Plugin Name can be found on the {{{usage.html}usage page}}.
+  Instructions on how to use the Exec Plugin can be found on the {{{usage.html}usage page}}.
 
 * Examples
 
-  To provide you with better understanding of some usages of the Exec Name,
+  To provide you with better understanding of some usages of the Exec Plugin,
   you can take a look into the following examples:
 
-  * {{{examples/example-exec-for-java-programs.html} Running java programs with exec::exec}}
+  * {{{examples/example-exec-for-java-programs.html} Running Java programs with exec:exec}}
 
   * {{{examples/example-exec-or-java-change-classpath-scope.html} Changing the classpath scope when running Java programs}}
 
   * {{{examples/example-exec-using-plugin-dependencies.html} Using plugin dependencies with exec:exec}}
-
