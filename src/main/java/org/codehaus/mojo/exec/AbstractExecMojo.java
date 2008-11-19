@@ -109,6 +109,7 @@ public abstract class AbstractExecMojo extends AbstractMojo
         else if ( "runtime".equals( classpathScope ) )
         {
             artifacts.addAll( project.getRuntimeArtifacts() );
+            theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
         }
         else if ( "system".equals( classpathScope ) )
         {
