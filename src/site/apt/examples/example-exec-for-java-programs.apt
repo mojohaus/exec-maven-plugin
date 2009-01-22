@@ -27,6 +27,16 @@ Running Java programs with the exec goal
 
  Special treatment of some command line arguments and configuration parameters facilitate the running of Java programs in external processes.
 
+  Note: with the java mojo, there are some confusion caused by the almost duplication of functionality between the arguments and commandArgs configuration parameters.
+
+  *  If commandLineArgs is specified, it will be used as is, except for replacing %classpath with proper classpath using dependencies
+
+  * Otherwise if the property exec.args is specified, it will be used
+
+  * Otherwise the list of <argument> and <classpath> will be parsed and used
+
+  See {{http://jira.codehaus.org/browse/MEXEC-59}} for discussion.
+
 * Command line
 
  If specified as part of the <<<exec.args>>> argument, the special string <<<%classpath>>>
