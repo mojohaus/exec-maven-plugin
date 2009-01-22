@@ -377,25 +377,25 @@ public class ExecMojo
 
     String getExecutablePath()
     { 
-    	File execFile = new File( executable );
-    	if ( execFile.exists() )
+        File execFile = new File( executable );
+        if ( execFile.exists() )
         {
-        	getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
+            getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
             return execFile.getAbsolutePath();
         } 
-    	else
-    	{
-	        Toolchain tc = getToolchain();
-	        
-	        // if the file doesn't exist & toolchain is null, the exec is probably in the PATH...
-	        // we should probably also test for isFile and canExecute, but the second one is only
-	        // available in SDK 6.
-	        if ( tc != null ) 
-	        {
-	            getLog().info( "Toolchain in exec-maven-plugin: " + tc );	
-	            executable = tc.findTool( executable );                	            	            
-	        }	        
-    	}
+        else
+        {
+            Toolchain tc = getToolchain();
+            
+            // if the file doesn't exist & toolchain is null, the exec is probably in the PATH...
+            // we should probably also test for isFile and canExecute, but the second one is only
+            // available in SDK 6.
+            if ( tc != null ) 
+            {
+                getLog().info( "Toolchain in exec-maven-plugin: " + tc );    
+                executable = tc.findTool( executable );                                                
+            }            
+        }
 
         return executable;        
     }
