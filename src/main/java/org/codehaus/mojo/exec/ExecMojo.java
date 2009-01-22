@@ -125,6 +125,15 @@ public class ExecMojo
     private MavenSession session;
     
     /**
+     * Exit codes to be resolved as successful execution for non-compliant
+     * applications (applications not returning 0 for success).
+     * 
+     * @parameter
+     * @since 1.1.1
+     */
+    private List successCodes;
+    
+    /**
      * if exec.args expression is used when invokign the exec:exec goal,
      * any occurence of %classpath argument is replaced by the actual project dependency classpath.
      */ 
@@ -267,11 +276,11 @@ public class ExecMojo
 
         try
         {
-            int result = executeCommandLine( commandLine, stdout, stderr );
+            int resultCode = executeCommandLine( commandLine, stdout, stderr );
 
-            if ( result != 0 )
+            if ( isResultCodeAFailure( resultCode ) )
             {
-                throw new MojoExecutionException( "Result of " + commandLine + " execution is: '" + result + "'." );
+                throw new MojoExecutionException( "Result of " + commandLine + " execution is: '" + resultCode + "'." );
             }
         }
         catch ( CommandLineException e )
@@ -280,6 +289,19 @@ public class ExecMojo
         }
 
         registerSourceRoots();
+    }
+
+    boolean isResultCodeAFailure(int result) 
+    {
+        if (successCodes == null || successCodes.size() == 0)
+            return result != 0;
+        for (Iterator it = successCodes.iterator(); it.hasNext(); ) 
+        {
+            int code = Integer.parseInt((String) it.next());
+            if (code == result)
+                return false;
+        }
+        return true;
     }
 
     private Log getExecOutputLog()
@@ -455,6 +477,16 @@ public class ExecMojo
         return System.getProperty( key );
     }
 
+    public void setSuccessCodes(List list) 
+    {
+        this.successCodes = list;
+    }
+
+    public List getSuccessCodes() 
+    {
+        return successCodes;
+    }
+
     private Toolchain getToolchain()
     {
         Toolchain tc = null;
@@ -478,4 +510,5 @@ public class ExecMojo
         }
         return tc;
     }
+
 }

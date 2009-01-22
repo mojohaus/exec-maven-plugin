@@ -23,7 +23,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
-import org.codehaus.plexus.PlexusTestCase;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
@@ -347,6 +346,23 @@ public class ExecMojoTest
         checkMojo( "mvn --version" );
     }
 
+    public void testIsResultCodeAFailure() 
+    {
+        ExecMojo execMojo = new ExecMojo();
+        assertTrue(execMojo.isResultCodeAFailure(1));
+        assertFalse(execMojo.isResultCodeAFailure(0));
+
+        execMojo.setSuccessCodes(new ArrayList());
+        assertTrue(execMojo.isResultCodeAFailure(1));
+        assertFalse(execMojo.isResultCodeAFailure(0));
+
+        execMojo.setSuccessCodes(Arrays.asList(new String[] { "2", "5" }));
+        assertTrue(execMojo.isResultCodeAFailure(0));
+        assertTrue(execMojo.isResultCodeAFailure(10));
+        assertFalse(execMojo.isResultCodeAFailure(2));
+        assertFalse(execMojo.isResultCodeAFailure(5));
+    }
+    
     private void checkMojo( String expectedCommandLine )
     {
         assertEquals( 1, mojo.getAmountExecutedCommandLines() );
