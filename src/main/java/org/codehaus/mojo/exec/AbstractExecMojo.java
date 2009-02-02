@@ -72,7 +72,7 @@ public abstract class AbstractExecMojo extends AbstractMojo
     /**
      * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending
      * on your needs.
-     * @parameter expression="${exec.classpathScope}" default-value="compile"
+     * @parameter expression="${exec.classpathScope}" default-value="runtime"
      */
     protected String classpathScope;
 
