@@ -276,6 +276,8 @@ public class ExecMojo
 
         try
         {
+            getLog().debug( "Executing command line: " + commandLine );
+            
             int resultCode = executeCommandLine( commandLine, stdout, stderr );
 
             if ( isResultCodeAFailure( resultCode ) )
