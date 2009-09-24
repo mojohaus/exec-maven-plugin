@@ -245,7 +245,7 @@ public class ExecJavaMojoTest
         finally
         {
             // see testUncooperativeThread() for explaination
-            Thread.sleep( 150 ); // time seems about right
+            Thread.sleep( 300 ); // time seems about right
             System.setOut( out );
         }
 
