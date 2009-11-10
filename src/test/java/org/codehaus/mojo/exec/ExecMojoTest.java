@@ -23,14 +23,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
-import org.codehaus.plexus.util.cli.CommandLineException;
-import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import org.codehaus.plexus.util.StringOutputStream;
 import java.util.ArrayList;
@@ -38,6 +36,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.Executor;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.apache.maven.monitor.logging.DefaultLog;
@@ -63,13 +64,13 @@ public class ExecMojoTest
 
         public Map systemProperties = new HashMap();
 
-        protected int executeCommandLine( Commandline commandLine, StreamConsumer stream1, StreamConsumer stream2 )
-            throws CommandLineException
+        protected int executeCommandLine( Executor exec, CommandLine commandLine, Map enviro, OutputStream out, OutputStream err )
+            throws IOException, ExecuteException
         {
             commandLines.add( commandLine );
             if ( failureMsg != null )
             {
-                throw new CommandLineException( failureMsg );
+                throw new ExecuteException( failureMsg, executeResult );
             }
             return executeResult;
         }
@@ -83,8 +84,8 @@ public class ExecMojoTest
             return commandLines.size();
         }
 
-        Commandline getExecutedCommandline( int index ) {
-            return ((Commandline) commandLines.get( index ));
+        CommandLine getExecutedCommandline( int index ) {
+            return ((CommandLine) commandLines.get( index ));
         }
     }
 
@@ -366,12 +367,12 @@ public class ExecMojoTest
     private void checkMojo( String expectedCommandLine )
     {
         assertEquals( 1, mojo.getAmountExecutedCommandLines() );
-        Commandline commandline = mojo.getExecutedCommandline( 0 );
+        CommandLine commandline = mojo.getExecutedCommandline( 0 );
         // do NOT depend on Commandline toString()
         assertEquals(expectedCommandLine, getCommandLineAsString( commandline ));
     }
 
-    private String getCommandLineAsString( Commandline commandline ) {
+    private String getCommandLineAsString( CommandLine commandline ) {
         String result = commandline.getExecutable();
         String[] arguments = commandline.getArguments();
         for (int i = 0; i < arguments.length; i++) 

@@ -15,6 +15,7 @@ package org.codehaus.mojo.exec;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.apache.commons.exec.ExecuteException;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
@@ -26,13 +27,10 @@ import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-import org.codehaus.plexus.util.cli.CommandLineException;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
@@ -43,6 +41,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.PumpStreamHandler;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -245,9 +247,8 @@ public class ExecMojo
                 }
             }
 
-        Commandline commandLine = new Commandline();
-
-        commandLine.setExecutable( getExecutablePath() );
+        CommandLine commandLine = new CommandLine( getExecutablePath() );
+        Executor exec = new DefaultExecutor();
 
         String [] args = new String[ commandArguments.size() ];
         for ( int i = 0; i < commandArguments.size(); i++ )
@@ -273,7 +274,9 @@ public class ExecMojo
                 }
             }
 
-        commandLine.setWorkingDirectory( workingDirectory.getAbsolutePath() );
+        exec.setWorkingDirectory( workingDirectory );
+
+        Map enviro = new HashMap();
 
         if ( environmentVariables != null )
         {
@@ -282,40 +285,48 @@ public class ExecMojo
             {
                     String key = (String) iter.next();
                 String value = (String) environmentVariables.get( key );
-                commandLine.addEnvironment( key, value );
+                enviro.put(key, value);
                 }
             }
 
-            final Log outputLog = getExecOutputLog();
-
-        StreamConsumer stdout = new StreamConsumer()
-        {
-            public void consumeLine( String line )
-            {
-                outputLog.info( line );
-                    }
-                };
-
-        StreamConsumer stderr = new StreamConsumer()
-        {
-            public void consumeLine( String line )
-            {
-                outputLog.info( line );
-                    }
-                };
+// this code ensures the output gets logged vai maven logging, but at the same time prevents
+// partial line output, like input prompts.
+//        final Log outputLog = getExecOutputLog();
+//        LogOutputStream stdout = new LogOutputStream()
+//        {
+//            protected void processLine( String line, int level )
+//            {
+//                outputLog.info( line );
+//            }
+//        };
+//
+//        LogOutputStream stderr = new LogOutputStream()
+//        {
+//            protected void processLine( String line, int level )
+//            {
+//                outputLog.info( line );
+//            }
+//        };
+        OutputStream stdout = System.out;
+        OutputStream stderr = System.err;
 
         try
         {
             getLog().debug( "Executing command line: " + commandLine );
 
-            int resultCode = executeCommandLine( commandLine, stdout, stderr );
+            int resultCode = executeCommandLine( exec, commandLine,  enviro, stdout, stderr );
 
             if ( isResultCodeAFailure( resultCode ) )
             {
                 throw new MojoExecutionException( "Result of " + commandLine + " execution is: '" + resultCode + "'." );
                 }
             }
-        catch ( CommandLineException e )
+        catch ( ExecuteException e )
+        {
+            throw new MojoExecutionException( "Command execution failed.", e );
+
+        }
+        catch ( IOException e )
         {
             throw new MojoExecutionException( "Command execution failed.", e );
         }
@@ -484,10 +495,10 @@ public class ExecMojo
 // methods used for tests purposes - allow mocking and simulate automatic setters
 //
 
-    protected int executeCommandLine( Commandline commandLine, StreamConsumer stream1, StreamConsumer stream2 )
-        throws CommandLineException
+    protected int executeCommandLine( Executor exec, CommandLine commandLine, Map enviro, OutputStream out, OutputStream err ) throws ExecuteException, IOException
     {
-        return CommandLineUtils.executeCommandLine( commandLine, stream1, stream2 );
+        exec.setStreamHandler(new PumpStreamHandler(out, err, System.in));
+        return exec.execute(commandLine, enviro);
     }
 
     void setExecutable( String executable )
