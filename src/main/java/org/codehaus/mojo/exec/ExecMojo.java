@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -48,6 +49,7 @@ import org.apache.commons.exec.PumpStreamHandler;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 
 /**
@@ -255,14 +257,14 @@ public class ExecMojo
         {
             args[i] = (String) commandArguments.get( i );
 
-            }
+        }
 
-        commandLine.addArguments( args );
+        commandLine.addArguments( args, false );
 
         if ( workingDirectory == null )
         {
                 workingDirectory = basedir;
-            }
+        }
 
         if ( !workingDirectory.exists() )
         {
@@ -271,23 +273,32 @@ public class ExecMojo
             {
                     throw new MojoExecutionException(
                     "Could not make working directory: '" + workingDirectory.getAbsolutePath() + "'" );
-                }
             }
+        }
 
         exec.setWorkingDirectory( workingDirectory );
 
         Map enviro = new HashMap();
+        try
+        {
+            Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
+            enviro.putAll( systemEnvVars );
+        }
+        catch ( IOException x )
+        {
+            getLog().error( "Could not assign default system enviroment variables.", x );
+        }
 
         if ( environmentVariables != null )
         {
-                Iterator iter = environmentVariables.keySet().iterator();
+            Iterator iter = environmentVariables.keySet().iterator();
             while ( iter.hasNext() )
             {
-                    String key = (String) iter.next();
+                String key = (String) iter.next();
                 String value = (String) environmentVariables.get( key );
                 enviro.put(key, value);
-                }
             }
+        }
 
 // this code ensures the output gets logged vai maven logging, but at the same time prevents
 // partial line output, like input prompts.
@@ -319,8 +330,8 @@ public class ExecMojo
             if ( isResultCodeAFailure( resultCode ) )
             {
                 throw new MojoExecutionException( "Result of " + commandLine + " execution is: '" + resultCode + "'." );
-                }
             }
+        }
         catch ( ExecuteException e )
         {
             throw new MojoExecutionException( "Command execution failed.", e );
