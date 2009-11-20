@@ -39,6 +39,7 @@ import java.util.Map;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.OS;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.apache.maven.monitor.logging.DefaultLog;
@@ -267,25 +268,54 @@ public class ExecMojoTest
         } );
     }
 
-    // MEXEC-12
+    // MEXEC-12, MEXEC-72
     public void testGetExecutablePath() throws IOException
     {
+
         ExecMojo realMojo = new ExecMojo();
 
-        String myJavaPath = "target" + File.separator + "java";
+        File workdir = new File( System.getProperty( "user.dir" ) );
+        Map enviro = new HashMap();
+
+        String myJavaPath = "target" + File.separator + "javax";
         File f = new File( myJavaPath );
         assertTrue( "file created...", f.createNewFile() ); 
         assertTrue( "file exists...", f.exists() ); 
 
         realMojo.setExecutable( myJavaPath );
 
+        CommandLine cmd = realMojo.getExecutablePath(enviro, workdir);
         assertTrue( "File exists so path is absolute",
-                    realMojo.getExecutablePath().startsWith( System.getProperty( "user.dir" ) ) );
+                    cmd.getExecutable().startsWith( System.getProperty( "user.dir" ) ) );
 
         f.delete();
         assertFalse( "file deleted...", f.exists() ); 
+        cmd = realMojo.getExecutablePath(enviro, workdir);
         assertEquals( "File doesn't exist. Let the system find it (in that PATH?)",
-                    myJavaPath, realMojo.getExecutablePath() );
+                    myJavaPath, cmd.getExecutable() );
+
+
+        if ( OS.isFamilyWindows() ) //how to make this part of the test run on other platforms as well??
+        {
+
+            myJavaPath = "target" + File.separator + "javax.bat";
+            f = new File( myJavaPath );
+            assertTrue( "file created...", f.createNewFile() );
+            assertTrue( "file exists...", f.exists() );
+
+
+            realMojo.setExecutable( "javax.bat" );
+            cmd = realMojo.getExecutablePath( enviro, workdir );
+            assertTrue( "is bat file on windows, execute using cmd.",
+                    cmd.getExecutable().equals( "cmd" ) );
+
+            enviro.put( "PATH", workdir.getAbsolutePath() + File.separator + "target" );
+            cmd = realMojo.getExecutablePath( enviro, workdir );
+            assertTrue( "is bat file on windows' PATH, execute using cmd.",
+                    cmd.getExecutable().equals( "cmd" ) );
+            f.delete();
+            assertFalse( "file deleted...", f.exists() );
+        }
     }
 
     public void testRunFailure()
@@ -373,12 +403,25 @@ public class ExecMojoTest
     }
 
     private String getCommandLineAsString( CommandLine commandline ) {
+        //for the sake of the test comparisons, cut out the eventual
+        //cmd /c *.bat conversion
         String result = commandline.getExecutable();
+        boolean isCmd = false;
+        if (OS.isFamilyWindows() && result.equals("cmd")) {
+            result = "";
+            isCmd = true;
+        }
         String[] arguments = commandline.getArguments();
         for (int i = 0; i < arguments.length; i++) 
         {
             String arg = arguments[i];
-            result += " " + arg;
+            if (isCmd && i == 0 && "/c".equals(arg)) {
+                continue;
+        }
+            if (isCmd && i == 1 && arg.endsWith( ".bat")) {
+                arg = arg.substring( 0, arg.length() - ".bat".length());
+            }
+            result += (result.length() == 0 ? "" : " ") + arg;
         }
         return result;
     }

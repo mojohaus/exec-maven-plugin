@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -49,6 +50,8 @@ import org.apache.commons.exec.PumpStreamHandler;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import org.apache.commons.exec.OS;
+import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 
@@ -245,38 +248,9 @@ public class ExecMojo
                             commandArguments.add(arg);
                         }
                     }
-
                 }
             }
 
-        CommandLine commandLine = new CommandLine( getExecutablePath() );
-        Executor exec = new DefaultExecutor();
-
-        String [] args = new String[ commandArguments.size() ];
-        for ( int i = 0; i < commandArguments.size(); i++ )
-        {
-            args[i] = (String) commandArguments.get( i );
-
-        }
-
-        commandLine.addArguments( args, false );
-
-        if ( workingDirectory == null )
-        {
-                workingDirectory = basedir;
-        }
-
-        if ( !workingDirectory.exists() )
-        {
-            getLog().debug( "Making working directory '" + workingDirectory.getAbsolutePath() + "'." );
-            if ( !workingDirectory.mkdirs() )
-            {
-                    throw new MojoExecutionException(
-                    "Could not make working directory: '" + workingDirectory.getAbsolutePath() + "'" );
-            }
-        }
-
-        exec.setWorkingDirectory( workingDirectory );
 
         Map enviro = new HashMap();
         try
@@ -297,8 +271,38 @@ public class ExecMojo
                 String key = (String) iter.next();
                 String value = (String) environmentVariables.get( key );
                 enviro.put(key, value);
+        }
+        }
+
+        if ( workingDirectory == null )
+        {
+                workingDirectory = basedir;
+        }
+
+        if ( !workingDirectory.exists() )
+        {
+            getLog().debug( "Making working directory '" + workingDirectory.getAbsolutePath() + "'." );
+            if ( !workingDirectory.mkdirs() )
+            {
+                    throw new MojoExecutionException(
+                    "Could not make working directory: '" + workingDirectory.getAbsolutePath() + "'" );
             }
         }
+
+
+        CommandLine commandLine = getExecutablePath( enviro, workingDirectory );
+
+        Executor exec = new DefaultExecutor();
+
+        String [] args = new String[ commandArguments.size() ];
+        for ( int i = 0; i < commandArguments.size(); i++ )
+        {
+            args[i] = (String) commandArguments.get( i );
+            }
+
+        commandLine.addArguments( args, false );
+
+        exec.setWorkingDirectory( workingDirectory );
 
 // this code ensures the output gets logged vai maven logging, but at the same time prevents
 // partial line output, like input prompts.
@@ -472,13 +476,14 @@ public class ExecMojo
         return filteredArtifacts;
     }
 
-    String getExecutablePath()
+    CommandLine getExecutablePath( Map enviro, File dir )
     {
         File execFile = new File( executable );
+        String exec = null;
         if ( execFile.exists() )
         {
             getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
-            return execFile.getAbsolutePath();
+            exec = execFile.getAbsolutePath();
         }
         else
         {
@@ -490,12 +495,65 @@ public class ExecMojo
             if ( tc != null )
             {
                 getLog().info( "Toolchain in exec-maven-plugin: " + tc );
-                executable = tc.findTool( executable );
+                exec = tc.findTool( executable );
+            }
+            else
+            {
+                if ( OS.isFamilyWindows() )
+                {
+                    String ex = executable.indexOf( "." ) < 0 ? executable + ".bat" : executable;
+                    File f = new File( dir, ex );
+                    if ( f.exists() )
+                    {
+                        exec = ex;
+        }
+                    else
+                    {
+                        //now try to figure the path from PATH, PATHEXT env vars
+                        //if bat file, wrap in cmd /c
+                        String path = ( String ) enviro.get( "PATH" );
+                        if ( path != null )
+                        {
+                            String[] elems = StringUtils.split( path, File.pathSeparator );
+                            for ( int i = 0; i < elems.length; i++ )
+                            {
+                                f = new File( new File( elems[i] ), ex );
+                                if ( f.exists() )
+                                {
+                                    exec = ex;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        return executable;
+        if ( exec == null )
+        {
+            exec = executable;
     }
+
+        CommandLine toRet;
+        if ( OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".bat") )
+        {
+             toRet = new CommandLine( "cmd" );
+             toRet.addArgument( "/c" );
+             toRet.addArgument( exec );
+        }
+        else
+        {
+             toRet = new CommandLine(exec);
+        }
+
+        return toRet;
+    }
+
+//    private String[] DEFAULT_PATH_EXT = new String[] {
+//.COM; .EXE; .BAT; .CMD; .VBS; .VBE; .JS; .JSE; .WSF; .WSH
+//        ".COM", ".EXE", ".BAT", ".CMD"
+//    };
 
     private static boolean isEmpty( String string )
     {
