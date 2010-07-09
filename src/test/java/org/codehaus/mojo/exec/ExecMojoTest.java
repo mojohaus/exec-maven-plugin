@@ -33,6 +33,7 @@ import java.io.PrintStream;
 import org.codehaus.plexus.util.StringOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -392,6 +393,17 @@ public class ExecMojoTest
         assertTrue(execMojo.isResultCodeAFailure(10));
         assertFalse(execMojo.isResultCodeAFailure(2));
         assertFalse(execMojo.isResultCodeAFailure(5));
+    }
+    
+    // MEXEC-81
+    public void testParseCommandlineOSWin() throws Exception 
+    {
+        ExecMojo execMojo = new ExecMojo();
+        final String javaHome = "C:\\Java\\jdk1.5.0_15";
+        // can only be set by expression or plugin-configuration
+        setVariableValueToObject( execMojo, "commandlineArgs", javaHome );
+        String[] args = execMojo.parseCommandlineArgs();
+        assertEquals( javaHome, args[0] );
     }
     
     private void checkMojo( String expectedCommandLine )

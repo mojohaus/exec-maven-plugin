@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
  * This class is used for unifying functionality between the 2 mojo exec plugins ('java' and 'exec').
@@ -140,87 +141,16 @@ public abstract class AbstractExecMojo extends AbstractMojo
         {
             return null;
         }
-
-        boolean inString = false;
-        String arguments = commandlineArgs.trim();
-
-        List argumentList = new LinkedList();
-
-        int chr = 0;
-        char curChar;
-        StringBuffer arg = new StringBuffer();
-        while ( chr < arguments.length() )
-        {
-            curChar = arguments.charAt( chr );
-            if ( curChar == ESCAPE_CHAR )
+        else {
+            try
             {
-                // A char is escaped, replace and skip one char
-                if ( arguments.length() == chr + 1 )
-                {
-                    // ESCAPE_CHAR is the last character... this should be an error (?)
-                    // char is just ignored by now
-                    getLog().warn( ESCAPE_CHAR 
-                        + " was the last character in your command line arguments. Verify your parameters." );
-                }
-                else
-                {
-                    // In a string only STRING_WRAPPER is escaped
-                    if ( !inString || arguments.charAt( chr + 1 ) == STRING_WRAPPER )
-                    {
-                        chr++;
-                    }
-
-                    arg.append( arguments.charAt( chr ) );
-                }
+                return CommandLineUtils.translateCommandline( commandlineArgs );
             }
-            else if ( curChar == PARAMETER_DELIMITER && !inString )
+            catch ( Exception e )
             {
-                // Next parameter begins here
-                argumentList.add( arg.toString() );
-                arg.delete( 0, arg.length() );
+                throw new MojoExecutionException( e.getMessage() );
             }
-            else if ( curChar == STRING_WRAPPER )
-            {
-                // Entering or leaving a string
-                inString = !inString;
-            }
-            else
-            {
-                // Append this char to the current parameter
-                arg.append( curChar );
-            }
-
-            chr++;
         }
-        if ( inString )
-        {
-            // Error string not terminated
-            throw new MojoExecutionException( "args contains not properly formatted string" );
-        }
-        else
-        {
-            // Append last parameter
-            argumentList.add( arg.toString() );
-        }
-
-        Iterator it = argumentList.listIterator();
-        String[] result = new String[argumentList.size()];
-        int index = 0;
-        while ( it.hasNext() )
-        {
-            result[index] = (String) it.next();
-            index++;
-        }
-
-        getLog().debug( "Args:" );
-        it = argumentList.listIterator();
-        while ( it.hasNext() )
-        {
-            getLog().debug( " <" + (String) it.next() + ">" );
-        }
-        getLog().debug( " parsed from <" + commandlineArgs + ">" );
-
-        return result;
     }
 
     /**
