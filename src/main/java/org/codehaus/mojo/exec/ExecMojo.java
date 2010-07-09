@@ -15,7 +15,30 @@ package org.codehaus.mojo.exec;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.OS;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
@@ -25,32 +48,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.StringTokenizer;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.Executor;
-import org.apache.commons.exec.PumpStreamHandler;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
-import org.apache.commons.exec.OS;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
@@ -179,7 +177,7 @@ public class ExecMojo
 
         String argsProp = getSystemProperty( "exec.args" );
 
-            List commandArguments = new ArrayList();
+        List commandArguments = new ArrayList();
 
         if ( hasCommandlineArgs() )
         {
@@ -209,11 +207,15 @@ public class ExecMojo
         {
             getLog().debug( "got arguments from system properties: " + argsProp );
 
-            StringTokenizer strtok = new StringTokenizer( argsProp, " " );
-            while ( strtok.hasMoreTokens() )
+            try
             {
-                commandArguments.add( strtok.nextToken() );
-                }
+                String[] args = CommandLineUtils.translateCommandline( argsProp );
+                commandArguments.addAll( Arrays.asList( args ) );
+            }
+            catch ( Exception e )
+            {
+                throw new MojoExecutionException("Couldn't parse systemproperty 'exec.args'");
+            }
         }
         else
         {
@@ -298,7 +300,7 @@ public class ExecMojo
         for ( int i = 0; i < commandArguments.size(); i++ )
         {
             args[i] = (String) commandArguments.get( i );
-            }
+        }
 
         commandLine.addArguments( args, false );
 
