@@ -239,6 +239,11 @@ public class ExecJavaMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        if ( isSkip() )
+        {
+            getLog().info( "skipping execute as per configuraion" );
+            return;
+        }
         if ( killAfter != -1 )
         {
             getLog().warn( "Warning: killAfter is now deprecated. Do you need it ? Please comment on MEXEC-6." );

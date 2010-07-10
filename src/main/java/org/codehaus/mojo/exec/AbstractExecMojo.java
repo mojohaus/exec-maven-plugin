@@ -78,6 +78,14 @@ public abstract class AbstractExecMojo extends AbstractMojo
      */
     protected String classpathScope;
 
+	/**
+	 * Skip the execution.
+	 *
+	 * @parameter expression="${skip}" default-value="false"
+	 * @since 1.0.1
+	 */
+	private boolean skip;
+
     /** @see #parseCommandlineArgs */
     private static final char PARAMETER_DELIMITER = ' ';
 
@@ -179,4 +187,8 @@ public abstract class AbstractExecMojo extends AbstractMojo
         }
     }
 
+    public boolean isSkip()
+    {
+        return skip;
+    }
 }
