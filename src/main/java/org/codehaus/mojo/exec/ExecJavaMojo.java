@@ -562,7 +562,7 @@ public class ExecJavaMojo
                 Artifact classPathElement = (Artifact) iter.next();
                 getLog().debug(
                     "Adding plugin dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
-                path.add( classPathElement.getFile().toURL() );
+                path.add( classPathElement.getFile().toURI().toURL() );
             }
         }
         catch ( MalformedURLException e )
@@ -595,7 +595,7 @@ public class ExecJavaMojo
 
                 for ( Iterator it = theClasspathFiles.iterator(); it.hasNext(); )
                 {
-                     URL url = ( (File) it.next() ).toURL();
+                     URL url = ( (File) it.next() ).toURI().toURL();
                      getLog().debug( "Adding to classpath : " + url );
                      path.add( url );
                 }
@@ -606,7 +606,7 @@ public class ExecJavaMojo
                     Artifact classPathElement = (Artifact) iter.next();
                     getLog().debug(
                         "Adding project dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
-                    path.add( classPathElement.getFile().toURL() );
+                    path.add( classPathElement.getFile().toURI().toURL() );
                 }
 
             }
