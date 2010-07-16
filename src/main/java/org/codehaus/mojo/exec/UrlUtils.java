@@ -89,7 +89,7 @@ public class UrlUtils
         catch ( UnsupportedEncodingException e )
         {
             // should not happen as UTF-8 must be present
-            throw new RuntimeException(e);
+            throw new RuntimeException( e );
         }
     }
 }
