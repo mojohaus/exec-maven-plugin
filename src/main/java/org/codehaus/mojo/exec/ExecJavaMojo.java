@@ -370,22 +370,14 @@ public class ExecJavaMojo
             {
                 return; //harmless
             }
-            boolean doLog = false;
             synchronized ( this )
             {
                 if ( uncaughtException == null ) // only remember the first one
                 {
                     uncaughtException = throwable; // will be reported eventually
                 }
-                else
-                {
-                    doLog = true;
-                }
             }
-            if ( doLog )
-            {
-                getLog().warn( "an additional exception was thrown", throwable );
-            }
+            getLog().warn( throwable );
         }
     }
 
