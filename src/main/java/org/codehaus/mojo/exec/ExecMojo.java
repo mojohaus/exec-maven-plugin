@@ -105,7 +105,7 @@ public class ExecMojo
     private List arguments;
 
     /**
-     * @parameter expression="${basedir}"
+     * @parameter default-value="${basedir}"
      * @required
      * @readonly
      * @since 1.0
@@ -123,7 +123,7 @@ public class ExecMojo
     /**
      * The current build session instance. This is used for toolchain manager API calls.
      * 
-     * @parameter expression="${session}"
+     * @parameter default-value="${session}"
      * @required
      * @readonly
      */

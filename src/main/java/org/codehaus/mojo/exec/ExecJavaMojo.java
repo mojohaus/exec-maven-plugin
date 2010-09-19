@@ -74,7 +74,7 @@ public class ExecJavaMojo
     private ArtifactMetadataSource metadataSource;
 
     /**
-     * @parameter expression="${localRepository}"
+     * @parameter default-value="${localRepository}"
      * @required
      * @readonly
      * @since 1.0
@@ -82,7 +82,7 @@ public class ExecJavaMojo
     private ArtifactRepository localRepository;
 
     /**
-     * @parameter expression="${project.remoteArtifactRepositories}"
+     * @parameter default-value="${project.remoteArtifactRepositories}"
      * @required
      * @readonly
      * @since 1.1-beta-1
@@ -96,7 +96,7 @@ public class ExecJavaMojo
     private MavenProjectBuilder projectBuilder;
 
     /**
-     * @parameter expression="${plugin.artifacts}"
+     * @parameter default-value="${plugin.artifacts}"
      * @readonly
      * @since 1.1-beta-1
      */

@@ -40,7 +40,7 @@ public abstract class AbstractExecMojo
     /**
      * The enclosing project.
      * 
-     * @parameter expression="${project}"
+     * @parameter default-value="${project}"
      * @required
      * @readonly
      */
