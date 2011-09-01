@@ -33,6 +33,7 @@ import org.apache.maven.project.artifact.MavenMetadataSource;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -283,12 +284,16 @@ public class ExecJavaMojo
                 {
                     Method main = Thread.currentThread().getContextClassLoader().loadClass( mainClass )
                         .getMethod( "main", new Class[]{ String[].class } );
-                    if ( ! main.isAccessible() )
+                    if ( !main.isAccessible() )
                     {
                         getLog().debug( "Setting accessibility to true in order to invoke main()." );
                         main.setAccessible( true );
                     }
-                    main.invoke( main, new Object[]{arguments} );
+                    if ( !Modifier.isStatic( main.getModifiers() ) )
+                    {
+                        throw new MojoExecutionException( "Can't call main(String[])-method, because it is not static." );
+                    }
+                    main.invoke( null, new Object[] { arguments } );
                 }
                 catch ( NoSuchMethodException e )
                 {   // just pass it on
