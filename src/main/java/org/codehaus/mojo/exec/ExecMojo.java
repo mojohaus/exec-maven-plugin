@@ -307,6 +307,8 @@ public class ExecMojo
 
             exec.setWorkingDirectory( workingDirectory );
 
+            fillSuccessCodes(exec);
+            
             // this code ensures the output gets logged vai maven logging, but at the same time prevents
             // partial line output, like input prompts.
             // final Log outputLog = getExecOutputLog();
@@ -355,6 +357,19 @@ public class ExecMojo
         catch ( IOException e )
         {
             throw new MojoExecutionException( "I/O Error", e );
+        }
+    }
+
+    private void fillSuccessCodes( Executor exec )
+    {
+        if ( successCodes != null && !successCodes.isEmpty() )
+        {
+            int[] exitValues = new int[successCodes.size()];
+            for ( int i = 0; i < exitValues.length; i++ )
+            {
+                exitValues[i] = Integer.parseInt( (String) successCodes.get( i ) );
+            }
+            exec.setExitValues( exitValues );
         }
     }
 
