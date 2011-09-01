@@ -136,7 +136,7 @@ public class ExecMojo
      * @parameter
      * @since 1.1.1
      */
-    private List successCodes;
+    private int[] successCodes;
 
     /**
      * If set to true the classpath and the main class will be written to a MANIFEST.MF file and wrapped into a jar.
@@ -362,27 +362,21 @@ public class ExecMojo
 
     private void fillSuccessCodes( Executor exec )
     {
-        if ( successCodes != null && !successCodes.isEmpty() )
+        if ( successCodes != null && successCodes.length > 0 )
         {
-            int[] exitValues = new int[successCodes.size()];
-            for ( int i = 0; i < exitValues.length; i++ )
-            {
-                exitValues[i] = Integer.parseInt( (String) successCodes.get( i ) );
-            }
-            exec.setExitValues( exitValues );
+            exec.setExitValues( successCodes );
         }
     }
 
     boolean isResultCodeAFailure( int result )
     {
-        if ( successCodes == null || successCodes.size() == 0 ) 
+        if ( successCodes == null || successCodes.length == 0 ) 
         {
             return result != 0;
         }
-        for ( Iterator it = successCodes.iterator(); it.hasNext(); )
+        for ( int index = 0; index < successCodes.length; index++ )
         {
-            int code = Integer.parseInt( (String) it.next() );
-            if ( code == result ) 
+            if ( successCodes[index] == result ) 
             {
                 return false;
             }
@@ -644,12 +638,16 @@ public class ExecMojo
         return System.getProperty( key );
     }
 
-    public void setSuccessCodes( List list )
+    public void setSuccessCodes( Integer[] list )
     {
-        this.successCodes = list;
+        this.successCodes = new int[list.length];
+        for ( int index = 0; index < list.length; index++ )
+        {
+            successCodes[index] = list[index].intValue();
+        }
     }
 
-    public List getSuccessCodes()
+    public int[] getSuccessCodes()
     {
         return successCodes;
     }

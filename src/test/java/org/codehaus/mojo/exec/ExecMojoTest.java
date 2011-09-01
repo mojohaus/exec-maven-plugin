@@ -384,11 +384,11 @@ public class ExecMojoTest
         assertTrue(execMojo.isResultCodeAFailure(1));
         assertFalse(execMojo.isResultCodeAFailure(0));
 
-        execMojo.setSuccessCodes(new ArrayList());
+        execMojo.setSuccessCodes(new Integer[0]);
         assertTrue(execMojo.isResultCodeAFailure(1));
         assertFalse(execMojo.isResultCodeAFailure(0));
 
-        execMojo.setSuccessCodes(Arrays.asList(new String[] { "2", "5" }));
+        execMojo.setSuccessCodes(new Integer[] { Integer.valueOf("2"), Integer.valueOf( "5" ) });
         assertTrue(execMojo.isResultCodeAFailure(0));
         assertTrue(execMojo.isResultCodeAFailure(10));
         assertFalse(execMojo.isResultCodeAFailure(2));
