@@ -69,8 +69,20 @@ public class ExecMojo
     extends AbstractExecMojo
 {
     /**
+     * <p>
      * The executable. Can be a full path or a the name executable. In the latter case, the executable must be in the
      * PATH for the execution to work.
+     * </p>
+     * <p>
+     * The plugin will search for the executable in the following order:
+     * <ol>
+     *  <li>relative to the root of the project</li>
+     *  <li>as toolchain executable</li>
+     *  <li>relative to the working directory (Windows only)</li>
+     *  <li>relative to the directories specified in the system property PATH (Windows Only)</li>
+     * </ol>
+     * Otherwise use the executable as is.
+     * </p>
      * 
      * @parameter expression="${exec.executable}"
      * @required
@@ -506,12 +518,19 @@ public class ExecMojo
     {
         File execFile = new File( executable );
         String exec = null;
-        if ( execFile.exists() )
+        if ( execFile.isFile() )
         {
-            getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
-            exec = execFile.getAbsolutePath();
+            if ( execFile.canExecute() )
+            {
+                getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
+                exec = execFile.getAbsolutePath();
+            }
+            else {
+                getLog().debug( "Can't execute " + execFile.getAbsolutePath() + "; continue to search" );
+            }
         }
-        else
+        
+        if ( exec == null )
         {
             Toolchain tc = getToolchain();
 
@@ -529,11 +548,18 @@ public class ExecMojo
                 {
                     String ex = executable.indexOf( "." ) < 0 ? executable + ".bat" : executable;
                     File f = new File( dir, ex );
-                    if ( f.exists() )
+                    if ( f.isFile() )
                     {
-                        exec = ex;
+                        if ( f.canExecute() )
+                        {
+                            exec = ex;
+                        }
+                        else {
+                            getLog().debug( "Can't execute " + f.getAbsolutePath() + "; continue to search" );
+                        }
                     }
-                    else
+                    
+                    if ( exec == null )
                     {
                         // now try to figure the path from PATH, PATHEXT env vars
                         // if bat file, wrap in cmd /c
@@ -544,10 +570,17 @@ public class ExecMojo
                             for ( int i = 0; i < elems.length; i++ )
                             {
                                 f = new File( new File( elems[i] ), ex );
-                                if ( f.exists() )
+                                if ( f.isFile() )
                                 {
-                                    exec = ex;
-                                    break;
+                                    if ( f.canExecute() )
+                                    {
+                                        exec = ex;
+                                        break;
+                                    }
+                                    else 
+                                    {
+                                        getLog().debug( "Can't execute " + f.getAbsolutePath() + "; continue to search" );
+                                    }
                                 }
                             }
                         }
