@@ -520,14 +520,8 @@ public class ExecMojo
         String exec = null;
         if ( execFile.isFile() )
         {
-            if ( execFile.canExecute() )
-            {
-                getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
-                exec = execFile.getAbsolutePath();
-            }
-            else {
-                getLog().debug( "Can't execute " + execFile.getAbsolutePath() + "; continue to search" );
-            }
+            getLog().debug( "Toolchains are ignored, 'executable' parameter is set to " + executable );
+            exec = execFile.getAbsolutePath();
         }
         
         if ( exec == null )
@@ -550,13 +544,7 @@ public class ExecMojo
                     File f = new File( dir, ex );
                     if ( f.isFile() )
                     {
-                        if ( f.canExecute() )
-                        {
-                            exec = ex;
-                        }
-                        else {
-                            getLog().debug( "Can't execute " + f.getAbsolutePath() + "; continue to search" );
-                        }
+                        exec = ex;
                     }
                     
                     if ( exec == null )
@@ -572,15 +560,8 @@ public class ExecMojo
                                 f = new File( new File( elems[i] ), ex );
                                 if ( f.isFile() )
                                 {
-                                    if ( f.canExecute() )
-                                    {
-                                        exec = ex;
-                                        break;
-                                    }
-                                    else 
-                                    {
-                                        getLog().debug( "Can't execute " + f.getAbsolutePath() + "; continue to search" );
-                                    }
+                                    exec = ex;
+                                    break;
                                 }
                             }
                         }

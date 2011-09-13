@@ -157,6 +157,25 @@
     <build>
         <plugins>
             <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>animal-sniffer-maven-plugin</artifactId>
+              <version>1.7</version>
+              <executions>
+                <execution>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <signature>
+                  <groupId>org.codehaus.mojo.signature</groupId>
+                  <artifactId>java14</artifactId>
+                  <version>1.0</version>
+                </signature>
+              </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
                 <configuration>
