@@ -18,4 +18,4 @@
  */
 File log = new File(basedir, 'build.log')
 assert log.exists()
-assert log.getText().contains( "java -classpath ${new File(basedir, 'target/classes').getCanonicalPath()} Main")
+assert log.getText().contains( "java -classpath ${new File(basedir, 'target/classes').getAbsolutePath()} Main")
