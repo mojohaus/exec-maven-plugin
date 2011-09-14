@@ -212,7 +212,7 @@ public class ExecMojo
                     }
                 }
             }
-            else if ( !isEmpty( argsProp ) )
+            else if ( !StringUtils.isEmpty( argsProp ) )
             {
                 getLog().debug( "got arguments from system properties: " + argsProp );
 
@@ -594,11 +594,6 @@ public class ExecMojo
     // .COM; .EXE; .BAT; .CMD; .VBS; .VBE; .JS; .JSE; .WSF; .WSH
     // ".COM", ".EXE", ".BAT", ".CMD"
     // };
-
-    private static boolean isEmpty( String string )
-    {
-        return string == null || string.length() == 0;
-    }
 
     //
     // methods used for tests purposes - allow mocking and simulate automatic setters
