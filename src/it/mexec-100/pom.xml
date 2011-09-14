@@ -13,9 +13,9 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>@project.version@</version>
         <configuration>
-          <executable>mvn</executable>
+          <executable>java</executable>
           <arguments>
-            <argument>-v</argument>
+            <argument>-version</argument>
             <argument>-Dsome.file="${project.build.directory}/Name With Spaces.exe"</argument>
           </arguments>
         </configuration>

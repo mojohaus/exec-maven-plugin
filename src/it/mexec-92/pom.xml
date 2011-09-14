@@ -13,9 +13,9 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>@pom.version@</version>
         <configuration>
-          <executable>mvn</executable>
+          <executable>java</executable>
           <arguments>
-            <argument>-v</argument>
+            <argument>-version</argument>
           </arguments>
         </configuration>
       </plugin>
