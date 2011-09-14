@@ -22,6 +22,10 @@
         <system>jira</system>
         <url>http://jira.codehaus.org/browse/MEXEC</url>
     </issueManagement>
+    <ciManagement>
+      <system>bamboo</system>
+      <url>http://bamboo.ci.codehaus.org/browse/MOJO</url>
+    </ciManagement>
 
     <developers>
         <developer>
