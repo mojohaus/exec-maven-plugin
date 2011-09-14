@@ -108,7 +108,7 @@ public class ExecMojo
     private File outputFile;
 
     /**
-     * Can be of type <code>&lt;argument&gt;</code> or <code>&lt;classpath&gt;</code> Can be overriden using "exec.args"
+     * Can be of type <code>&lt;argument&gt;</code> or <code>&lt;classpath&gt;</code> Can be overridden by using "exec.args"
      * env. variable
      * 
      * @parameter
@@ -430,7 +430,7 @@ public class ExecMojo
      * plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us he wants
      * the scope in which the plugin is expected to be executed.
      * 
-     * @param specifiedClasspath Non null when the user restricted the dependenceis, null otherwise (the default
+     * @param specifiedClasspath Non null when the user restricted the dependencies, <code>null</code> otherwise (the default
      *            classpath will be used)
      * @return a platform specific String representation of the classpath
      */
@@ -453,7 +453,7 @@ public class ExecMojo
      * plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us he wants
      * the scope in which the plugin is expected to be executed.
      * 
-     * @param specifiedClasspath Non null when the user restricted the dependenceis, null otherwise (the default
+     * @param specifiedClasspath Non null when the user restricted the dependencies, <code>null</code> otherwise (the default
      *            classpath will be used)
      * @return a list of class path elements
      */
