@@ -50,7 +50,7 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1</version>
+        <version>${project.version}</version>
         <executions>
           <execution>
             ...
@@ -123,7 +123,7 @@ mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] ...
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1</version>
+        <version>${project.version}</version>
         <executions>
           <execution>
             ...

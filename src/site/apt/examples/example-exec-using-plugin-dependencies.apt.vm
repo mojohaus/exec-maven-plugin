@@ -62,7 +62,7 @@ Using Plugin Dependencies Instead of Project Dependencies
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1</version>
+        <version>${project.version}</version>
         <executions>
           <execution>
             ...
