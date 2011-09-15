@@ -22,7 +22,8 @@ package org.codehaus.mojo.exec;
 import org.apache.maven.artifact.Artifact;
 
 /**
- * 
+ * <p>ExecutableDependency class.</p>
+ *
  */
 public class ExecutableDependency
 {
@@ -30,48 +31,72 @@ public class ExecutableDependency
 
     private String artifactId;
 
-    public ExecutableDependency()
-    {
-    }
-
+    /**
+     * <p>Getter for the field <code>groupId</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getGroupId()
     {
         return this.groupId;
     }
 
+    /**
+     * <p>Setter for the field <code>groupId</code>.</p>
+     *
+     * @param groupId a {@link java.lang.String} object.
+     */
     public void setGroupId( String groupId )
     {
         this.groupId = groupId;
     }
 
+    /**
+     * <p>Getter for the field <code>artifactId</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getArtifactId()
     {
         return this.artifactId;
     }
 
+    /**
+     * <p>Setter for the field <code>artifactId</code>.</p>
+     *
+     * @param artifactId a {@link java.lang.String} object.
+     */
     public void setArtifactId( String artifactId )
     {
         this.artifactId = artifactId;
     }
 
+    /**
+     * <p>Matches the groupId and artifactId.</p>
+     *
+     * @param artifact a {@link org.apache.maven.artifact.Artifact} object.
+     * @return <code>true</code> if both math, <code>false</code> otherwise.
+     */
     public boolean matches( Artifact artifact )
     {
         return artifact.getGroupId().equals( this.getGroupId() )
             && artifact.getArtifactId().equals( this.getArtifactId() );
     }
 
+    /** {@inheritDoc} */
     public String toString()
     {
         return this.groupId + ":" + this.artifactId;
     }
 
+    /** {@inheritDoc} */
     public boolean equals( Object o )
     {
         if ( this == o )
         {
             return true;
         }
-        if ( o == null || getClass() != o.getClass() )
+        if ( !( o instanceof ExecutableDependency ) )
         {
             return false;
         }
@@ -90,6 +115,7 @@ public class ExecutableDependency
         return true;
     }
 
+    /** {@inheritDoc} */
     public int hashCode()
     {
         int result;

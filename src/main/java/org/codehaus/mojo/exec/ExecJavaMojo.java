@@ -291,7 +291,8 @@ public class ExecJavaMojo
                     }
                     if ( !Modifier.isStatic( main.getModifiers() ) )
                     {
-                        throw new MojoExecutionException( "Can't call main(String[])-method, because it is not static." );
+                        throw new MojoExecutionException( 
+                                 "Can't call main(String[])-method because it is not static." );
                     }
                     main.invoke( null, new Object[] { arguments } );
                 }
