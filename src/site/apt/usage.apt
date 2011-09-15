@@ -99,9 +99,9 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
 |                                      | thread management (interrupt/join/[stop])|
 *--------------------------------------+------------------------------------------+
 
-  Read the documentation for the {{{java-mojo.html}java goal}} for more information on how to configure this behavior.
+  Read the documentation for the {{{./java-mojo.html}java goal}} for more information on how to configure this behavior.
 
-  If you find out that these differences are unacceptable for your case, you may need to use the {{{exec-mojo.html} exec goal}} to wrap your Java executable.
+  If you find out that these differences are unacceptable for your case, you may need to use the {{{./exec-mojo.html} exec goal}} to wrap your Java executable.
 
 ** Command line
 
