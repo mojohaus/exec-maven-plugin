@@ -8,7 +8,7 @@
     </parent>
 
     <artifactId>exec-maven-plugin</artifactId>
-    <version>1.2.1-SNAPSHOT</version>
+    <version>1.2.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>Exec Maven Plugin</name>
@@ -84,9 +84,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:svn:http://svn.codehaus.org/mojo/trunk/mojo/exec-maven-plugin</connection>
-        <developerConnection>scm:svn:https://svn.codehaus.org/mojo/trunk/mojo/exec-maven-plugin</developerConnection>
-        <url>http://fisheye.codehaus.org/browse/mojo/trunk/mojo/exec-maven-plugin</url>
+        <connection>scm:svn:http://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.2.1</connection>
+        <developerConnection>scm:svn:https://svn.codehaus.org/mojo/tags/exec-maven-plugin-1.2.1</developerConnection>
+        <url>http://fisheye.codehaus.org/browse/mojo/tags/exec-maven-plugin-1.2.1</url>
     </scm>
 
     <dependencies>
