@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>mojo-parent</artifactId>
-        <version>28</version>
+        <version>29</version>
     </parent>
 
     <artifactId>exec-maven-plugin</artifactId>
@@ -24,7 +24,7 @@
     </issueManagement>
     <ciManagement>
       <system>bamboo</system>
-      <url>http://bamboo.ci.codehaus.org/browse/MOJO</url>
+      <url>http://bamboo.ci.codehaus.org/browse/MOJO-MEXEC</url>
     </ciManagement>
 
     <developers>
@@ -54,7 +54,7 @@
             <id>rfscholte</id>
             <name>Robert Scholte</name>
             <email>rfscholte@codehaus.org</email>
-            <timezone>+1</timezone>
+            <timezone>Europe/Amsterdam</timezone>
         </developer>
     </developers>
 
