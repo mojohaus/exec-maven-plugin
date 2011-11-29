@@ -53,7 +53,6 @@ import java.util.Set;
  * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>, <a href="mailto:dsmiley@mitre.org">David Smiley</a>
  * @goal java
  * @requiresDependencyResolution test
- * @execute phase="validate"
  * @since 1.0
  */
 public class ExecJavaMojo
