@@ -205,9 +205,9 @@ public class ExecMojo
                         commandArguments.add( tmpFile.getAbsolutePath() );
                         i += 2;
                     }
-                    else if ( CLASSPATH_TOKEN.equals( args[i] ) )
+                    else if ( args[i].indexOf( CLASSPATH_TOKEN ) != -1 )
                     {
-                        commandArguments.add( computeClasspathString( null ) );
+                        commandArguments.add( args[i].replace( CLASSPATH_TOKEN, computeClasspathString( null ) ) );
                     }
                     else
                     {
