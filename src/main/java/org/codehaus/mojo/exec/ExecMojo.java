@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -117,7 +116,7 @@ public class ExecMojo
      * @parameter
      * @since 1.0
      */
-    private List arguments;
+    private List<?> arguments;
 
     /**
      * @parameter default-value="${basedir}"
@@ -133,7 +132,7 @@ public class ExecMojo
      * @parameter
      * @since 1.1-beta-2
      */
-    private Map environmentVariables = new HashMap();
+    private Map<String, String> environmentVariables = new HashMap<String, String>();
 
     /**
      * The current build session instance. This is used for toolchain manager API calls.
@@ -187,7 +186,7 @@ public class ExecMojo
 
             String argsProp = getSystemProperty( "exec.args" );
 
-            List commandArguments = new ArrayList();
+            List<String> commandArguments = new ArrayList<String>();
 
             if ( hasCommandlineArgs() )
             {
@@ -271,11 +270,14 @@ public class ExecMojo
                 }
             }
 
-            Map enviro = new HashMap();
+            Map<String, String> enviro = new HashMap<String, String>();
             try
             {
                 Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
-                enviro.putAll( systemEnvVars );
+                for( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
+                {
+                    enviro.put( (String) entry.getKey(), (String) entry.getValue() );
+                }
             }
             catch ( IOException x )
             {
@@ -284,13 +286,7 @@ public class ExecMojo
 
             if ( environmentVariables != null )
             {
-                Iterator iter = environmentVariables.keySet().iterator();
-                while ( iter.hasNext() )
-                {
-                    String key = (String) iter.next();
-                    String value = (String) environmentVariables.get( key );
-                    enviro.put( key, value );
-                }
+                enviro.putAll( environmentVariables );
             }
 
             if ( workingDirectory == null )
@@ -439,12 +435,11 @@ public class ExecMojo
      */
     private String computeClasspathString( Classpath specifiedClasspath )
     {
-        List resultList = computeClasspath( specifiedClasspath );
+        List<String> resultList = computeClasspath( specifiedClasspath );
         StringBuffer theClasspath = new StringBuffer();
 
-        for ( Iterator it = resultList.iterator(); it.hasNext(); )
+        for ( String str : resultList )
         {
-            String str = (String) it.next();
             addToClasspath( theClasspath, str );
         }
 
@@ -460,11 +455,11 @@ public class ExecMojo
      *    otherwise (the default classpath will be used)
      * @return a list of class path elements
      */
-    private List computeClasspath( Classpath specifiedClasspath )
+    private List<String> computeClasspath( Classpath specifiedClasspath )
     {
-        List artifacts = new ArrayList();
-        List theClasspathFiles = new ArrayList();
-        List resultList = new ArrayList();
+        List<Artifact> artifacts = new ArrayList<Artifact>();
+        List<File> theClasspathFiles = new ArrayList<File>();
+        List<String> resultList = new ArrayList<String>();
 
         collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
@@ -473,15 +468,13 @@ public class ExecMojo
             artifacts = filterArtifacts( artifacts, specifiedClasspath.getDependencies() );
         }
 
-        for ( Iterator it = theClasspathFiles.iterator(); it.hasNext(); )
+        for ( File f : theClasspathFiles )
         {
-            File f = (File) it.next();
             resultList.add( f.getAbsolutePath() );
         }
 
-        for ( Iterator it = artifacts.iterator(); it.hasNext(); )
+        for ( Artifact artifact : artifacts )
         {
-            Artifact artifact = (Artifact) it.next();
             getLog().debug( "dealing with " + artifact );
             resultList.add( artifact.getFile().getAbsolutePath() );
         }
@@ -498,16 +491,15 @@ public class ExecMojo
         theClasspath.append( toAdd );
     }
 
-    private List filterArtifacts( List artifacts, Collection dependencies )
+    private List<Artifact> filterArtifacts( List<Artifact> artifacts, Collection<String> dependencies )
     {
         AndArtifactFilter filter = new AndArtifactFilter();
 
-        filter.add( new IncludesArtifactFilter( new ArrayList( dependencies ) ) ); // gosh
+        filter.add( new IncludesArtifactFilter( new ArrayList<String>( dependencies ) ) ); // gosh
 
-        List filteredArtifacts = new ArrayList();
-        for ( Iterator it = artifacts.iterator(); it.hasNext(); )
+        List<Artifact> filteredArtifacts = new ArrayList<Artifact>();
+        for ( Artifact artifact : artifacts )
         {
-            Artifact artifact = (Artifact) it.next();
             if ( filter.include( artifact ) )
             {
                 getLog().debug( "filtering in " + artifact );
@@ -517,7 +509,7 @@ public class ExecMojo
         return filteredArtifacts;
     }
 
-    CommandLine getExecutablePath( Map enviro, File dir )
+    CommandLine getExecutablePath( Map<String, String> enviro, File dir )
     {
         File execFile = new File( executable );
         String exec = null;
@@ -554,7 +546,7 @@ public class ExecMojo
                     {
                         // now try to figure the path from PATH, PATHEXT env vars
                         // if bat file, wrap in cmd /c
-                        String path = (String) enviro.get( "PATH" );
+                        String path = enviro.get( "PATH" );
                         if ( path != null )
                         {
                             String[] elems = StringUtils.split( path, File.pathSeparator );
@@ -602,7 +594,7 @@ public class ExecMojo
     // methods used for tests purposes - allow mocking and simulate automatic setters
     //
 
-    protected int executeCommandLine( Executor exec, CommandLine commandLine, Map enviro, OutputStream out,
+    protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro, OutputStream out,
                                       OutputStream err )
         throws ExecuteException, IOException
     {
@@ -630,7 +622,7 @@ public class ExecMojo
         this.workingDirectory = workingDir;
     }
 
-    void setArguments( List arguments )
+    void setArguments( List<?> arguments )
     {
         this.arguments = arguments;
     }
@@ -696,7 +688,7 @@ public class ExecMojo
      * @return
      * @throws IOException
      */
-    private File createJar( List classPath, String mainClass )
+    private File createJar( List<String> classPath, String mainClass )
         throws IOException
     {
         File file = File.createTempFile( "maven-exec", ".jar" );
@@ -712,9 +704,8 @@ public class ExecMojo
         // we can't use StringUtils.join here since we need to add a '/' to
         // the end of directory entries - otherwise the jvm will ignore them.
         String cp = "";
-        for ( Iterator it = classPath.iterator(); it.hasNext(); )
+        for ( String el : classPath )
         {
-            String el = (String) it.next();
             // NOTE: if File points to a directory, this entry MUST end in '/'.
             cp += UrlUtils.getURL( new File( el ) ).toExternalForm() + " ";
         }

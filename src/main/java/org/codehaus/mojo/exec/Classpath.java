@@ -20,7 +20,6 @@ package org.codehaus.mojo.exec;
  */
 
 import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
@@ -30,9 +29,9 @@ public class Classpath
     /**
      * @parameter dependency
      */
-    private Collection dependencies;
+    private Collection<String> dependencies;
 
-    public void setDependencies( Collection deps )
+    public void setDependencies( Collection<String> deps )
     {
         this.dependencies = deps;
     }
@@ -42,12 +41,12 @@ public class Classpath
         // Is the the correct thing to do? See MOJO-348
         if ( dependencies == null )
         {
-            setDependencies( new java.util.ArrayList() );
+            setDependencies( new java.util.ArrayList<String>() );
         }
         dependencies.add( dependency );
     }
 
-    public Collection getDependencies()
+    public Collection<String> getDependencies()
     {
         return dependencies;
     }
@@ -58,9 +57,9 @@ public class Classpath
 
         if ( dependencies != null )
         {
-            for ( Iterator it = dependencies.iterator(); it.hasNext(); )
+            for ( String dep : dependencies )
             {
-                buffer.append( " " ).append( it.next() );
+                buffer.append( " " ).append( dep );
             }
         }
         buffer.append( "}" );

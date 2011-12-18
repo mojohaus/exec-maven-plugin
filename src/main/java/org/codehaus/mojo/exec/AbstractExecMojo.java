@@ -22,6 +22,7 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.util.List;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -92,7 +93,8 @@ public abstract class AbstractExecMojo
      * @param artifacts the list where to collect the scope specific artifacts
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
-    protected void collectProjectArtifactsAndClasspath( List artifacts, List theClasspathFiles )
+    @SuppressWarnings( "unchecked" )
+    protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<File> theClasspathFiles )
     {
 
         if ( "compile".equals( classpathScope ) )

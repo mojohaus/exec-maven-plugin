@@ -19,18 +19,6 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.project.artifact.MavenMetadataSource;
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -41,10 +29,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.artifact.MavenMetadataSource;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's
@@ -87,7 +87,7 @@ public class ExecJavaMojo
      * @readonly
      * @since 1.1-beta-1
      */
-    private List remoteRepositories;
+    private List<ArtifactRepository> remoteRepositories;
 
     /**
      * @component
@@ -100,7 +100,7 @@ public class ExecJavaMojo
      * @readonly
      * @since 1.1-beta-1
      */
-    private List pluginDependencies;
+    private List<Artifact> pluginDependencies;
 
     /**
      * The main class to execute.
@@ -392,10 +392,9 @@ public class ExecJavaMojo
         do
         {
             foundNonDaemon = false;
-            Collection threads = getActiveThreads( threadGroup );
-            for ( Iterator iter = threads.iterator(); iter.hasNext(); )
+            Collection<Thread> threads = getActiveThreads( threadGroup );
+            for ( Thread thread : threads )
             {
-                Thread thread = (Thread) iter.next();
                 if ( thread.isDaemon() )
                 {
                     continue;
@@ -428,22 +427,20 @@ public class ExecJavaMojo
     private void terminateThreads( ThreadGroup threadGroup )
     {
         long startTime = System.currentTimeMillis();
-        Set uncooperativeThreads = new HashSet(); // these were not responsive to interruption
-        for ( Collection threads = getActiveThreads( threadGroup ); !threads.isEmpty();
+        Set<Thread> uncooperativeThreads = new HashSet<Thread>(); // these were not responsive to interruption
+        for ( Collection<Thread> threads = getActiveThreads( threadGroup ); !threads.isEmpty();
               threads = getActiveThreads( threadGroup ), threads.removeAll( uncooperativeThreads ) )
         {
             // Interrupt all threads we know about as of this instant (harmless if spuriously went dead (! isAlive())
             //   or if something else interrupted it ( isInterrupted() ).
-            for ( Iterator iter = threads.iterator(); iter.hasNext(); )
+            for ( Thread thread : threads )
             {
-                Thread thread = (Thread) iter.next();
                 getLog().debug( "interrupting thread " + thread );
                 thread.interrupt();
             }
             // Now join with a timeout and call stop() (assuming flags are set right)
-            for ( Iterator iter = threads.iterator(); iter.hasNext(); )
+            for ( Thread thread : threads )
             {
-                Thread thread = (Thread) iter.next();
                 if ( ! thread.isAlive() )
                 {
                     continue; //and, presumably it won't show up in getActiveThreads() next iteration
@@ -495,11 +492,11 @@ public class ExecJavaMojo
         }
     }
 
-    private Collection getActiveThreads( ThreadGroup threadGroup )
+    private Collection<Thread> getActiveThreads( ThreadGroup threadGroup )
     {
         Thread[] threads = new Thread[ threadGroup.activeCount() ];
         int numThreads = threadGroup.enumerate( threads );
-        Collection result = new ArrayList( numThreads );
+        Collection<Thread> result = new ArrayList<Thread>( numThreads );
         for ( int i = 0; i < threads.length && threads[i] != null; i++ )
         {
             result.add( threads[i] );
@@ -533,10 +530,10 @@ public class ExecJavaMojo
     private ClassLoader getClassLoader()
         throws MojoExecutionException
     {
-        List classpathURLs = new ArrayList();
+        List<URL> classpathURLs = new ArrayList<URL>();
         this.addRelevantPluginDependenciesToClasspath( classpathURLs );
         this.addRelevantProjectDependenciesToClasspath( classpathURLs );
-        return new URLClassLoader( ( URL[] ) classpathURLs.toArray( new URL[ classpathURLs.size() ] ) );
+        return new URLClassLoader( classpathURLs.toArray( new URL[ classpathURLs.size() ] ) );
     }
 
     /**
@@ -546,7 +543,7 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantPluginDependenciesToClasspath( List path )
+    private void addRelevantPluginDependenciesToClasspath( List<URL> path )
         throws MojoExecutionException
     {
         if ( hasCommandlineArgs() )
@@ -556,10 +553,8 @@ public class ExecJavaMojo
 
         try
         {
-            Iterator iter = this.determineRelevantPluginDependencies().iterator();
-            while ( iter.hasNext() )
+            for ( Artifact classPathElement : this.determineRelevantPluginDependencies() )
             {
-                Artifact classPathElement = (Artifact) iter.next();
                 getLog().debug(
                     "Adding plugin dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
                 path.add( classPathElement.getFile().toURI().toURL() );
@@ -579,7 +574,7 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantProjectDependenciesToClasspath( List path )
+    private void addRelevantProjectDependenciesToClasspath( List<URL> path )
         throws MojoExecutionException
     {
         if ( this.includeProjectDependencies )
@@ -588,22 +583,20 @@ public class ExecJavaMojo
             {
                 getLog().debug( "Project Dependencies will be included." );
 
-                List artifacts = new ArrayList();
-                List theClasspathFiles = new ArrayList();
+                List<Artifact> artifacts = new ArrayList<Artifact>();
+                List<File> theClasspathFiles = new ArrayList<File>();
  
                 collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
-                for ( Iterator it = theClasspathFiles.iterator(); it.hasNext(); )
+                for ( File classpathFile : theClasspathFiles )
                 {
-                     URL url = ( (File) it.next() ).toURI().toURL();
+                     URL url = classpathFile.toURI().toURL();
                      getLog().debug( "Adding to classpath : " + url );
                      path.add( url );
                 }
 
-                Iterator iter = artifacts.iterator();
-                while ( iter.hasNext() )
+                for ( Artifact classPathElement : artifacts )
                 {
-                    Artifact classPathElement = (Artifact) iter.next();
                     getLog().debug(
                         "Adding project dependency artifact: " + classPathElement.getArtifactId() + " to classpath" );
                     path.add( classPathElement.getFile().toURI().toURL() );
@@ -630,16 +623,16 @@ public class ExecJavaMojo
      *         (Empty set is returned if there are no relevant plugin dependencies.)
      * @throws MojoExecutionException if a problem happens resolving the plufin dependencies
      */
-    private Set determineRelevantPluginDependencies()
+    private Set<Artifact> determineRelevantPluginDependencies()
         throws MojoExecutionException
     {
-        Set relevantDependencies;
+        Set<Artifact> relevantDependencies;
         if ( this.includePluginDependencies )
         {
             if ( this.executableDependency == null )
             {
                 getLog().debug( "All Plugin Dependencies will be included." );
-                relevantDependencies = new HashSet( this.pluginDependencies );
+                relevantDependencies = new HashSet<Artifact>( this.pluginDependencies );
             }
             else
             {
@@ -651,7 +644,7 @@ public class ExecJavaMojo
         }
         else
         {
-            relevantDependencies = Collections.EMPTY_SET;
+            relevantDependencies = Collections.emptySet();
             getLog().debug( "Plugin Dependencies will be excluded." );
         }
         return relevantDependencies;
@@ -682,9 +675,8 @@ public class ExecJavaMojo
         //ILimitedArtifactIdentifier execToolAssembly = this.getExecutableToolAssembly();
 
         Artifact executableTool = null;
-        for ( Iterator iter = this.pluginDependencies.iterator(); iter.hasNext(); )
+        for ( Artifact pluginDep : this.pluginDependencies )
         {
-            Artifact pluginDep = (Artifact) iter.next();
             if ( this.executableDependency.matches( pluginDep ) )
             {
                 executableTool = pluginDep;
@@ -708,11 +700,11 @@ public class ExecJavaMojo
      * @return a set of Artifacts
      * @throws MojoExecutionException if a failure happens
      */
-    private Set resolveExecutableDependencies( Artifact executablePomArtifact )
+    private Set<Artifact> resolveExecutableDependencies( Artifact executablePomArtifact )
         throws MojoExecutionException
     {
 
-        Set executableDependencies;
+        Set<Artifact> executableDependencies;
         try
         {
             MavenProject executableProject = this.projectBuilder.buildFromRepository( executablePomArtifact,
@@ -720,10 +712,10 @@ public class ExecJavaMojo
                                                                                       this.localRepository );
 
             //get all of the dependencies for the executable project
-            List dependencies = executableProject.getDependencies();
+            List<Dependency> dependencies = executableProject.getDependencies();
 
             //make Artifacts of all the dependencies
-            Set dependencyArtifacts =
+            Set<Artifact> dependencyArtifacts =
                 MavenMetadataSource.createArtifacts( this.artifactFactory, dependencies, null, null, null );
 
             //not forgetting the Artifact of the project itself
@@ -738,7 +730,6 @@ public class ExecJavaMojo
                                                                                     metadataSource, null,
                                                                                     Collections.EMPTY_LIST );
             executableDependencies = result.getArtifacts();
-
         }
         catch ( Exception ex )
         {
