@@ -30,7 +30,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <commandlineArgs>-classpath %classpath;customdir-after Main</commandlineArgs>
+              <commandlineArgs>-classpath %classpath${path.separator}customdir-after Main</commandlineArgs>
             </configuration>
           </execution>
           <execution>
@@ -40,7 +40,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <commandlineArgs>-classpath customdir-before;%classpath Main</commandlineArgs>
+              <commandlineArgs>-classpath customdir-before${path.separator}%classpath Main</commandlineArgs>
             </configuration>
           </execution>
           <execution>
@@ -50,7 +50,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <commandlineArgs>-classpath customdir-before;%classpath;customdir-after Main</commandlineArgs>
+              <commandlineArgs>-classpath customdir-before${path.separator}%classpath${path.separator}customdir-after Main</commandlineArgs>
             </configuration>
           </execution>
         </executions>

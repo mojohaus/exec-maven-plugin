@@ -22,11 +22,11 @@ assert log.exists()
 String expectedClasspath = new File(basedir, 'target/classes').getAbsolutePath()
 assert log.getText().contains( "java -classpath $expectedClasspath Main" )
 
-expectedClasspath = "customdir-before;${new File(basedir, 'target/classes').getAbsolutePath()}" 
+expectedClasspath = "customdir-before${File.pathSeparator}${new File(basedir, 'target/classes').getAbsolutePath()}" 
 assert log.getText().contains( "java -classpath $expectedClasspath Main" )
 
-expectedClasspath = "${new File(basedir, 'target/classes').getAbsolutePath()};customdir-after" 
+expectedClasspath = "${new File(basedir, 'target/classes').getAbsolutePath()}${File.pathSeparator}customdir-after" 
 assert log.getText().contains( "java -classpath $expectedClasspath Main" )
 
-expectedClasspath = "customdir-before;${new File(basedir, 'target/classes').getAbsolutePath()};customdir-after" 
+expectedClasspath = "customdir-before${File.pathSeparator}${new File(basedir, 'target/classes').getAbsolutePath()}${File.pathSeparator}customdir-after" 
 assert log.getText().contains( "java -classpath $expectedClasspath Main" )
