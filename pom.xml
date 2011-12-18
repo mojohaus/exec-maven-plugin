@@ -155,6 +155,7 @@
     </dependencies>
 
     <properties>
+        <mojo.java.target>1.5</mojo.java.target>
         <mavenVersion>2.0.6</mavenVersion>
     </properties>
 
@@ -174,7 +175,7 @@
               <configuration>
                 <signature>
                   <groupId>org.codehaus.mojo.signature</groupId>
-                  <artifactId>java14</artifactId>
+                  <artifactId>java15</artifactId>
                   <version>1.0</version>
                 </signature>
               </configuration>
