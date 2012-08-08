@@ -52,6 +52,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
+import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
@@ -320,26 +321,21 @@ public class ExecMojo
 
             fillSuccessCodes(exec);
             
-            // this code ensures the output gets logged vai maven logging, but at the same time prevents
-            // partial line output, like input prompts.
-            // final Log outputLog = getExecOutputLog();
-            // LogOutputStream stdout = new LogOutputStream()
-            // {
-            // protected void processLine( String line, int level )
-            // {
-            // outputLog.info( line );
-            // }
-            // };
-            //
-            // LogOutputStream stderr = new LogOutputStream()
-            // {
-            // protected void processLine( String line, int level )
-            // {
-            // outputLog.info( line );
-            // }
-            // };
-            OutputStream stdout = System.out;
-            OutputStream stderr = System.err;
+            OutputStream stdout;
+            OutputStream stderr;
+            if( outputFile != null )
+            {
+                if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() )
+                {
+                    getLog().warn( "Could not create non existing parent directories for log file: " + outputFile );
+                }
+                stdout = stderr = new FileOutputStream( outputFile );
+            }
+            else
+            {
+                stdout = System.out;
+                stderr = System.err;
+            }
 
             try
             {
@@ -362,6 +358,14 @@ public class ExecMojo
             {
                 throw new MojoExecutionException( "Command execution failed.", e );
             }
+            finally
+            {
+                if( stdout instanceof FileOutputStream )
+                {
+                    IOUtil.close( stdout );
+                }
+            }
+            
 
             registerSourceRoots();
         }
@@ -398,30 +402,6 @@ public class ExecMojo
     private boolean isLongClassPathArgument( String arg )
     {
         return longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
-    }
-
-    private Log getExecOutputLog()
-    {
-        Log log = getLog();
-        if ( outputFile != null )
-        {
-            try
-            {
-                if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() )
-                {
-                    getLog().warn( "Could not create non existing parent directories for log file: " + outputFile );
-                }
-                PrintStream stream = new PrintStream( new FileOutputStream( outputFile ) );
-
-                log = new StreamLog( stream );
-            }
-            catch ( Exception e )
-            {
-                getLog().warn( "Could not open " + outputFile + ". Using default log", e );
-            }
-        }
-
-        return log;
     }
 
     /**
