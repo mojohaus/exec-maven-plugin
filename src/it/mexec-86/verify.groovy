@@ -21,7 +21,10 @@ assert outLog.exists()
 File buildLog = new File(basedir, 'build.log')
 assert buildLog.exists()
 
+// non-Windows OS can start with Java Home
 String mavenVersion = outLog.filterLine() {
-  line -> !line.startsWith('/')
+  line -> !line.startsWith('/') 
 }
-assert buildLog.getText().startsWith( mavenVersion )
+// Depending on Maven version the build.log can start with 
+// + Error stacktraces are turned on.
+assert 1 == buildLog.getText().count( mavenVersion )
