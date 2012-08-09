@@ -21,4 +21,7 @@ assert outLog.exists()
 File buildLog = new File(basedir, 'build.log')
 assert buildLog.exists()
 
-assert buildLog.getText().startsWith( outLog.text )
+String mavenVersion = outLog.filterLine() {
+  line -> !line.startsWith('/')
+}
+assert buildLog.getText().startsWith( mavenVersion )
