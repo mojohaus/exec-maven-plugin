@@ -14,15 +14,17 @@
         <version>@pom.version@</version>
         <executions>
           <execution>
-            <phase>validate</phase>
+            <phase>process-classes</phase>
             <goals>
               <goal>exec</goal>
             </goals>
             <configuration>
               <outputFile>${project.build.directory}/out.log</outputFile>
-              <executable>mvn</executable>
+              <executable>java</executable>
               <arguments>
-                <argument>-v</argument>
+                <argument>-cp</argument>
+                <argument>target/classes</argument>
+                <argument>Main</argument>
               </arguments>
             </configuration>
           </execution>

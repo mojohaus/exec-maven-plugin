@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +46,6 @@ import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
@@ -100,10 +98,14 @@ public class ExecMojo
 
     /**
      * Program standard and error output will be redirected to the file specified by this optional field. If not
-     * specified the standard maven logging is used.
+     * specified the standard Maven logging is used.
+     * <br/>
+     * <strong>Note:</strong> Be aware that <code>System.out</code> and <code>System.err</code> use buffering, so don't rely on the order!
      * 
      * @parameter expression="${exec.outputFile}"
      * @since 1.1-beta-2
+     * @see java.lang.System#err
+     * @see java.lang.System#in
      */
     private File outputFile;
 
@@ -320,28 +322,34 @@ public class ExecMojo
             exec.setWorkingDirectory( workingDirectory );
 
             fillSuccessCodes(exec);
-            
-            OutputStream stdout;
-            OutputStream stderr;
-            if( outputFile != null )
-            {
-                if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() )
-                {
-                    getLog().warn( "Could not create non existing parent directories for log file: " + outputFile );
-                }
-                stdout = stderr = new FileOutputStream( outputFile );
-            }
-            else
-            {
-                stdout = System.out;
-                stderr = System.err;
-            }
+
+            getLog().debug( "Executing command line: " + commandLine );
 
             try
             {
-                getLog().debug( "Executing command line: " + commandLine );
-
-                int resultCode = executeCommandLine( exec, commandLine, enviro, stdout, stderr );
+                int resultCode;
+                if( outputFile != null )
+                {
+                    if ( !outputFile.getParentFile().exists() && !outputFile.getParentFile().mkdirs() )
+                    {
+                        getLog().warn( "Could not create non existing parent directories for log file: " + outputFile );
+                    }
+                    
+                    FileOutputStream outputStream = null;
+                    try 
+                    {
+                        outputStream = new FileOutputStream( outputFile );
+                        resultCode = executeCommandLine( exec, commandLine, enviro, outputStream );
+                    }
+                    finally
+                    {
+                        IOUtil.close( outputStream );
+                    }
+                }
+                else
+                {
+                    resultCode = executeCommandLine( exec, commandLine, enviro, System.out, System.err );
+                }
 
                 if ( isResultCodeAFailure( resultCode ) )
                 {
@@ -358,14 +366,6 @@ public class ExecMojo
             {
                 throw new MojoExecutionException( "Command execution failed.", e );
             }
-            finally
-            {
-                if( stdout instanceof FileOutputStream )
-                {
-                    IOUtil.close( stdout );
-                }
-            }
-            
 
             registerSourceRoots();
         }
@@ -581,6 +581,15 @@ public class ExecMojo
         exec.setStreamHandler( new PumpStreamHandler( out, err, System.in ) );
         return exec.execute( commandLine, enviro );
     }
+    
+    protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro,
+                                      FileOutputStream outputFile )
+        throws ExecuteException, IOException
+    {
+        exec.setStreamHandler( new PumpStreamHandler( outputFile ) );
+        return exec.execute( commandLine, enviro );
+    }
+
 
     void setExecutable( String executable )
     {

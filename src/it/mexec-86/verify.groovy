@@ -18,13 +18,24 @@
  */
 File outLog = new File(basedir, 'target/out.log')
 assert outLog.exists()
-File buildLog = new File(basedir, 'build.log')
-assert buildLog.exists()
 
-// non-Windows OS can start with Java Home
-String mavenVersion = outLog.filterLine() {
-  line -> !line.startsWith('/') 
+int outIndex = -1
+int errIndex = -1
+
+
+// Sometimes this test fails, because the line and linebreak seem to be separate, unsynchronized calls.
+// Would be nice if commons-exec could solve this...
+// http://stackoverflow.com/questions/6121786/java-synchronizing-standard-out-and-standard-error
+outLog.eachLine { line ->
+    int origIndex = line.getAt( 0 ).toInteger();
+    if ( origIndex % 2 == 0 )
+    {
+      assert errIndex < origIndex;
+      errIndex = origIndex;
+    }
+    else
+    {
+      assert outIndex < origIndex;
+      outIndex = origIndex;
+    }
 }
-// Depending on Maven version the build.log can start with 
-// + Error stacktraces are turned on.
-assert 1 == buildLog.getText().count( mavenVersion )
