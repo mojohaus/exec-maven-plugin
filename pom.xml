@@ -194,6 +194,9 @@
                     </goals>
                     <settingsFile>src/it/settings.xml</settingsFile>
                     <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                    <pomExcludes>
+                      <pomExclude>mexec-86/pom.xml</pomExclude> <!-- unstable -->
+                    </pomExcludes>
                 </configuration>
                 <executions>
                     <execution>
