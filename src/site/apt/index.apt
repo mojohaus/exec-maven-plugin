@@ -54,7 +54,7 @@ Exec Maven Plugin
 
 * Examples
 
-  To provide you with better understanding of some usages of the Exec Plugin,
+  To provide you with better understanding of some usages of the Exec Maven Plugin,
   you can take a look into the following examples:
 
   * {{{./examples/example-exec-for-java-programs.html} Running Java programs with exec:exec}}

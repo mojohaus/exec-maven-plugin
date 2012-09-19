@@ -49,7 +49,7 @@ mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
 
 * POM configuration
 
- To execute Java programs, the Exec Plugin helps by allowing the <<<\<classpath\>>>> special argument:
+ To execute Java programs, the Exec Maven Plugin helps by allowing the <<<\<classpath\>>>> special argument:
 
 -------------------
         <configuration>
