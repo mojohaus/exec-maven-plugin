@@ -68,7 +68,7 @@ public class ExecMojo
 {
     /**
      * <p>
-     * The executable. Can be a full path or a the name executable. In the latter case, the executable must be in the
+     * The executable. Can be a full path or the name of the executable. In the latter case, the executable must be in the
      * PATH for the execution to work.
      * </p>
      * <p>
