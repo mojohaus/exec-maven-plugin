@@ -49,7 +49,7 @@ Using Plugin Dependencies Instead of Project Dependencies
   which already has a transitive dependency upon <<<org.codehaus.plexus:plexus-utils>>>, will end up using
   the brand new version you explictly supplied.  It is unlikely you will encounter a situation
   where this will be a problem, but hopefully this knowledge will help you diagnose such a problem if
-  it occurs.  None of this is relevant unless your using the plugin dependencies for your
+  it occurs.  None of this is relevant unless you're using the plugin dependencies for your
   executable (<<<includePluginDependencies=true>>>).
 
 * Example POM Configuration using Plugin Dependencies
