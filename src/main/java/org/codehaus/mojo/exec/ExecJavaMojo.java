@@ -235,6 +235,14 @@ public class ExecJavaMojo
     private Properties originalSystemProperties;
 
     /**
+     * Additional elements to be appended to the classpath.
+     *
+     * @parameter expression="${exec.additionalClasspath}
+     * @since 1.3
+     */
+    private List<String> additionalClasspathElements;
+
+    /**
      * Execute goal.
      * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
      * @throws MojoFailureException something bad happened...
@@ -533,7 +541,30 @@ public class ExecJavaMojo
         List<URL> classpathURLs = new ArrayList<URL>();
         this.addRelevantPluginDependenciesToClasspath( classpathURLs );
         this.addRelevantProjectDependenciesToClasspath( classpathURLs );
+        this.addAdditionalClasspathElements(classpathURLs);
         return new URLClassLoader( classpathURLs.toArray( new URL[ classpathURLs.size() ] ) );
+    }
+
+    private void addAdditionalClasspathElements(List<URL> path) 
+    {
+        if(additionalClasspathElements != null)
+        {
+            for ( String classPathElement : additionalClasspathElements )
+            {
+                try {
+                    File file = new File(classPathElement);
+                    if(!file.isAbsolute())
+                    {
+                        file = new File(project.getBasedir(), classPathElement);
+                    }
+                    URL url = file.toURI().toURL();
+                    getLog().debug( "Adding additional classpath element: " + url + " to classpath" );
+                    path.add(url);
+                } catch (MalformedURLException e) {
+                    getLog().warn("Skipping additional classpath element: "+classPathElement, e);
+                }
+            }
+        }
     }
 
     /**
