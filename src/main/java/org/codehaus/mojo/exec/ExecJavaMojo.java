@@ -237,7 +237,7 @@ public class ExecJavaMojo
     /**
      * Additional elements to be appended to the classpath.
      *
-     * @parameter expression="${exec.additionalClasspath}
+     * @parameter 
      * @since 1.3
      */
     private List<String> additionalClasspathElements;
