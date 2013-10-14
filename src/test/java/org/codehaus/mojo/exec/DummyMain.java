@@ -13,13 +13,13 @@ public class DummyMain
      *
      * @param args
      */
-    public static void main( String[] args )
+    public static void main( String... args )
     {
-        StringBuffer buffer = new StringBuffer( "Hello" );
+        StringBuilder buffer = new StringBuilder( "Hello" );
 
-        for ( int i = 0; i < args.length; i++ )
+        for ( String arg : args )
         {
-            buffer.append( System.getProperty( "line.separator" ) ).append( args[i] );
+            buffer.append( System.getProperty( "line.separator" ) ).append( arg );
         }
 
         System.out.println( buffer.toString() );

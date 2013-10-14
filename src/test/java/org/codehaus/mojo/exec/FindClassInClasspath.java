@@ -14,16 +14,16 @@ public class FindClassInClasspath
      * @param args the names of classes to search in the classpath
      * prints 'OK' if all classes found
      **/
-    public static void main( String[] args )
+    public static void main( String... args )
     {
-      for (int i = 0; i < args.length; i++)
-      {
-        if ( ! isClassInClasspath( args[i] ))
+        for ( String arg : args )
         {
-          System.out.println( "ERROR: class + " + args[i] + " not found in classpath" );
-          System.exit( 1 );
+            if ( !isClassInClasspath( arg ) )
+            {
+                System.out.println( "ERROR: class + " + arg + " not found in classpath" );
+                System.exit( 1 );
+            }
         }
-      }
       System.out.println( FOUND_ALL );
     }
 

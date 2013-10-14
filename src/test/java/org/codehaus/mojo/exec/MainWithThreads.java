@@ -18,7 +18,7 @@ public class MainWithThreads extends Thread
      * after all the other threads
      * - if not, one must use a time out to stop joining on that unresponsive daemon thread
      **/
-    public static void main( String[] args )
+    public static void main( String... args )
     {
         // long run so that we interrupt it before it ends itself
         Thread responsiveDaemonThread = new MainWithThreads( 60000, "td" );
@@ -45,10 +45,12 @@ public class MainWithThreads extends Thread
 
     private static boolean optionsContains( String[] args, String option )
     {
-        for (int i = 0; i < args.length; i++ )
+        for ( String arg : args )
         {
-            if ( args[i].equals( option ) )
+            if ( arg.equals( option ) )
+            {
                 return true;
+            }
         }
         return false;
     }

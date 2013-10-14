@@ -11,7 +11,7 @@ public class MainUncooperative extends Thread
 {
     public static final String SUCCESS = "1(interrupted)(f)2(f)";
 
-    public static void main( String[] args )
+    public static void main( String... args )
         throws InterruptedException
     {
         Thread daemonThread = new MainUncooperative();

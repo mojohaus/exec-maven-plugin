@@ -125,7 +125,7 @@ public class ExecJavaMojoTest
     // java 1.4 compatibility
     private boolean stringContains( String str, String sequence )
     {
-        return str.indexOf( sequence ) != -1;
+        return str.contains( sequence );
     }
 
     /**
@@ -224,7 +224,7 @@ public class ExecJavaMojoTest
 
         // why isn't this set up by the harness based on the default-value?  TODO get to bottom of this!
         setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
-        setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
+        setVariableValueToObject( mojo, "killAfter", (long) -1 );
         setVariableValueToObject( mojo, "cleanupDaemonThreads", Boolean.TRUE );
         setVariableValueToObject( mojo, "classpathScope", "compile" );
 

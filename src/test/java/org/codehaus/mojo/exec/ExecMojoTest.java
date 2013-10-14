@@ -60,7 +60,7 @@ public class ExecMojoTest
     {
         public int executeResult;
 
-        public List commandLines = new ArrayList();
+        public List<CommandLine> commandLines = new ArrayList<CommandLine>();
 
         public String failureMsg;
 

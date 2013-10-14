@@ -208,7 +208,7 @@ public class ExecMojo
                         commandArguments.add( tmpFile.getAbsolutePath() );
                         i += 2;
                     }
-                    else if ( args[i].indexOf( CLASSPATH_TOKEN ) != -1 )
+                    else if ( args[i].contains( CLASSPATH_TOKEN ) )
                     {
                         commandArguments.add( args[i].replace( CLASSPATH_TOKEN, computeClasspathString( null ) ) );
                     }
@@ -390,9 +390,9 @@ public class ExecMojo
         {
             return result != 0;
         }
-        for ( int index = 0; index < successCodes.length; index++ )
+        for ( int successCode : successCodes )
         {
-            if ( successCodes[index] == result ) 
+            if ( successCode == result )
             {
                 return false;
             }
@@ -516,7 +516,7 @@ public class ExecMojo
             {
                 if ( OS.isFamilyWindows() )
                 {
-                    String ex = executable.indexOf( "." ) < 0 ? executable + ".bat" : executable;
+                    String ex = !executable.contains( "." ) ? executable + ".bat" : executable;
                     File f = new File( dir, ex );
                     if ( f.isFile() )
                     {
@@ -531,9 +531,9 @@ public class ExecMojo
                         if ( path != null )
                         {
                             String[] elems = StringUtils.split( path, File.pathSeparator );
-                            for ( int i = 0; i < elems.length; i++ )
+                            for ( String elem : elems )
                             {
-                                f = new File( new File( elems[i] ), ex );
+                                f = new File( new File( elem ), ex );
                                 if ( f.isFile() )
                                 {
                                     exec = ex;
@@ -632,12 +632,12 @@ public class ExecMojo
         return System.getProperty( key );
     }
 
-    public void setSuccessCodes( Integer[] list )
+    public void setSuccessCodes( Integer... list )
     {
         this.successCodes = new int[list.length];
         for ( int index = 0; index < list.length; index++ )
         {
-            successCodes[index] = list[index].intValue();
+            successCodes[index] = list[index];
         }
     }
 

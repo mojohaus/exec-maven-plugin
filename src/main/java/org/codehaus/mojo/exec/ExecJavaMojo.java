@@ -521,9 +521,8 @@ public class ExecJavaMojo
         if ( systemProperties != null )
         {
             originalSystemProperties = System.getProperties();
-            for ( int i = 0; i < systemProperties.length; i++ )
+            for ( Property systemProperty : systemProperties )
             {
-                Property systemProperty = systemProperties[i];
                 String value = systemProperty.getValue();
                 System.setProperty( systemProperty.getKey(), value == null ? "" : value );
             }
@@ -756,11 +755,11 @@ public class ExecJavaMojo
             //resolve all dependencies transitively to obtain a comprehensive list of assemblies
             ArtifactResolutionResult result = artifactResolver.resolveTransitively( dependencyArtifacts,
                                                                                     executablePomArtifact,
-                                                                                    Collections.EMPTY_MAP,
+                                                                                    Collections.emptyMap(),
                                                                                     this.localRepository,
                                                                                     this.remoteRepositories,
                                                                                     metadataSource, null,
-                                                                                    Collections.EMPTY_LIST );
+                                                                                    Collections.emptyList() );
             executableDependencies = result.getArtifacts();
         }
         catch ( Exception ex )

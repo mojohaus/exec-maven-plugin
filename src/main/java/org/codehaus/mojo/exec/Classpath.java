@@ -53,7 +53,7 @@ public class Classpath
 
     public String toString()
     {
-        StringBuffer buffer = new StringBuffer( "Classpath {" );
+        StringBuilder buffer = new StringBuilder( "Classpath {" );
 
         if ( dependencies != null )
         {
