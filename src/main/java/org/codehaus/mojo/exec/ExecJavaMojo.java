@@ -53,6 +53,7 @@ import org.apache.maven.project.artifact.MavenMetadataSource;
  * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>, <a href="mailto:dsmiley@mitre.org">David Smiley</a>
  * @goal java
  * @requiresDependencyResolution test
+ * @threadSafe
  * @since 1.0
  */
 public class ExecJavaMojo

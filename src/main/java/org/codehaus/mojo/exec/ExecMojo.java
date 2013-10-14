@@ -61,6 +61,7 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
  * @version $Id$
  * @goal exec
  * @requiresDependencyResolution test
+ * @threadSafe
  * @since 1.0
  */
 public class ExecMojo
