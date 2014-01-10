@@ -194,83 +194,17 @@ public class ExecMojo
 
             if ( hasCommandlineArgs() )
             {
-                String[] args = parseCommandlineArgs();
-                for ( int i = 0; i < args.length; i++ )
-                {
-                    if ( isLongClassPathArgument( args[i] ) )
-                    {
-                        // it is assumed that starting from -cp or -classpath the arguments
-                        // are: -classpath/-cp %classpath mainClass
-                        // the arguments are replaced with: -jar $TMP/maven-exec.jar
-                        // NOTE: the jar will contain the classpath and the main class
-                        commandArguments.add( "-jar" );
-                        File tmpFile = createJar( computeClasspath( null ), args[i + 2] );
-                        commandArguments.add( tmpFile.getAbsolutePath() );
-                        i += 2;
-                    }
-                    else if ( args[i].contains( CLASSPATH_TOKEN ) )
-                    {
-                        commandArguments.add( args[i].replace( CLASSPATH_TOKEN, computeClasspathString( null ) ) );
-                    }
-                    else
-                    {
-                        commandArguments.add( args[i] );
-                    }
-                }
+                handleCommandLineArgs(commandArguments);
             }
             else if ( !StringUtils.isEmpty( argsProp ) )
             {
-                getLog().debug( "got arguments from system properties: " + argsProp );
-
-                try
-                {
-                    String[] args = CommandLineUtils.translateCommandline( argsProp );
-                    commandArguments.addAll( Arrays.asList( args ) );
-                }
-                catch ( Exception e )
-                {
-                    throw new MojoExecutionException( "Couldn't parse systemproperty 'exec.args'" );
-                }
+                handleSystemPropertyArguments(argsProp, commandArguments);
             }
             else
             {
                 if ( arguments != null )
                 {
-                    for ( int i = 0; i < arguments.size(); i++ )
-                    {
-                        Object argument = arguments.get( i );
-                        String arg;
-                        if ( argument == null )
-                        {
-                            throw new MojoExecutionException( "Misconfigured argument, value is null. "
-                                + "Set the argument to an empty value if this is the required behaviour." );
-                        }
-                        else if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
-                        {
-                            // it is assumed that starting from -cp or -classpath the arguments
-                            // are: -classpath/-cp %classpath mainClass
-                            // the arguments are replaced with: -jar $TMP/maven-exec.jar
-                            // NOTE: the jar will contain the classpath and the main class
-                            commandArguments.add( "-jar" );
-                            File tmpFile =
-                                createJar( computeClasspath( (Classpath) arguments.get( i + 1 ) ),
-                                           (String) arguments.get( i + 2 ) );
-                            commandArguments.add( tmpFile.getAbsolutePath() );
-                            i += 2;
-                        }
-                        else if ( argument instanceof Classpath )
-                        {
-                            Classpath specifiedClasspath = (Classpath) argument;
-
-                            arg = computeClasspathString( specifiedClasspath );
-                            commandArguments.add( arg );
-                        }
-                        else
-                        {
-                            arg = argument.toString();
-                            commandArguments.add( arg );
-                        }
-                    }
+                    handleArguments(commandArguments);
                 }
             }
 
@@ -312,11 +246,7 @@ public class ExecMojo
 
             Executor exec = new DefaultExecutor();
 
-            String[] args = new String[commandArguments.size()];
-            for ( int i = 0; i < commandArguments.size(); i++ )
-            {
-                args[i] = (String) commandArguments.get( i );
-            }
+            String[] args = commandArguments.toArray(new String[commandArguments.size()]);
 
             commandLine.addArguments( args, false );
 
@@ -373,6 +303,84 @@ public class ExecMojo
         catch ( IOException e )
         {
             throw new MojoExecutionException( "I/O Error", e );
+        }
+    }
+
+    private void handleSystemPropertyArguments(String argsProp, List<String> commandArguments) throws MojoExecutionException {
+        getLog().debug( "got arguments from system properties: " + argsProp );
+
+        try
+        {
+            String[] args = CommandLineUtils.translateCommandline(argsProp);
+            commandArguments.addAll( Arrays.asList(args) );
+        }
+        catch ( Exception e )
+        {
+            throw new MojoExecutionException( "Couldn't parse systemproperty 'exec.args'" );
+        }
+    }
+
+    private void handleCommandLineArgs(List<String> commandArguments) throws MojoExecutionException, IOException {
+        String[] args = parseCommandlineArgs();
+        for ( int i = 0; i < args.length; i++ )
+        {
+            if ( isLongClassPathArgument( args[i] ) )
+            {
+                // it is assumed that starting from -cp or -classpath the arguments
+                // are: -classpath/-cp %classpath mainClass
+                // the arguments are replaced with: -jar $TMP/maven-exec.jar
+                // NOTE: the jar will contain the classpath and the main class
+                commandArguments.add( "-jar" );
+                File tmpFile = createJar( computeClasspath( null ), args[i + 2] );
+                commandArguments.add( tmpFile.getAbsolutePath() );
+                i += 2;
+            }
+            else if ( args[i].contains( CLASSPATH_TOKEN ) )
+            {
+                commandArguments.add( args[i].replace( CLASSPATH_TOKEN, computeClasspathString( null ) ) );
+            }
+            else
+            {
+                commandArguments.add( args[i] );
+            }
+        }
+    }
+
+    private void handleArguments(List<String> commandArguments) throws MojoExecutionException, IOException {
+        for ( int i = 0; i < arguments.size(); i++ )
+        {
+            Object argument = arguments.get( i );
+            String arg;
+            if ( argument == null )
+            {
+                throw new MojoExecutionException( "Misconfigured argument, value is null. "
+                    + "Set the argument to an empty value if this is the required behaviour." );
+            }
+            else if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
+            {
+                // it is assumed that starting from -cp or -classpath the arguments
+                // are: -classpath/-cp %classpath mainClass
+                // the arguments are replaced with: -jar $TMP/maven-exec.jar
+                // NOTE: the jar will contain the classpath and the main class
+                commandArguments.add( "-jar" );
+                File tmpFile =
+                    createJar( computeClasspath( (Classpath) arguments.get( i + 1 ) ),
+                               (String) arguments.get( i + 2 ) );
+                commandArguments.add( tmpFile.getAbsolutePath() );
+                i += 2;
+            }
+            else if ( argument instanceof Classpath )
+            {
+                Classpath specifiedClasspath = (Classpath) argument;
+
+                arg = computeClasspathString( specifiedClasspath );
+                commandArguments.add( arg );
+            }
+            else
+            {
+                arg = argument.toString();
+                commandArguments.add( arg );
+            }
         }
     }
 
