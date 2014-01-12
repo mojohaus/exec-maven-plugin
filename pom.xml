@@ -191,6 +191,37 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <version>1.5</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>1.8.4</version>
+              </dependency>
+              <dependency>
+                <groupId>org.codehaus.gmaven.runtime</groupId>
+                <artifactId>gmaven-runtime-1.8</artifactId>
+                <version>1.4</version>
+              </dependency>
+            </dependencies>
+            <configuration>
+              <debug>false</debug>
+              <verbose>true</verbose>
+              <stacktrace>true</stacktrace>
+              <defaultScriptExtension>.groovy</defaultScriptExtension>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
             <version>1.8</version>
@@ -222,7 +253,8 @@
                 </goals>
                 <configuration>
                   <extraArtifacts>
-                    <extraArtifact>org.codehaus.plexus:plexus-utils:1.1:jar</extraArtifact>
+                    <extraArtifact>commons-io:commons-io:1.1:jar</extraArtifact>
+                    <extraArtifact>commons-logging:commons-logging:1.0.4:jar</extraArtifact>
                   </extraArtifacts>
                 </configuration>
               </execution>

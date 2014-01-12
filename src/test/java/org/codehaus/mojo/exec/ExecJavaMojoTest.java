@@ -95,6 +95,31 @@ public class ExecJavaMojoTest
      * MEXEC-29 exec:java throws NPE if the mainClass main method has not a correct signature
      * <p/>
      */
+    // Moved this test to src/it/mexec-29 (integration test)
+    // cause it will fail. This is based of trying to 
+    // using dependencies (commons-logging:1.0.4:jar; commons-io:commons-is:1.1) which will be resolved 
+    // against maven central which will not work always in particular 
+    // when maven central is proxied via a repository manager.
+    // This could be solved by using the local settings.xml 
+    // file of the user, but the tests don't use it.
+    // Apart from that if the class does not exist as in this test
+    // the real execution of the plugin will result in a ClassNotFoundException
+    // like this:
+    //    [DEBUG] Adding project dependency artifact: commons-io to classpath
+    //    [DEBUG] Adding project dependency artifact: commons-logging to classpath
+    //    [DEBUG] joining on thread Thread[org.codehaus.mojo.exec.NoMain.main(),5,org.codehaus.mojo.exec.NoMain]
+    //    [WARNING]
+    //    java.lang.ClassNotFoundException: org.codehaus.mojo.exec.NoMain
+    //      at java.net.URLClassLoader$1.run(URLClassLoader.java:366)
+    //      at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
+    //      at java.security.AccessController.doPrivileged(Native Method)
+    //      at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
+    //      at java.lang.ClassLoader.loadClass(ClassLoader.java:423)
+    //      at java.lang.ClassLoader.loadClass(ClassLoader.java:356)
+    //      at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:293)
+    //      at java.lang.Thread.run(Thread.java:722)
+
+/*
     public void testIncorrectMainMethodSignature()
         throws Exception
     {
@@ -107,7 +132,8 @@ public class ExecJavaMojoTest
         }
 
     }
-
+*/
+    
 // this test doesn't work as the classpath passed to the project when executing the POM isn't the same as when maven is executed from within the project dir
 // Should be moved as an integration-test
 /*
