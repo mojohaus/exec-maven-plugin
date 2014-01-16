@@ -256,6 +256,15 @@
                 </goals>
                 <configuration>
                   <extraArtifacts>
+                    <extraArtifact>org.apache.maven.plugins:maven-compiler-plugin:3.1:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-install-plugin:2.4:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-clean-plugin:2.5:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-surefire-plugin:2.16:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-assembly-plugin:2.4:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-jar-plugin:2.4:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-war-plugin:2.3:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-resources-plugin:2.6:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-site-plugin:3.3:maven-plugin</extraArtifact>
                     <extraArtifact>commons-io:commons-io:1.1:jar</extraArtifact>
                     <extraArtifact>commons-logging:commons-logging:1.0.4:jar</extraArtifact>
                   </extraArtifacts>
