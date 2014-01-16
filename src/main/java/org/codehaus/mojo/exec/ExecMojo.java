@@ -188,6 +188,8 @@ public class ExecMojo
                 throw new IllegalStateException( "basedir is null. Should not be possible." );
             }
 
+            handleWorkingDirectory();
+            
             String argsProp = getSystemProperty( "exec.args" );
 
             List<String> commandArguments = new ArrayList<String>();
@@ -208,39 +210,7 @@ public class ExecMojo
                 }
             }
 
-            Map<String, String> enviro = new HashMap<String, String>();
-            try
-            {
-                Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
-                for( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
-                {
-                    enviro.put( (String) entry.getKey(), (String) entry.getValue() );
-                }
-            }
-            catch ( IOException x )
-            {
-                getLog().error( "Could not assign default system enviroment variables.", x );
-            }
-
-            if ( environmentVariables != null )
-            {
-                enviro.putAll( environmentVariables );
-            }
-
-            if ( workingDirectory == null )
-            {
-                workingDirectory = basedir;
-            }
-
-            if ( !workingDirectory.exists() )
-            {
-                getLog().debug( "Making working directory '" + workingDirectory.getAbsolutePath() + "'." );
-                if ( !workingDirectory.mkdirs() )
-                {
-                    throw new MojoExecutionException( "Could not make working directory: '"
-                        + workingDirectory.getAbsolutePath() + "'" );
-                }
-            }
+            Map<String, String> enviro = handleSystemEnvVariables();
 
             CommandLine commandLine = getExecutablePath( enviro, workingDirectory );
 
@@ -303,6 +273,48 @@ public class ExecMojo
         catch ( IOException e )
         {
             throw new MojoExecutionException( "I/O Error", e );
+        }
+    }
+
+    private Map<String, String> handleSystemEnvVariables()
+    {
+        Map<String, String> enviro = new HashMap<String, String>();
+        try
+        {
+            Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
+            for( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
+            {
+                enviro.put( (String) entry.getKey(), (String) entry.getValue() );
+            }
+        }
+        catch ( IOException x )
+        {
+            getLog().error( "Could not assign default system enviroment variables.", x );
+        }
+
+        if ( environmentVariables != null )
+        {
+            enviro.putAll( environmentVariables );
+        }
+        return enviro;
+    }
+
+    private void handleWorkingDirectory()
+        throws MojoExecutionException
+    {
+        if ( workingDirectory == null )
+        {
+            workingDirectory = basedir;
+        }
+
+        if ( !workingDirectory.exists() )
+        {
+            getLog().debug( "Making working directory '" + workingDirectory.getAbsolutePath() + "'." );
+            if ( !workingDirectory.mkdirs() )
+            {
+                throw new MojoExecutionException( "Could not make working directory: '"
+                    + workingDirectory.getAbsolutePath() + "'" );
+            }
         }
     }
 

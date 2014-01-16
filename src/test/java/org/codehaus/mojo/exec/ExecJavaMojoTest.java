@@ -16,21 +16,20 @@ package org.codehaus.mojo.exec;
  * limitations under the License.
  */
 
+import java.io.File;
+import java.io.PrintStream;
+
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.monitor.logging.DefaultLog;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.monitor.logging.DefaultLog;
-import org.codehaus.plexus.util.StringOutputStream;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
-
-import java.io.File;
-import java.io.PrintStream;
+import org.codehaus.plexus.util.StringOutputStream;
 
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
@@ -148,12 +147,6 @@ public class ExecJavaMojoTest
     }
 */
     
-    // java 1.4 compatibility
-    private boolean stringContains( String str, String sequence )
-    {
-        return str.contains( sequence );
-    }
-
     /**
      * For cases where the Java code spawns Threads and main returns soon.
      * See <a href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
