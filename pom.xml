@@ -59,6 +59,12 @@
       <email>rfscholte@codehaus.org</email>
       <timezone>Europe/Amsterdam</timezone>
     </developer>
+    <developer>
+      <id>khmarbaise</id>
+      <name>Karl Heinz Marbaise</name>
+      <email>khmarbaise@codehaus.org</email>
+      <timezone>Europe/Berlin</timezone>
+    </developer>
   </developers>
 
   <contributors>
