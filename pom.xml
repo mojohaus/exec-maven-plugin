@@ -244,9 +244,6 @@
               <pomIncludes>
                 <pomInclude>*/pom.xml</pomInclude>
               </pomIncludes>
-              <pomExcludes>
-                <pomExclude>mexec-86/pom.xml</pomExclude> <!-- unstable -->
-              </pomExcludes>
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
               <settingsFile>src/it/settings.xml</settingsFile>

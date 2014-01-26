@@ -19,10 +19,12 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -175,18 +177,19 @@ public class ExecMojo
     public void execute()
         throws MojoExecutionException
     {
+        if ( isSkip() )
+        {
+            getLog().info( "skipping execute as per configuraion" );
+            return;
+        }
+        
+        if ( basedir == null )
+        {
+            throw new IllegalStateException( "basedir is null. Should not be possible." );
+        }
+
         try
         {
-            if ( isSkip() )
-            {
-                getLog().info( "skipping execute as per configuraion" );
-                return;
-            }
-
-            if ( basedir == null )
-            {
-                throw new IllegalStateException( "basedir is null. Should not be possible." );
-            }
 
             handleWorkingDirectory();
             
@@ -214,14 +217,12 @@ public class ExecMojo
 
             CommandLine commandLine = getExecutablePath( enviro, workingDirectory );
 
-            Executor exec = new DefaultExecutor();
-
             String[] args = commandArguments.toArray(new String[commandArguments.size()]);
 
             commandLine.addArguments( args, false );
 
+            Executor exec = new DefaultExecutor();
             exec.setWorkingDirectory( workingDirectory );
-
             fillSuccessCodes(exec);
 
             getLog().debug( "Executing command line: " + commandLine );
@@ -240,6 +241,7 @@ public class ExecMojo
                     try 
                     {
                         outputStream = new FileOutputStream( outputFile );
+
                         resultCode = executeCommandLine( exec, commandLine, enviro, outputStream );
                     }
                     finally
@@ -599,16 +601,49 @@ public class ExecMojo
                                       OutputStream err )
         throws ExecuteException, IOException
     {
-        exec.setStreamHandler( new PumpStreamHandler( out, err, System.in ) );
-        return exec.execute( commandLine, enviro );
+        BufferedOutputStream bosStdOut = new BufferedOutputStream( out );
+        BufferedOutputStream bosStdErr = new BufferedOutputStream( out );
+        PumpStreamHandler psh = new PumpStreamHandler( bosStdOut, bosStdErr, System.in );
+        exec.setStreamHandler( psh );
+
+        int result;
+        try
+        {
+            psh.start();
+            result = exec.execute( commandLine, enviro );
+        }
+        finally
+        {
+            psh.stop();
+            bosStdOut.close();
+            bosStdErr.close();
+            out.close();
+            err.close();
+        }
+        return result;
     }
     
     protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro,
                                       FileOutputStream outputFile )
         throws ExecuteException, IOException
     {
-        exec.setStreamHandler( new PumpStreamHandler( outputFile ) );
-        return exec.execute( commandLine, enviro );
+        BufferedOutputStream bos = new BufferedOutputStream( outputFile );
+        PumpStreamHandler psh = new PumpStreamHandler( bos );
+        exec.setStreamHandler( psh );
+
+        int result;
+        try
+        {
+            psh.start();
+            result = exec.execute( commandLine, enviro );
+        }
+        finally
+        {
+            psh.stop();
+            bos.close();
+            outputFile.close();
+        }
+        return result;
     }
 
 

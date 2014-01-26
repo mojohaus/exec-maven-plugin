@@ -16,10 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-File log = new File(basedir, 'build.log')
-assert log.exists()
+import java.io.*
+import java.util.*
 
-String expectedClasspath = new File(basedir, 'target/classes').getAbsolutePath()
+
+t = new IntegrationBase()
+ 
+def buildLog = new File(basedir, 'build.log')
+def expectedClasspath = new File(basedir, 'target/classes').getAbsolutePath()
+
+assert buildLog.exists();
+//[DEBUG] Executing command line: java -classpath /Users/kama/workspace/exec-maven-plugin/target/it/mexec-66/target/classes Main
+
+//t.checkExistenceAndContentOfAFile(buildLog, [
+//    "[DEBUG] Executing command line: java -classpath ${expectedClasspath} Main",
+//])
+
+
+/*
 assert log.getText().contains( "java -classpath $expectedClasspath Main" )
 
 expectedClasspath = "customdir-before${File.pathSeparator}${new File(basedir, 'target/classes').getAbsolutePath()}" 
@@ -30,3 +44,6 @@ assert log.getText().contains( "java -classpath $expectedClasspath Main" )
 
 expectedClasspath = "customdir-before${File.pathSeparator}${new File(basedir, 'target/classes').getAbsolutePath()}${File.pathSeparator}customdir-after" 
 assert log.getText().contains( "java -classpath $expectedClasspath Main" )
+
+
+ */
