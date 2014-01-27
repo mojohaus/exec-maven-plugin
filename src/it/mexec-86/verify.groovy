@@ -55,9 +55,11 @@ private int countTheNumberOfLines(String expectedHexString, String line) {
         if (posOfFirstLine >= 0) {
             found = true;
             numberOfLine++;
-            // +3: +2 for hex means two character like 0a
+            // line.length():
+            //     +2 for hex means two character like 0a
             //     +1 for space during the hex string generation.
-            expectedHexString = expectedHexString.substring(posOfFirstLine+3);
+            // depends on the platform.
+            expectedHexString = expectedHexString.substring(posOfFirstLine+line.length());
         }  else {
             found = false;
         }

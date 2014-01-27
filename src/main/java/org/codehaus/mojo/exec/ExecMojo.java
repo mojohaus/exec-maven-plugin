@@ -301,6 +301,18 @@ public class ExecMojo
         return enviro;
     }
 
+    /**
+     * This method is a convenient method to make
+     * the execute method a little bit more readable.
+     *
+     * It will define the workingDirectory to be the
+     * baseDir in case of workingDirectory is null.
+     *
+     * If the workingDirectory does not exist
+     * it will created.
+     *
+     * @throws MojoExecutionException
+     */
     private void handleWorkingDirectory()
         throws MojoExecutionException
     {
@@ -602,7 +614,7 @@ public class ExecMojo
         throws ExecuteException, IOException
     {
         BufferedOutputStream bosStdOut = new BufferedOutputStream( out );
-        BufferedOutputStream bosStdErr = new BufferedOutputStream( out );
+        BufferedOutputStream bosStdErr = new BufferedOutputStream( err );
         PumpStreamHandler psh = new PumpStreamHandler( bosStdOut, bosStdErr, System.in );
         exec.setStreamHandler( psh );
 
