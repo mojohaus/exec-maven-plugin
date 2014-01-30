@@ -268,8 +268,10 @@
                     <extraArtifact>org.apache.maven.plugins:maven-war-plugin:2.3:maven-plugin</extraArtifact>
                     <extraArtifact>org.apache.maven.plugins:maven-resources-plugin:2.6:maven-plugin</extraArtifact>
                     <extraArtifact>org.apache.maven.plugins:maven-site-plugin:3.3:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-site-plugin:2.0.1:maven-plugin</extraArtifact>
                     <extraArtifact>commons-io:commons-io:1.1:jar</extraArtifact>
                     <extraArtifact>commons-logging:commons-logging:1.0.4:jar</extraArtifact>
+                    <extraArtifact>org.codehaus.plexus:plexus-utils:1.1:jar</extraArtifact>
                   </extraArtifacts>
                 </configuration>
               </execution>
