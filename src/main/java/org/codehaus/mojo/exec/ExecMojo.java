@@ -125,6 +125,21 @@ public class ExecMojo
     private List<?> arguments;
 
     /**
+     * <p>
+     * This will control if you like to fail the build if
+     * an arguments element is empty. This means that for arguments 
+     * which would evaluate to <code>Null</code> an
+     * <code>""</code> empty string will be added to the command line
+     * of the {@code executable} which will be called.
+     * </p>
+     * 
+     * @parameter default-value="true"
+     * @since 1.3
+     * @see #arguments
+     */
+    private boolean failWithEmptyArgument;
+
+    /**
      * @parameter default-value="${basedir}"
      * @required
      * @readonly
@@ -379,8 +394,14 @@ public class ExecMojo
             String arg;
             if ( argument == null )
             {
-                throw new MojoExecutionException( "Misconfigured argument, value is null. "
-                    + "Set the argument to an empty value if this is the required behaviour." );
+            	if ( failWithEmptyArgument ) {
+            		throw new MojoExecutionException( "Misconfigured argument, value is null. "
+            				+ "Set the argument to an empty value if this is the required behaviour." );
+            		
+            	} else {
+            		//Just add an empty string to the argument list.
+                    commandArguments.add( "" );
+            	}
             }
             else if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
             {
