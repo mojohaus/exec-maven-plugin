@@ -26,5 +26,5 @@ def buildLog = new File( basedir, "build.log" )
 
 t.checkExistenceAndContentOfAFile(buildLog, [
   "[DEBUG]   (f) arguments = [-cp, target/classes, Main, null]",
-  "Caused by: org.apache.maven.plugin.MojoExecutionException: Misconfigured argument, value is null. Set the argument to an empty value if this is the required behaviour."
+  "Caused by: org.apache.maven.plugin.MojoExecutionException: Misconfigured argument (4), value is null. Set the argument to an empty value if this is the required behaviour."
 ])

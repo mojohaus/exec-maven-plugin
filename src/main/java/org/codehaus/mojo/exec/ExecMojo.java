@@ -395,7 +395,7 @@ public class ExecMojo
             if ( argument == null )
             {
             	if ( failWithEmptyArgument ) {
-            		throw new MojoExecutionException( "Misconfigured argument, value is null. "
+            		throw new MojoExecutionException( "Misconfigured argument (" + (i + 1) + "), value is null. "
             				+ "Set the argument to an empty value if this is the required behaviour." );
             		
             	} else {
