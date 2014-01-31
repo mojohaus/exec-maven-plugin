@@ -16,3 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+ import java.io.*
+ import java.util.*
+ 
+ t = new IntegrationBase()
+ 
+ def buildLog = new File( basedir, "build.log" )
+ 
+ t.checkExistenceAndContentOfAFile(buildLog, [
+   "java.lang.Exception: The specified mainClass doesn't contain a main method with appropriate signature."
+ ])
+ 
+ 
