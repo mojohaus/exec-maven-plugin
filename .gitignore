@@ -12,5 +12,5 @@ build
 .surefire-*
 .DS_Store
 *.versionsBackup
-src/test/repository/commons-logging/
+test-output
 
