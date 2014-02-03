@@ -47,6 +47,10 @@ import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
@@ -60,11 +64,9 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
  * 
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
- * @goal exec
- * @requiresDependencyResolution test
- * @threadSafe
  * @since 1.0
  */
+@Mojo( name = "exec", threadSafe = true, requiresDependencyResolution = ResolutionScope.TEST )
 public class ExecMojo
     extends AbstractExecMojo
 {
@@ -84,18 +86,17 @@ public class ExecMojo
      * Otherwise use the executable as is.
      * </p>
      * 
-     * @parameter expression="${exec.executable}"
-     * @required
      * @since 1.0
      */
+    @Parameter( property = "exec.executable", required = true )
     private String executable;
 
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
      * 
-     * @parameter expression="${exec.workingdir}
      * @since 1.0
      */
+    @Parameter( property = "exec.workingdir" )
     private File workingDirectory;
 
     /**
@@ -104,11 +105,11 @@ public class ExecMojo
      * <strong>Note:</strong> Be aware that <code>System.out</code> and <code>System.err</code> use buffering, so don't
      * rely on the order!
      * 
-     * @parameter expression="${exec.outputFile}"
      * @since 1.1-beta-2
      * @see java.lang.System#err
      * @see java.lang.System#in
      */
+    @Parameter( property = "exec.exec.outputFile" )
     private File outputFile;
 
     /**
@@ -117,9 +118,9 @@ public class ExecMojo
      * <code>&lt;classpath&gt;</code>. Can be overridden by using the <code>exec.args</code> environment variable.
      * </p>
      * 
-     * @parameter
      * @since 1.0
      */
+    @Parameter
     private List<?> arguments;
 
     /**
@@ -129,10 +130,10 @@ public class ExecMojo
      * the {@code executable} which will be called.
      * </p>
      * 
-     * @parameter default-value="true"
      * @since 1.3
      * @see #arguments
      */
+    @Parameter( defaultValue = "true" )
     private boolean failWithEmptyArgument;
 
     /**
@@ -141,18 +142,16 @@ public class ExecMojo
      * environmentVariables will be evaluated to <code>Null</code> an <code>""</code> empty string will be used instead.
      * </p>
      * 
-     * @parameter default-value="true"
      * @since 1.3
      * @see #environmentVariables
      */
+    @Parameter( defaultValue = "true" )
     private boolean failWithNullKeyOrValueInEnvironment;
 
     /**
-     * @parameter default-value="${basedir}"
-     * @required
-     * @readonly
      * @since 1.0
      */
+    @Parameter( readonly = true, required = true, defaultValue = "${basedir}" )
     private File basedir;
 
     /**
@@ -161,15 +160,13 @@ public class ExecMojo
      * @parameter
      * @since 1.1-beta-2
      */
+    @Parameter
     private Map<String, String> environmentVariables = new HashMap<String, String>();
 
     /**
      * The current build session instance. This is used for toolchain manager API calls.
-     * 
-     * @parameter default-value="${session}"
-     * @required
-     * @readonly
      */
+    @Component
     private MavenSession session;
 
     /**
@@ -179,15 +176,16 @@ public class ExecMojo
      * @parameter
      * @since 1.1.1
      */
+    @Parameter
     private int[] successCodes;
 
     /**
      * If set to true the classpath and the main class will be written to a MANIFEST.MF file and wrapped into a jar.
      * Instead of '-classpath/-cp CLASSPATH mainClass' the exec plugin executes '-jar maven-exec.jar'.
      * 
-     * @parameter expression="${exec.longClasspath}" default-value="false"
      * @since 1.1.2
      */
+    @Parameter( property = "exec.longClasspath", defaultValue = "false" )
     private boolean longClasspath;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
@@ -301,7 +299,8 @@ public class ExecMojo
         }
     }
 
-    private Map<String, String> handleSystemEnvVariables() throws MojoExecutionException
+    private Map<String, String> handleSystemEnvVariables()
+        throws MojoExecutionException
     {
         Map<String, String> enviro = new HashMap<String, String>();
         try
@@ -330,7 +329,7 @@ public class ExecMojo
                     if ( failWithNullKeyOrValueInEnvironment )
                     {
                         throw new MojoExecutionException(
-                                                         "The defined environment contains an entry with null key. This could cause failures." );
+                                                          "The defined environment contains an entry with null key. This could cause failures." );
                     }
                     else
                     {
@@ -342,13 +341,13 @@ public class ExecMojo
                     if ( failWithNullKeyOrValueInEnvironment )
                     {
                         throw new MojoExecutionException(
-                                                         "The defined environment contains an entry with null value (key:"
-                                                             + item.getKey() + "). This could cause failures." );
+                                                          "The defined environment contains an entry with null value (key:"
+                                                              + item.getKey() + "). This could cause failures." );
                     }
                     else
                     {
-                        getLog().warn( "The defined environment contains an entry with null value (key:" + item.getKey()
-                                       + "). This could cause failures." );
+                        getLog().warn( "The defined environment contains an entry with null value (key:"
+                                           + item.getKey() + "). This could cause failures." );
                     }
                 }
             }

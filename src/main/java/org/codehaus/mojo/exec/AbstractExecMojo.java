@@ -25,6 +25,8 @@ import java.util.List;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
@@ -40,50 +42,44 @@ public abstract class AbstractExecMojo
 {
     /**
      * The enclosing project.
-     * 
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
      */
+    @Component
     protected MavenProject project;
 
     /**
      * This folder is added to the list of those folders containing source to be compiled. Use this if your plugin
      * generates source code.
      * 
-     * @parameter expression="${sourceRoot}"
      */
+    @Parameter( property = "sourceRoot" )
     private File sourceRoot;
 
     /**
      * This folder is added to the list of those folders containing source to be compiled for testing. Use this if your
      * plugin generates test source code.
-     * 
-     * @parameter expression="${testSourceRoot}"
      */
+    @Parameter( property = "testSourceRoot" )
     private File testSourceRoot;
 
     /**
      * Arguments for the executed program
-     * 
-     * @parameter expression="${exec.args}"
      */
+    @Parameter( property = "exec.args" )
     private String commandlineArgs;
 
     /**
      * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your
      * needs. Since 1.1.2, the default value is 'runtime' instead of 'compile'.
-     * 
-     * @parameter expression="${exec.classpathScope}" default-value="runtime"
      */
+    @Parameter( property = "exec.classpathScope", defaultValue = "runtime" )
     protected String classpathScope;
 
     /**
      * Skip the execution.
      * 
-     * @parameter expression="${skip}" default-value="false"
      * @since 1.0.1
      */
+    @Parameter( property = "skip", defaultValue = "false" )
     private boolean skip;
 
     /**
