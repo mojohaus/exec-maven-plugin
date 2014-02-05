@@ -212,6 +212,7 @@
         <artifactId>maven-plugin-plugin</artifactId>
         <configuration>
           <goalPrefix>exec</goalPrefix>
+          <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
         </configuration>
         <executions>
           <execution>
