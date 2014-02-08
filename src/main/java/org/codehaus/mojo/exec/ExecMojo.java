@@ -58,6 +58,12 @@ import org.codehaus.plexus.component.repository.exception.ComponentLookupExcepti
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
+import java.io.*;
+import java.net.URL;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 /**
  * A Plugin for executing external programs.
@@ -357,10 +363,15 @@ public class ExecMojo
     }
 
     /**
-     * This method is a convenient method to make the execute method a little bit more readable. It will define the
-     * workingDirectory to be the baseDir in case of workingDirectory is null. If the workingDirectory does not exist it
-     * will created.
-     * 
+     * This is a convenient method to make
+     * the execute method a little bit more readable.
+     *
+     * It will define the workingDirectory to be the
+     * baseDir in case of workingDirectory is null.
+     *
+     * If the workingDirectory does not exist
+     * it will created.
+     *
      * @throws MojoExecutionException
      */
     private void handleWorkingDirectory()
@@ -823,15 +834,15 @@ public class ExecMojo
 
         // we can't use StringUtils.join here since we need to add a '/' to
         // the end of directory entries - otherwise the jvm will ignore them.
-        String cp = "";
+        StringBuilder cp = new StringBuilder();
         for ( String el : classPath )
         {
             // NOTE: if File points to a directory, this entry MUST end in '/'.
-            cp += UrlUtils.getURL( new File( el ) ).toExternalForm() + " ";
+            cp.append(new URL(new File( el ).toURI().toASCIIString()).toExternalForm() + " ");
         }
 
         man.getMainAttributes().putValue( "Manifest-Version", "1.0" );
-        man.getMainAttributes().putValue( "Class-Path", cp.trim() );
+        man.getMainAttributes().putValue( "Class-Path", cp.toString().trim() );
         man.getMainAttributes().putValue( "Main-Class", mainClass );
 
         man.write( jos );
