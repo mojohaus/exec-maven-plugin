@@ -728,7 +728,6 @@ public class ExecMojo
         {
             psh.stop();
             bos.close();
-            outputFile.close();
         }
         return result;
     }
