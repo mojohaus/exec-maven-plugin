@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,12 +59,6 @@ import org.codehaus.plexus.component.repository.exception.ComponentLookupExcepti
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
-import java.io.*;
-import java.net.URL;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 
 /**
  * A Plugin for executing external programs.
@@ -363,15 +358,10 @@ public class ExecMojo
     }
 
     /**
-     * This is a convenient method to make
-     * the execute method a little bit more readable.
-     *
-     * It will define the workingDirectory to be the
-     * baseDir in case of workingDirectory is null.
-     *
-     * If the workingDirectory does not exist
-     * it will created.
-     *
+     * This is a convenient method to make the execute method a little bit more readable. It will define the
+     * workingDirectory to be the baseDir in case of workingDirectory is null. If the workingDirectory does not exist it
+     * will created.
+     * 
      * @throws MojoExecutionException
      */
     private void handleWorkingDirectory()
@@ -837,7 +827,7 @@ public class ExecMojo
         for ( String el : classPath )
         {
             // NOTE: if File points to a directory, this entry MUST end in '/'.
-            cp.append(new URL(new File( el ).toURI().toASCIIString()).toExternalForm() + " ");
+            cp.append( new URL( new File( el ).toURI().toASCIIString() ).toExternalForm() + " " );
         }
 
         man.getMainAttributes().putValue( "Manifest-Version", "1.0" );

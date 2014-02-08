@@ -16,7 +16,6 @@ package org.codehaus.mojo.exec;
  * limitations under the License.
  */
 
-
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
@@ -24,7 +23,9 @@ package org.codehaus.mojo.exec;
 public class NoMain
 {
     // MEXEC-29 wrong interface for main method causes NPE
-    public static void main( ) throws Exception {
- 
+    public static void main()
+        throws Exception
+    {
+
     }
 }

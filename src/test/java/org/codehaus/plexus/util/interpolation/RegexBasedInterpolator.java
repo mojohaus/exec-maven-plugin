@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * COPIED FROM plexus-utils-1.5.15 TO SATISFY TESTS
- *
+ * 
  * @version $Id$
  * @deprecated Use plexus-interpolation APIs instead.
  */
@@ -22,15 +22,12 @@ public class RegexBasedInterpolator
         super( valueSources );
     }
 
-    public RegexBasedInterpolator( String startRegex,
-                                   String endRegex,
-                                   List valueSources )
+    public RegexBasedInterpolator( String startRegex, String endRegex, List valueSources )
     {
         super( startRegex, endRegex, valueSources );
     }
 
-    public RegexBasedInterpolator( String startRegex,
-                                   String endRegex )
+    public RegexBasedInterpolator( String startRegex, String endRegex )
     {
         super( startRegex, endRegex );
     }

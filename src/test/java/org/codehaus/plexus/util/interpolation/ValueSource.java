@@ -7,7 +7,8 @@ package org.codehaus.plexus.util.interpolation;
  * @deprecated Use plexus-interpolation APIs instead.
  * @version $Id$
  */
-public interface ValueSource  extends org.codehaus.plexus.interpolation.ValueSource
+public interface ValueSource
+    extends org.codehaus.plexus.interpolation.ValueSource
 {
 
 }

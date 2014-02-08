@@ -6,17 +6,18 @@ import java.util.TimerTask;
 /**
  * @author <a href="mailto:dsmiley@mitre.org">David Smiley</a>
  */
-public class MainWithThreads extends Thread
+public class MainWithThreads
+    extends Thread
 {
     public static final String ALL_EXITED = "t1(interrupted td)(cancelled timer)";
+
     public static final String TIMER_IGNORED = "t1(interrupted td)";
 
-    /** 
-     * both daemon threads will be interrupted as soon as the non daemon thread is done.
-     * the responsive daemon thread will be interrupted right away.
-     * - if the timer is cancelled (using 'cancelTimer' as argument), the timer will die on itself
-     * after all the other threads
-     * - if not, one must use a time out to stop joining on that unresponsive daemon thread
+    /**
+     * both daemon threads will be interrupted as soon as the non daemon thread is done. the responsive daemon thread
+     * will be interrupted right away. - if the timer is cancelled (using 'cancelTimer' as argument), the timer will die
+     * on itself after all the other threads - if not, one must use a time out to stop joining on that unresponsive
+     * daemon thread
      **/
     public static void main( String... args )
     {
@@ -56,6 +57,7 @@ public class MainWithThreads extends Thread
     }
 
     private int millisecsToSleep;
+
     private String message;
 
     public MainWithThreads( int millisecsToSleep, String message )

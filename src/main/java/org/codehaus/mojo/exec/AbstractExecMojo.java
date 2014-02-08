@@ -49,7 +49,6 @@ public abstract class AbstractExecMojo
     /**
      * This folder is added to the list of those folders containing source to be compiled. Use this if your plugin
      * generates source code.
-     * 
      */
     @Parameter( property = "sourceRoot" )
     private File sourceRoot;

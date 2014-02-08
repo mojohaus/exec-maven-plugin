@@ -21,7 +21,7 @@ package org.codehaus.mojo.exec;
 
 /**
  * Wrapper class for the systemPropery argument type.
- *
+ * 
  * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
  */
 public class Property
@@ -31,8 +31,10 @@ public class Property
     private String value;
 
     /**
-     * <p>Getter for the field <code>key</code>.</p>
-     *
+     * <p>
+     * Getter for the field <code>key</code>.
+     * </p>
+     * 
      * @return a {@link java.lang.String} object.
      */
     public String getKey()
@@ -41,8 +43,10 @@ public class Property
     }
 
     /**
-     * <p>Setter for the field <code>key</code>.</p>
-     *
+     * <p>
+     * Setter for the field <code>key</code>.
+     * </p>
+     * 
      * @param key a {@link java.lang.String} object.
      */
     public void setKey( String key )
@@ -51,8 +55,10 @@ public class Property
     }
 
     /**
-     * <p>Getter for the field <code>value</code>.</p>
-     *
+     * <p>
+     * Getter for the field <code>value</code>.
+     * </p>
+     * 
      * @return a {@link java.lang.String} object.
      */
     public String getValue()
@@ -61,8 +67,10 @@ public class Property
     }
 
     /**
-     * <p>Setter for the field <code>value</code>.</p>
-     *
+     * <p>
+     * Setter for the field <code>value</code>.
+     * </p>
+     * 
      * @param value a {@link java.lang.String} object.
      */
     public void setValue( String value )

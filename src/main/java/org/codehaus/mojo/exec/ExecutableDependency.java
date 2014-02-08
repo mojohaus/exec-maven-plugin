@@ -22,8 +22,9 @@ package org.codehaus.mojo.exec;
 import org.apache.maven.artifact.Artifact;
 
 /**
- * <p>ExecutableDependency class.</p>
- *
+ * <p>
+ * ExecutableDependency class.
+ * </p>
  */
 public class ExecutableDependency
 {
@@ -32,8 +33,10 @@ public class ExecutableDependency
     private String artifactId;
 
     /**
-     * <p>Getter for the field <code>groupId</code>.</p>
-     *
+     * <p>
+     * Getter for the field <code>groupId</code>.
+     * </p>
+     * 
      * @return a {@link java.lang.String} object.
      */
     public String getGroupId()
@@ -42,8 +45,10 @@ public class ExecutableDependency
     }
 
     /**
-     * <p>Setter for the field <code>groupId</code>.</p>
-     *
+     * <p>
+     * Setter for the field <code>groupId</code>.
+     * </p>
+     * 
      * @param groupId a {@link java.lang.String} object.
      */
     public void setGroupId( String groupId )
@@ -52,8 +57,10 @@ public class ExecutableDependency
     }
 
     /**
-     * <p>Getter for the field <code>artifactId</code>.</p>
-     *
+     * <p>
+     * Getter for the field <code>artifactId</code>.
+     * </p>
+     * 
      * @return a {@link java.lang.String} object.
      */
     public String getArtifactId()
@@ -62,8 +69,10 @@ public class ExecutableDependency
     }
 
     /**
-     * <p>Setter for the field <code>artifactId</code>.</p>
-     *
+     * <p>
+     * Setter for the field <code>artifactId</code>.
+     * </p>
+     * 
      * @param artifactId a {@link java.lang.String} object.
      */
     public void setArtifactId( String artifactId )
@@ -72,8 +81,10 @@ public class ExecutableDependency
     }
 
     /**
-     * <p>Matches the groupId and artifactId.</p>
-     *
+     * <p>
+     * Matches the groupId and artifactId.
+     * </p>
+     * 
      * @param artifact a {@link org.apache.maven.artifact.Artifact} object.
      * @return <code>true</code> if both math, <code>false</code> otherwise.
      */
