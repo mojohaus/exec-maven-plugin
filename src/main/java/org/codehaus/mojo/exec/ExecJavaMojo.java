@@ -115,7 +115,7 @@ public class ExecJavaMojo
      * 
      * @since 1.0
      */
-    @Parameter( required = true, property = "exec.arguments" )
+    @Parameter( property = "exec.arguments" )
     private String[] arguments;
 
     /**
