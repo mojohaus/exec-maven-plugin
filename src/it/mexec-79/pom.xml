@@ -15,6 +15,8 @@
 
   <build>
     <directory>target or build</directory>
+    <!-- The following entry is need to satisfy Maven 2.0.11, cause it does not work with only the previous line -->
+    <outputDirectory>target or build/classes</outputDirectory>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
