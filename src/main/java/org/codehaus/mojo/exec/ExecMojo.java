@@ -158,7 +158,6 @@ public class ExecMojo
     /**
      * Environment variables to pass to the executed program.
      * 
-     * @parameter
      * @since 1.1-beta-2
      */
     @Parameter
@@ -174,7 +173,6 @@ public class ExecMojo
      * Exit codes to be resolved as successful execution for non-compliant applications (applications not returning 0
      * for success).
      * 
-     * @parameter
      * @since 1.1.1
      */
     @Parameter

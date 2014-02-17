@@ -60,21 +60,12 @@ import org.apache.maven.project.artifact.MavenMetadataSource;
 public class ExecJavaMojo
     extends AbstractExecMojo
 {
-    /**
-     * @component
-     */
     @Component
     private ArtifactResolver artifactResolver;
 
-    /**
-     * @component
-     */
     @Component
     private ArtifactFactory artifactFactory;
 
-    /**
-     * @component
-     */
     @Component
     private ArtifactMetadataSource metadataSource;
 
@@ -123,20 +114,20 @@ public class ExecJavaMojo
      * by the JVM cannot be passed here. Use MAVEN_OPTS or the exec:exec instead. See the user guide for more
      * information.
      * 
-     * @parameter
      * @since 1.0
      */
     @Parameter
     private Property[] systemProperties;
 
     /**
-     * Indicates if mojo should be kept running after the mainclass terminates. Usefull for serverlike apps with
-     * deamonthreads.
+     * Indicates if mojo should be kept running after the mainclass terminates. Use full for server like apps with
+     * daemon threads.
      * 
      * @deprecated since 1.1-alpha-1
      * @since 1.0
      */
     @Parameter( property = "exec.keepAlive", defaultValue = "false" )
+    @Deprecated
     private boolean keepAlive;
 
     /**
@@ -154,7 +145,6 @@ public class ExecJavaMojo
      * particularly useful when the project is not a java project. For example a mvn project using the csharp plugins
      * only expects to see dotnet libraries as dependencies.
      * 
-     * @parameter expression="${exec.includePluginDependencies}" default-value="false"
      * @since 1.1-beta-1
      */
     @Parameter( property = "exec.includePluginsDependencies", defaultValue = "false" )
@@ -168,8 +158,6 @@ public class ExecJavaMojo
      * the executable's classpath. Whether a particular project dependency is a dependency of the identified
      * ExecutableDependency will be irrelevant to its inclusion in the classpath.
      * 
-     * @parameter
-     * @optional
      * @since 1.1-beta-1
      */
     @Parameter
@@ -185,7 +173,6 @@ public class ExecJavaMojo
      * {@link #daemonThreadJoinTimeout} and {@link #stopUnresponsiveDaemonThreads} for further tuning.
      * </p>
      * 
-     * @parameter expression="${exec.cleanupDaemonThreads} default-value="true"
      * @since 1.1-beta-1
      */
     @Parameter( property = "exec.cleanupDaemonThreads", defaultValue = "true" )
@@ -203,7 +190,6 @@ public class ExecJavaMojo
      * value <i>may change</i> in the future based on user feedback.
      * </p>
      * 
-     * @parameter expression="${exec.daemonThreadJoinTimeout}" default-value="15000"
      * @since 1.1-beta-1
      */
     @Parameter( property = "exec.daemonThreadJoinTimeout", defaultValue = "15000" )
@@ -231,6 +217,7 @@ public class ExecJavaMojo
      * @since 1.0
      */
     @Parameter( property = "exec.killAfter", defaultValue = "1" )
+    @Deprecated
     private long killAfter;
 
     private Properties originalSystemProperties;
@@ -238,7 +225,6 @@ public class ExecJavaMojo
     /**
      * Additional elements to be appended to the classpath.
      * 
-     * @parameter
      * @since 1.3
      */
     @Parameter
