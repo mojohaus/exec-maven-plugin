@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -43,7 +42,7 @@ public abstract class AbstractExecMojo
     /**
      * The enclosing project.
      */
-    @Component
+    @Parameter( defaultValue = "${project}", readonly = true )
     protected MavenProject project;
 
     /**
