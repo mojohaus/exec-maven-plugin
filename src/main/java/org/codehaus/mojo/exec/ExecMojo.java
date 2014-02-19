@@ -110,7 +110,7 @@ public class ExecMojo
      * @see java.lang.System#err
      * @see java.lang.System#in
      */
-    @Parameter( property = "exec.exec.outputFile" )
+    @Parameter( property = "exec.outputFile" )
     private File outputFile;
 
     /**
