@@ -690,10 +690,6 @@ public class ExecMojo
         finally
         {
             psh.stop();
-            bosStdOut.close();
-            bosStdErr.close();
-            out.close();
-            err.close();
         }
         return result;
     }
@@ -715,7 +711,6 @@ public class ExecMojo
         finally
         {
             psh.stop();
-            bos.close();
         }
         return result;
     }

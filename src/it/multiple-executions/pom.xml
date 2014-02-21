@@ -1,0 +1,56 @@
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo.exec.it</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <artifactId>multiple-execution</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-cp</argument>
+            <argument>target/classes</argument>
+            <argument>Main</argument>
+          </arguments>
+        </configuration>
+        <executions>
+          <execution>
+            <id>first-execution</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>process-classes</phase>
+          </execution>
+          <execution>
+            <id>second-execution</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>test-compile</phase>
+          </execution>
+          <execution>
+            <id>third-execution</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>pre-integration-test</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
