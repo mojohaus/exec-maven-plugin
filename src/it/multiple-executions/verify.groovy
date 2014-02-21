@@ -46,7 +46,9 @@ def getProjectVersion() {
 def getMavenVersion(buildLog) {
     def maven = null;
     buildLog.eachLine { line ->
-        if (line.startsWith("Apache Maven 2.2.1")) {
+        if (line.startsWith("Apache Maven 2.0.11")) {
+            maven = "2.0.11";
+        } else if (line.startsWith("Apache Maven 2.2.1")) {
             maven = "2.2.1";
         } else if (line.startsWith("Apache Maven 3.0.3")) {
             maven = "3.0.3";
@@ -75,7 +77,7 @@ def pluginVersion = getPluginVersion();
 println "Project version: ${projectVersion}"
 println "Plugin version ${pluginVersion}"
 
-if (mavenVersion.equals("2.2.1")) {
+if (mavenVersion.equals("2.0.11") || mavenVersion.equals("2.2.1")) {
   t.checkExistenceAndContentOfAFile(buildLog, [
     "[DEBUG]   (f) failWithEmptyArgument = true",
     "[DEBUG]   (f) arguments = [-cp, target/classes, Main]",
