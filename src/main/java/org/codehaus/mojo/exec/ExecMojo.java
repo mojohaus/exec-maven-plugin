@@ -122,7 +122,7 @@ public class ExecMojo
      * @since 1.0
      */
     @Parameter
-    private List<?> arguments;
+    private List<?> arguments; //TODO: Change ? into something more meaningfull
 
     /**
      * <p>
@@ -135,7 +135,7 @@ public class ExecMojo
      * @see #arguments
      */
     @Parameter( defaultValue = "true" )
-    private boolean failWithEmptyArgument;
+    private boolean failWithEmptyArgument; //TODO: Remove this related to http://jira.codehaus.org/browse/MEXEC-127
 
     /**
      * <p>
@@ -147,7 +147,7 @@ public class ExecMojo
      * @see #environmentVariables
      */
     @Parameter( defaultValue = "true" )
-    private boolean failWithNullKeyOrValueInEnvironment;
+    private boolean failWithNullKeyOrValueInEnvironment; //TODO: Remove this related to http://jira.codehaus.org/browse/MEXEC-127
 
     /**
      * @since 1.0
