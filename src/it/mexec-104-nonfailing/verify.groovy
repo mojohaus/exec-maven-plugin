@@ -27,5 +27,5 @@ def buildLog = new File( basedir, "build.log" )
 t.checkExistenceAndContentOfAFile(buildLog, [
   "[DEBUG]   (f) arguments = [-cp, target/classes, Main, null]",
   "[DEBUG]   (f) failWithEmptyArgument = false",
-  "[DEBUG] Executing command line: java -cp target/classes Main ",
+  "[DEBUG] Executing command line: [java, -cp, target/classes, Main, ]",
 ])
