@@ -7,8 +7,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <!-- TODO: Update to 33 before release: 1.4 -->
-    <version>30</version>
+    <version>33</version>
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
@@ -279,7 +278,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
-            <version>1.8</version>
             <configuration>
               <addTestClassPath>true</addTestClassPath>
               <debug>true</debug>
