@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -58,11 +61,15 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.codehaus.plexus.util.cli.Commandline;
+import org.codehaus.plexus.util.cli.DefaultConsumer;
+import org.codehaus.plexus.util.cli.StreamConsumer;
 
 /**
  * A Plugin for executing external programs.
- * 
+ *
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
  * @version $Id$
  * @since 1.0
@@ -86,7 +93,7 @@ public class ExecMojo
      * </ol>
      * Otherwise use the executable as is.
      * </p>
-     * 
+     *
      * @since 1.0
      */
     @Parameter( property = "exec.executable", required = true )
@@ -94,7 +101,7 @@ public class ExecMojo
 
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
-     * 
+     *
      * @since 1.0
      */
     @Parameter( property = "exec.workingdir" )
@@ -105,7 +112,7 @@ public class ExecMojo
      * specified the standard Maven logging is used. <br/>
      * <strong>Note:</strong> Be aware that <code>System.out</code> and <code>System.err</code> use buffering, so don't
      * rely on the order!
-     * 
+     *
      * @since 1.1-beta-2
      * @see java.lang.System#err
      * @see java.lang.System#in
@@ -118,11 +125,11 @@ public class ExecMojo
      * A list of arguments passed to the {@code executable}, which should be of type <code>&lt;argument&gt;</code> or
      * <code>&lt;classpath&gt;</code>. Can be overridden by using the <code>exec.args</code> environment variable.
      * </p>
-     * 
+     *
      * @since 1.0
      */
     @Parameter
-    private List<?> arguments; //TODO: Change ? into something more meaningfull
+    private List<?> arguments; // TODO: Change ? into something more meaningfull
 
     /**
      * <p>
@@ -130,24 +137,25 @@ public class ExecMojo
      * which would evaluate to <code>Null</code> an <code>""</code> empty string will be added to the command line of
      * the {@code executable} which will be called.
      * </p>
-     * 
+     *
      * @since 1.3
      * @see #arguments
      */
     @Parameter( defaultValue = "true" )
-    private boolean failWithEmptyArgument; //TODO: Remove this related to http://jira.codehaus.org/browse/MEXEC-127
+    private boolean failWithEmptyArgument; // TODO: Remove this related to http://jira.codehaus.org/browse/MEXEC-127
 
     /**
      * <p>
      * The following will control if you like to get a warning during the build if an entry either key/value of
      * environmentVariables will be evaluated to <code>Null</code> an <code>""</code> empty string will be used instead.
      * </p>
-     * 
+     *
      * @since 1.3
      * @see #environmentVariables
      */
     @Parameter( defaultValue = "true" )
-    private boolean failWithNullKeyOrValueInEnvironment; //TODO: Remove this related to http://jira.codehaus.org/browse/MEXEC-127
+    private boolean failWithNullKeyOrValueInEnvironment; // TODO: Remove this related to
+                                                         // http://jira.codehaus.org/browse/MEXEC-127
 
     /**
      * @since 1.0
@@ -157,11 +165,22 @@ public class ExecMojo
 
     /**
      * Environment variables to pass to the executed program.
-     * 
+     *
      * @since 1.1-beta-2
      */
     @Parameter
     private Map<String, String> environmentVariables = new HashMap<String, String>();
+
+    /**
+     * Environment script to be merged with <i>environmentVariables</i>
+     * This script is platform specifics, on Unix its must be Bourne shell format.
+     * Use this feature if you have a need to create environment variable dynamically
+     * such as invoking Visual Studio environment script file
+     *
+     * @since 1.4.0
+     */
+    @Parameter
+    private File environmentScript = null;
 
     /**
      * The current build session instance. This is used for toolchain manager API calls.
@@ -172,7 +191,7 @@ public class ExecMojo
     /**
      * Exit codes to be resolved as successful execution for non-compliant applications (applications not returning 0
      * for success).
-     * 
+     *
      * @since 1.1.1
      */
     @Parameter
@@ -181,7 +200,7 @@ public class ExecMojo
     /**
      * If set to true the classpath and the main class will be written to a MANIFEST.MF file and wrapped into a jar.
      * Instead of '-classpath/-cp CLASSPATH mainClass' the exec plugin executes '-jar maven-exec.jar'.
-     * 
+     *
      * @since 1.1.2
      */
     @Parameter( property = "exec.longClasspath", defaultValue = "false" )
@@ -191,7 +210,7 @@ public class ExecMojo
 
     /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
-     * 
+     *
      * @throws MojoExecutionException if a failure happens
      */
     public void execute()
@@ -301,6 +320,9 @@ public class ExecMojo
     private Map<String, String> handleSystemEnvVariables()
         throws MojoExecutionException
     {
+
+        validateEnvironmentVars();
+
         Map<String, String> enviro = new HashMap<String, String>();
         try
         {
@@ -315,6 +337,37 @@ public class ExecMojo
             getLog().error( "Could not assign default system enviroment variables.", x );
         }
 
+        if ( environmentVariables != null )
+        {
+            enviro.putAll( environmentVariables );
+        }
+
+        if ( this.environmentScript != null )
+        {
+            getLog().info( "Pick up external environment script: " + this.environmentScript );
+            Map<String, String> envVarsFromScript = this.createEnvs( this.environmentScript );
+            if ( envVarsFromScript != null )
+            {
+                enviro.putAll( envVarsFromScript );
+            }
+        }
+
+        if ( this.getLog().isDebugEnabled() )
+        {
+            Set<String> keys = new TreeSet<String>();
+            keys.addAll( enviro.keySet() );
+            for ( String key: keys )
+            {
+                this.getLog().debug( "env: " + key + "=" + enviro.get( key ) );
+            }
+        }
+
+        return enviro;
+    }
+
+    private void validateEnvironmentVars()
+        throws MojoExecutionException
+    {
         if ( environmentVariables != null )
         {
             for ( Map.Entry<String, String> item : environmentVariables.entrySet() )
@@ -350,16 +403,15 @@ public class ExecMojo
                     }
                 }
             }
-            enviro.putAll( environmentVariables );
+
         }
-        return enviro;
     }
 
     /**
      * This is a convenient method to make the execute method a little bit more readable. It will define the
      * workingDirectory to be the baseDir in case of workingDirectory is null. If the workingDirectory does not exist it
      * will created.
-     * 
+     *
      * @throws MojoExecutionException
      */
     private void handleWorkingDirectory()
@@ -506,7 +558,7 @@ public class ExecMojo
      * Compute the classpath from the specified Classpath. The computed classpath is based on the classpathScope. The
      * plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us he wants
      * the scope in which the plugin is expected to be executed.
-     * 
+     *
      * @param specifiedClasspath Non null when the user restricted the dependencies, <code>null</code> otherwise (the
      *            default classpath will be used)
      * @return a platform specific String representation of the classpath
@@ -528,7 +580,7 @@ public class ExecMojo
      * Compute the classpath from the specified Classpath. The computed classpath is based on the classpathScope. The
      * plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us he wants
      * the scope in which the plugin is expected to be executed.
-     * 
+     *
      * @param specifiedClasspath Non null when the user restricted the dependencies, <code>null</code> otherwise (the
      *            default classpath will be used)
      * @return a list of class path elements
@@ -796,7 +848,7 @@ public class ExecMojo
     /**
      * Create a jar with just a manifest containing a Main-Class entry for SurefireBooter and a Class-Path entry for all
      * classpath elements. Copied from surefire (ForkConfiguration#createJar())
-     * 
+     *
      * @param classPath List&lt;String> of all classpath elements.
      * @return
      * @throws IOException
@@ -831,5 +883,93 @@ public class ExecMojo
         jos.close();
 
         return file;
+    }
+
+    protected Map<String, String> createEnvs( File envScriptFile )
+        throws MojoExecutionException
+    {
+        Map<String, String> results = null;
+
+        File tmpEnvExecFile = null;
+        try
+        {
+            tmpEnvExecFile = this.createEnvWrapperFile( envScriptFile );
+
+            Commandline cl = new Commandline();// commons-exec instead?
+            cl.setExecutable( tmpEnvExecFile.getAbsolutePath() );
+
+            // pickup the initial env vars so that the env script can used if necessary
+            if ( environmentVariables != null )
+            {
+                for ( Map.Entry<String, String> item : environmentVariables.entrySet() )
+                {
+                    cl.addEnvironment( item.getKey(), item.getValue() );
+                }
+            }
+
+            EnvStreamConsumer stdout = new EnvStreamConsumer();
+            StreamConsumer stderr = new DefaultConsumer();
+
+            CommandLineUtils.executeCommandLine( cl, stdout, stderr );
+
+            results = stdout.getParsedEnv();
+        }
+        catch ( CommandLineException e )
+        {
+            throw new MojoExecutionException( e.getMessage() );
+        }
+        catch ( IOException e )
+        {
+            throw new MojoExecutionException( e.getMessage() );
+        }
+        finally
+        {
+            if ( tmpEnvExecFile != null )
+            {
+                tmpEnvExecFile.delete();
+            }
+        }
+
+        return results;
+
+    }
+
+    protected File createEnvWrapperFile( File envScript )
+        throws IOException
+    {
+        PrintWriter writer = null;
+        File tmpFile = null;
+        try
+        {
+
+            if ( OS.isFamilyWindows() )
+            {
+                tmpFile = File.createTempFile( "env", ".bat" );
+                writer = new PrintWriter( tmpFile );
+                writer.append( "@echo off" ).println();
+                writer.append( "call \"" ).append( envScript.getCanonicalPath() ).append( "\"" ).println();
+                writer.append( "echo " + EnvStreamConsumer.START_PARSING_INDICATOR ).println();
+                writer.append( "set" ).println();
+                writer.flush();
+            }
+            else
+            {
+                tmpFile = File.createTempFile( "env", ".sh" );
+                // tmpFile.setExecutable( true );//java 6 only
+                writer = new PrintWriter( tmpFile );
+                writer.append( "#! /bin/sh" ).println();
+                writer.append( ". " ).append( envScript.getCanonicalPath() ).println(); // works on all unix??
+                writer.append( "echo " + EnvStreamConsumer.START_PARSING_INDICATOR ).println();
+                writer.append( "env" ).println();
+                writer.flush();
+            }
+        }
+        finally
+        {
+            IOUtil.close( writer );
+        }
+
+        return tmpFile;
+
     }
 }
