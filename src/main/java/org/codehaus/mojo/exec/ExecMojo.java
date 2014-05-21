@@ -897,6 +897,11 @@ public class ExecMojo
 
             Commandline cl = new Commandline();// commons-exec instead?
             cl.setExecutable( tmpEnvExecFile.getAbsolutePath() );
+            if ( ! OS.isFamilyWindows() )
+            {
+                cl.setExecutable( "sh" );
+                cl.createArg().setFile( tmpEnvExecFile );
+            }
 
             // pickup the initial env vars so that the env script can used if necessary
             if ( environmentVariables != null )
