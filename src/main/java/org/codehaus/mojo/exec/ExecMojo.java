@@ -172,10 +172,9 @@ public class ExecMojo
     private Map<String, String> environmentVariables = new HashMap<String, String>();
 
     /**
-     * Environment script to be merged with <i>environmentVariables</i>
-     * This script is platform specifics, on Unix its must be Bourne shell format.
-     * Use this feature if you have a need to create environment variable dynamically
-     * such as invoking Visual Studio environment script file
+     * Environment script to be merged with <i>environmentVariables</i> This script is platform specifics, on Unix its
+     * must be Bourne shell format. Use this feature if you have a need to create environment variable dynamically such
+     * as invoking Visual Studio environment script file
      *
      * @since 1.4.0
      */
@@ -356,7 +355,7 @@ public class ExecMojo
         {
             Set<String> keys = new TreeSet<String>();
             keys.addAll( enviro.keySet() );
-            for ( String key: keys )
+            for ( String key : keys )
             {
                 this.getLog().debug( "env: " + key + "=" + enviro.get( key ) );
             }
@@ -701,7 +700,8 @@ public class ExecMojo
         }
 
         CommandLine toRet;
-        if ( OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".bat" ) )
+        if ( ( OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".bat" ) ))
+            //|| OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".cmd" ) ) //needed for mexec-137??
         {
             toRet = new CommandLine( "cmd" );
             toRet.addArgument( "/c" );
@@ -897,7 +897,7 @@ public class ExecMojo
 
             Commandline cl = new Commandline();// commons-exec instead?
             cl.setExecutable( tmpEnvExecFile.getAbsolutePath() );
-            if ( ! OS.isFamilyWindows() )
+            if ( !OS.isFamilyWindows() )
             {
                 cl.setExecutable( "sh" );
                 cl.createArg().setFile( tmpEnvExecFile );
