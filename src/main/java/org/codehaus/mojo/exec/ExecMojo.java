@@ -700,9 +700,10 @@ public class ExecMojo
         }
 
         CommandLine toRet;
-        if ( ( OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".bat" ) ))
-            //|| OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".cmd" ) ) //needed for mexec-137??
+        if ( ( OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".bat" ) )
+            || OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".cmd" ) )
         {
+            // run the windows batch script in isolation and exit at the end
             toRet = new CommandLine( "cmd" );
             toRet.addArgument( "/c" );
             toRet.addArgument( exec );
