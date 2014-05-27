@@ -30,7 +30,6 @@
                   <additionalClasspathElements>
                       <additionalClasspathElement>etc/run1</additionalClasspathElement>
                       <additionalClasspathElement>etc/run2</additionalClasspathElement>
-                      <additionalClasspathElement>c:\windows\system32\drivers\etc</additionalClasspathElement>
                   </additionalClasspathElements>
               </configuration>
           </execution>

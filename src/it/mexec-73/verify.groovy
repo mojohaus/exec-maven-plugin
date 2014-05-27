@@ -28,8 +28,8 @@ assert log.getText().contains( "Adding additional classpath element: $expectedCl
 expectedClasspath = new File(basedir, 'etc/run2').toURI().toURL().toString()
 assert log.getText().contains( "Adding additional classpath element: $expectedClasspath" )
 
-expectedClasspath = new File(basedir, "c:\\windows\\system32\\drivers\\etc").toURI().toURL().toString()
-assert log.getText().contains( "Adding additional classpath element: $expectedClasspath" )
+//expectedClasspath = new File("c:\\windows\\system32\\drivers\\etc").toURI().toURL().toString()
+//assert log.getText().contains( "Adding additional classpath element: $expectedClasspath" )
 
 
 //expectedClasspath = "customdir-before${File.pathSeparator}${new File(basedir, 'target/classes').getAbsolutePath()}"
