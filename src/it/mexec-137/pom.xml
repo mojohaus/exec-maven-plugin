@@ -9,13 +9,9 @@
     <version>0.1</version>
   </parent>
 
-  <artifactId>mexec-137</artifactId>
+  <artifactId>mexec-137</artifactId> <!-- also for mexec-118 -->
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-
-  <properties>
-    <testScript>test</testScript>
-  </properties>
 
   <build>
     <plugins>
@@ -30,7 +26,8 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>src/build/${testScript}</executable>
+              <executable>test</executable>
+              <workingDirectory>src/build</workingDirectory>
             </configuration>
           </execution>
         </executions>
@@ -38,19 +35,4 @@
     </plugins>
   </build>
 
-  <profiles>
-
-    <profile>
-      <id>windows</id>
-      <activation>
-        <os>
-          <family>Windows</family>
-        </os>
-      </activation>
-      <properties>
-        <testScript>test.cmd</testScript>
-      </properties>
-    </profile>
-
-  </profiles>
 </project>

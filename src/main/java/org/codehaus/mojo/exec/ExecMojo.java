@@ -638,6 +638,8 @@ public class ExecMojo
         return filteredArtifacts;
     }
 
+    private final String[] WINDOWS_SPECIAL_EXTS = new String[] { ".bat", ".cmd" };
+
     CommandLine getExecutablePath( Map<String, String> enviro, File dir )
     {
         File execFile = new File( executable );
@@ -664,22 +666,19 @@ public class ExecMojo
             {
                 if ( OS.isFamilyWindows() )
                 {
-                    String ex = !executable.contains( "." ) ? executable + ".bat" : executable;
-                    File f = new File( dir, ex );
-                    if ( f.isFile() )
+                    List<String> paths = this.getExecutablePaths( enviro );
+                    for ( String extension : WINDOWS_SPECIAL_EXTS )
                     {
-                        exec = ex;
-                    }
-
-                    if ( exec == null )
-                    {
-                        // now try to figure the path from PATH, PATHEXT env vars
-                        // if bat file, wrap in cmd /c
-                        String path = enviro.get( "PATH" );
-                        if ( path != null )
+                        String ex = !executable.contains( "." ) ? executable + extension : executable;
+                        File f = new File( dir, ex );
+                        if ( f.isFile() )
                         {
-                            String[] elems = StringUtils.split( path, File.pathSeparator );
-                            for ( String elem : elems )
+                            exec = ex;
+                        }
+
+                        if ( exec == null )
+                        {
+                            for ( String elem : paths )
                             {
                                 f = new File( new File( elem ), ex );
                                 if ( f.isFile() )
@@ -689,6 +688,7 @@ public class ExecMojo
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -716,10 +716,19 @@ public class ExecMojo
         return toRet;
     }
 
-    // private String[] DEFAULT_PATH_EXT = new String[] {
-    // .COM; .EXE; .BAT; .CMD; .VBS; .VBE; .JS; .JSE; .WSF; .WSH
-    // ".COM", ".EXE", ".BAT", ".CMD"
-    // };
+    private List<String> getExecutablePaths( Map<String, String> enviro )
+    {
+        List<String> paths = new ArrayList<String>();
+        paths.add( "" );
+
+        String path = enviro.get( "PATH" );
+        if ( path != null )
+        {
+            paths.addAll( Arrays.asList( StringUtils.split( path, File.pathSeparator ) ) );
+        }
+
+        return paths;
+    }
 
     //
     // methods used for tests purposes - allow mocking and simulate automatic setters
