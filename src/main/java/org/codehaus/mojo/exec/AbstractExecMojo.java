@@ -32,7 +32,7 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 /**
  * This class is used for unifying functionality between the 2 mojo exec plugins ('java' and 'exec'). It handles parsing
  * the arguments and adding source/test folders.
- * 
+ *
  * @author Philippe Jacot (PJA)
  * @author Jerome Lacoste
  */
@@ -60,7 +60,8 @@ public abstract class AbstractExecMojo
     private File testSourceRoot;
 
     /**
-     * Arguments for the executed program
+     * Arguments separated by space for the executed program. For example: "-j 20"
+     *
      */
     @Parameter( property = "exec.args" )
     private String commandlineArgs;
@@ -74,7 +75,7 @@ public abstract class AbstractExecMojo
 
     /**
      * Skip the execution.
-     * 
+     *
      * @since 1.0.1
      */
     @Parameter( property = "skip", defaultValue = "false" )
@@ -83,7 +84,7 @@ public abstract class AbstractExecMojo
     /**
      * Collects the project artifacts in the specified List and the project specific classpath (build output and build
      * test output) Files in the specified List, depending on the plugin classpathScope value.
-     * 
+     *
      * @param artifacts the list where to collect the scope specific artifacts
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
@@ -124,7 +125,7 @@ public abstract class AbstractExecMojo
      * Parses the argument string given by the user. Strings are recognized as everything between STRING_WRAPPER.
      * PARAMETER_DELIMITER is ignored inside a string. STRING_WRAPPER and PARAMETER_DELIMITER can be escaped using
      * ESCAPE_CHAR.
-     * 
+     *
      * @return Array of String representing the arguments
      * @throws MojoExecutionException for wrong formatted arguments
      */
@@ -176,7 +177,7 @@ public abstract class AbstractExecMojo
 
     /**
      * Check if the execution should be skipped
-     * 
+     *
      * @return true to skip
      */
     protected boolean isSkip()
