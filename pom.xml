@@ -139,14 +139,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-plugin-plugin</artifactId>
-      <version>3.2</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>3.2</version>
+      <version>3.3</version>
       <scope>provided</scope>
     </dependency>
 
@@ -185,7 +180,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.2</version>
+          <version>3.3</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -221,14 +216,12 @@
             <goals>
               <goal>descriptor</goal>
             </goals>
-            <phase>process-classes</phase>
           </execution>
           <execution>
             <id>help-mojo</id>
             <goals>
               <goal>helpmojo</goal>
             </goals>
-            <phase>process-classes</phase>
           </execution>
         </executions>
       </plugin>
