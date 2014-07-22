@@ -176,8 +176,7 @@
   </dependencies>
 
   <properties>
-    <mojo.java.target>1.5</mojo.java.target>
-    <mavenVersion>2.0.6</mavenVersion>
+    <mavenVersion>2.2.1</mavenVersion>
   </properties>
 
   <build>
@@ -291,7 +290,7 @@
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
               <settingsFile>src/it/settings.xml</settingsFile>
-              <!-- Currently working with more than one thread does not work, cause it is not guaranteed that the setup-config project 
+              <!-- Currently working with more than one thread does not work, cause it is not guaranteed that the setup-config project
                 is build at first. see also http://jira.codehaus.org/browse/MINVOKER-147 -->
               <parallelThreads>1</parallelThreads>
             </configuration>
