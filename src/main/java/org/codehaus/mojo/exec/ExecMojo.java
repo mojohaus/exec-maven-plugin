@@ -730,17 +730,13 @@ public class ExecMojo
         return paths;
     }
 
-    //
-    // methods used for tests purposes - allow mocking and simulate automatic setters
-    //
 
     protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro,
                                       OutputStream out, OutputStream err )
         throws ExecuteException, IOException
     {
-        BufferedOutputStream bosStdOut = new BufferedOutputStream( out );
-        BufferedOutputStream bosStdErr = new BufferedOutputStream( err );
-        PumpStreamHandler psh = new PumpStreamHandler( bosStdOut, bosStdErr, System.in );
+        //note: dont use BufferedOutputStream here since it delays the outputs MEXEC-138
+        PumpStreamHandler psh = new PumpStreamHandler( out, err, System.in );
         exec.setStreamHandler( psh );
 
         int result;
@@ -776,6 +772,10 @@ public class ExecMojo
         }
         return result;
     }
+
+    //
+    // methods used for tests purposes - allow mocking and simulate automatic setters
+    //
 
     void setExecutable( String executable )
     {
