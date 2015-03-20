@@ -145,11 +145,10 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Needed to be updated after commons-exec 1.3 has been released. Details see: https://issues.apache.org/jira/browse/EXEC-80. -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-exec</artifactId>
-      <version>1.2</version>
+      <version>1.3</version>
     </dependency>
 
     <dependency>
