@@ -216,7 +216,7 @@ public class ExecJavaMojo
      * @deprecated since 1.1-alpha-1
      * @since 1.0
      */
-    @Parameter( property = "exec.killAfter", defaultValue = "1" )
+    @Parameter( property = "exec.killAfter", defaultValue = "-1" )
     @Deprecated
     private long killAfter;
 
