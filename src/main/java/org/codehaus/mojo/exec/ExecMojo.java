@@ -184,7 +184,7 @@ public class ExecMojo
     /**
      * The current build session instance. This is used for toolchain manager API calls.
      */
-    @Component
+    @Parameter( defaultValue = "${session}", readonly = true )
     private MavenSession session;
 
     /**
