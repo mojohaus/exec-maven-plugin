@@ -51,7 +51,6 @@ import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -129,33 +128,7 @@ public class ExecMojo
      * @since 1.0
      */
     @Parameter
-    private List<?> arguments; // TODO: Change ? into something more meaningfull
-
-    /**
-     * <p>
-     * This will control if you like to fail the build if an arguments element is empty. This means that for arguments
-     * which would evaluate to <code>Null</code> an <code>""</code> empty string will be added to the command line of
-     * the {@code executable} which will be called.
-     * </p>
-     *
-     * @since 1.3
-     * @see #arguments
-     */
-    @Parameter( defaultValue = "true" )
-    private boolean failWithEmptyArgument; // TODO: Remove this related to http://jira.codehaus.org/browse/MEXEC-127
-
-    /**
-     * <p>
-     * The following will control if you like to get a warning during the build if an entry either key/value of
-     * environmentVariables will be evaluated to <code>Null</code> an <code>""</code> empty string will be used instead.
-     * </p>
-     *
-     * @since 1.3
-     * @see #environmentVariables
-     */
-    @Parameter( defaultValue = "true" )
-    private boolean failWithNullKeyOrValueInEnvironment; // TODO: Remove this related to
-                                                         // http://jira.codehaus.org/browse/MEXEC-127
+    private List<?> arguments; // TODO: Change ? into something more meaningful
 
     /**
      * @since 1.0
@@ -320,8 +293,6 @@ public class ExecMojo
         throws MojoExecutionException
     {
 
-        validateEnvironmentVars();
-
         Map<String, String> enviro = new HashMap<String, String>();
         try
         {
@@ -362,48 +333,6 @@ public class ExecMojo
         }
 
         return enviro;
-    }
-
-    private void validateEnvironmentVars()
-        throws MojoExecutionException
-    {
-        if ( environmentVariables != null )
-        {
-            for ( Map.Entry<String, String> item : environmentVariables.entrySet() )
-            {
-                getLog().debug( "Entry: key:" + item.getKey() + " value:" + item.getValue() );
-
-                // The following checks are only in relationship with MEXEC-108
-                // (https://issues.apache.org/jira/browse/EXEC-80)
-                if ( item.getKey() == null )
-                {
-                    if ( failWithNullKeyOrValueInEnvironment )
-                    {
-                        throw new MojoExecutionException(
-                                                          "The defined environment contains an entry with null key. This could cause failures." );
-                    }
-                    else
-                    {
-                        getLog().warn( "The defined environment contains an entry with null key. This could cause failures." );
-                    }
-                }
-                if ( item.getValue() == null )
-                {
-                    if ( failWithNullKeyOrValueInEnvironment )
-                    {
-                        throw new MojoExecutionException(
-                                                          "The defined environment contains an entry with null value (key:"
-                                                              + item.getKey() + "). This could cause failures." );
-                    }
-                    else
-                    {
-                        getLog().warn( "The defined environment contains an entry with null value (key:"
-                                           + item.getKey() + "). This could cause failures." );
-                    }
-                }
-            }
-
-        }
     }
 
     /**
@@ -483,21 +412,7 @@ public class ExecMojo
         {
             Object argument = arguments.get( i );
             String arg;
-            if ( argument == null )
-            {
-                if ( failWithEmptyArgument )
-                {
-                    throw new MojoExecutionException( "Misconfigured argument (" + ( i + 1 ) + "), value is null. "
-                        + "Set the argument to an empty value if this is the required behaviour." );
-
-                }
-                else
-                {
-                    // Just add an empty string to the argument list.
-                    commandArguments.add( "" );
-                }
-            }
-            else if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
+            if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
             {
                 // it is assumed that starting from -cp or -classpath the arguments
                 // are: -classpath/-cp %classpath mainClass
@@ -518,8 +433,7 @@ public class ExecMojo
             }
             else
             {
-                arg = argument.toString();
-                commandArguments.add( arg );
+                commandArguments.add( (String)argument );
             }
         }
     }

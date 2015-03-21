@@ -79,7 +79,6 @@ println "Plugin version ${pluginVersion}"
 
 if (mavenVersion.equals("2.0.11") || mavenVersion.equals("2.2.1")) {
   t.checkExistenceAndContentOfAFile(buildLog, [
-    "[DEBUG]   (f) failWithEmptyArgument = true",
     "[DEBUG]   (f) arguments = [-cp, target/classes, Main]",
     "[INFO] [exec:exec {execution: first-execution}]",
     "[INFO] [exec:exec {execution: second-execution}]",
@@ -87,7 +86,6 @@ if (mavenVersion.equals("2.0.11") || mavenVersion.equals("2.2.1")) {
   ])
 } else {
   t.checkExistenceAndContentOfAFile(buildLog, [
-    "[DEBUG]   (f) failWithEmptyArgument = true",
     "[DEBUG]   (f) arguments = [-cp, target/classes, Main]",
     "[INFO] --- exec-maven-plugin:" + pluginVersion + ":exec (first-execution) @ multiple-execution ---",
     "[INFO] --- exec-maven-plugin:" + pluginVersion + ":exec (second-execution) @ multiple-execution ---",

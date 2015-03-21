@@ -26,7 +26,5 @@ def buildLog = new File( basedir, "build.log" )
  
 t.checkExistenceAndContentOfAFile(buildLog, [
   "[DEBUG]   (f) environmentVariables = {key=null}",
-  "[DEBUG]   (f) failWithEmptyArgument = true",
   "[DEBUG]   (f) arguments = [-cp, target/classes, Main]",
-  "Caused by: org.apache.maven.plugin.MojoExecutionException: The defined environment contains an entry with null value (key:key). This could cause failures.",
 ])
