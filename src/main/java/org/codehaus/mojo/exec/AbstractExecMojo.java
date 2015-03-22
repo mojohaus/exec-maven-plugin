@@ -79,7 +79,7 @@ public abstract class AbstractExecMojo
      * changed into <code>exec.skip</code>.
      * @since 1.0.1
      */
-    //TODO: Removed the alias with version 1.4 of the plugin.
+    //TODO: Remove the alias in version 1.5.0 of the plugin.
     @Parameter( property = "exec.skip", defaultValue = "false", alias="skip" )
     private boolean skip;
 
