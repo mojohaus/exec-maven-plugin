@@ -175,6 +175,15 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.6</version>
+          <configuration>
+            <!-- Temporary solution to get a release out using gpg version 1 -->
+            <useAgent>false</useAgent>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
           <version>3.4</version>
         </plugin>
