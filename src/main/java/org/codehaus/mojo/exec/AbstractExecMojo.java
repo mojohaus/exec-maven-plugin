@@ -75,7 +75,7 @@ public abstract class AbstractExecMojo
 
     /**
      * Skip the execution.
-     * Starting with version 1.3.3 the former name <code>skip</code> has been
+     * Starting with version 1.4.0 the former name <code>skip</code> has been
      * changed into <code>exec.skip</code>.
      * @since 1.0.1
      */
