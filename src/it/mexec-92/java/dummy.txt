@@ -1,1 +1,0 @@
-Just to be sure the java folder is checked out
