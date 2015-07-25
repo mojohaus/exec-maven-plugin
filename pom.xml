@@ -13,18 +13,18 @@
 
   <name>Exec Maven Plugin</name>
   <description>A plugin to allow execution of system and Java programs</description>
-  <url>http://mojo.codehaus.org/exec-maven-plugin</url>
+  <url>http://www.mojohaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
   <prerequisites>
     <maven>${mavenVersion}</maven>
   </prerequisites>
   <issueManagement>
-    <system>jira</system>
-    <url>http://jira.codehaus.org/browse/MEXEC</url>
+    <system>GitHub</system>
+    <url>https://github.com/mojohaus/exec-maven-plugin/issues/</url>
   </issueManagement>
   <ciManagement>
-    <system>bamboo</system>
-    <url>http://bamboo.ci.codehaus.org/browse/MOJO-MEXEC</url>
+    <system>Travis-CI</system>
+    <url>https://travis-ci.org/mojohaus/exec-maven-plugin</url>
   </ciManagement>
 
   <developers>
@@ -90,9 +90,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:svn:http://svn.codehaus.org/mojo/trunk/mojo/exec-maven-plugin</connection>
-    <developerConnection>scm:svn:https://svn.codehaus.org/mojo/trunk/mojo/exec-maven-plugin</developerConnection>
-    <url>http://fisheye.codehaus.org/browse/mojo/trunk/mojo/exec-maven-plugin</url>
+    <connection>scm:git:git@github.com:mojohaus/exec-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:mojohaus/exec-maven-plugin.git</developerConnection>
+    <url>https://github.com/mojohaus/exec-maven-plugin</url>
   </scm>
 
   <dependencies>
@@ -282,8 +282,12 @@
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
               <settingsFile>src/it/settings.xml</settingsFile>
-              <!-- Currently working with more than one thread does not work, cause it is not guaranteed that the setup-config
-                project is build at first. see also http://jira.codehaus.org/browse/MINVOKER-147 -->
+              <!-- 
+                ! Currently working with more than one thread does not work, 
+                ! cause it is not guaranteed that the setup-config
+                ! project is build at first. 
+                ! see also https://issues.apache.org/jira/browse/MINVOKER-147 
+               -->
               <parallelThreads>1</parallelThreads>
             </configuration>
             <executions>
