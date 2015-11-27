@@ -36,7 +36,6 @@ Running Java programs with the exec goal
 
   * Otherwise the list of <argument> and <classpath> will be parsed and used
 
-  See {{http://jira.codehaus.org/browse/MEXEC-59}} for discussion.
 
 * Command line
 
