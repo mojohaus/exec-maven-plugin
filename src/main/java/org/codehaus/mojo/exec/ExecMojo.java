@@ -267,17 +267,19 @@ public class ExecMojo
 
                 if ( isResultCodeAFailure( resultCode ) )
                 {
-                    throw new MojoExecutionException( "Result of " + commandLine + " execution is: '" + resultCode
-                        + "'." );
+                    String message = "Result of " + commandLine.toString() + " execution is: '" + resultCode + "'.";
+                    getLog().error( message );
+                    throw new MojoExecutionException( message );
                 }
             }
             catch ( ExecuteException e )
             {
+                getLog().error( "Command execution failed.", e );
                 throw new MojoExecutionException( "Command execution failed.", e );
-
             }
             catch ( IOException e )
             {
+                getLog().error( "Command execution failed.", e );
                 throw new MojoExecutionException( "Command execution failed.", e );
             }
 
@@ -419,8 +421,8 @@ public class ExecMojo
                 // the arguments are replaced with: -jar $TMP/maven-exec.jar
                 // NOTE: the jar will contain the classpath and the main class
                 commandArguments.add( "-jar" );
-                File tmpFile =
-                    createJar( computeClasspath( (Classpath) arguments.get( i + 1 ) ), (String) arguments.get( i + 2 ) );
+                File tmpFile = createJar( computeClasspath( (Classpath) arguments.get( i + 1 ) ),
+                                          (String) arguments.get( i + 2 ) );
                 commandArguments.add( tmpFile.getAbsolutePath() );
                 i += 2;
             }
@@ -433,7 +435,7 @@ public class ExecMojo
             }
             else
             {
-                commandArguments.add( (String)argument );
+                commandArguments.add( (String) argument );
             }
         }
     }
@@ -644,12 +646,11 @@ public class ExecMojo
         return paths;
     }
 
-
     protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro,
                                       OutputStream out, OutputStream err )
-        throws ExecuteException, IOException
+                                          throws ExecuteException, IOException
     {
-        //note: dont use BufferedOutputStream here since it delays the outputs MEXEC-138
+        // note: dont use BufferedOutputStream here since it delays the outputs MEXEC-138
         PumpStreamHandler psh = new PumpStreamHandler( out, err, System.in );
         exec.setStreamHandler( psh );
 
@@ -668,7 +669,7 @@ public class ExecMojo
 
     protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro,
                                       FileOutputStream outputFile )
-        throws ExecuteException, IOException
+                                          throws ExecuteException, IOException
     {
         BufferedOutputStream bos = new BufferedOutputStream( outputFile );
         PumpStreamHandler psh = new PumpStreamHandler( bos );
