@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
-  <version>1.5.0-SNAPSHOT</version>
+  <version>1.5.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Exec Maven Plugin</name>
@@ -309,6 +309,7 @@
                     <extraArtifact>org.apache.maven.plugins:maven-resources-plugin:2.6:maven-plugin</extraArtifact>
                     <extraArtifact>org.apache.maven.plugins:maven-site-plugin:3.3:maven-plugin</extraArtifact>
                     <extraArtifact>org.apache.maven.plugins:maven-site-plugin:2.0.1:maven-plugin</extraArtifact>
+                    <extraArtifact>org.codehaus.gmaven:gmaven-plugin:1.5:maven-plugin</extraArtifact>
                     <extraArtifact>commons-io:commons-io:1.1:jar</extraArtifact>
                     <extraArtifact>commons-logging:commons-logging:1.0.4:jar</extraArtifact>
                     <extraArtifact>org.codehaus.plexus:plexus-utils:1.1:jar</extraArtifact>

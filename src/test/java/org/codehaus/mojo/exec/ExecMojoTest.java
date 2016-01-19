@@ -43,6 +43,8 @@ import org.codehaus.plexus.util.StringOutputStream;
 public class ExecMojoTest
     extends AbstractMojoTestCase
 {
+    private static final String MVN_EXECUTABLE = System.getProperty("os.name").toLowerCase().contains( "win" ) ? "mvn.cmd" : "mvn";
+
     private MockExecMojo mojo;
 
     static class MockExecMojo
@@ -104,7 +106,7 @@ public class ExecMojoTest
     {
         mojo.execute();
 
-        checkMojo( "mvn --version" );
+        checkMojo( MVN_EXECUTABLE + " --version" );
     }
 
     /*
@@ -313,7 +315,7 @@ public class ExecMojoTest
             assertEquals( "Result of " + mojo.getExecutedCommandline( 0 ) + " execution is: '1'.", e.getMessage() );
         }
 
-        checkMojo( "mvn --version" );
+        checkMojo( MVN_EXECUTABLE + " --version" );
     }
 
     public void testRunError()
@@ -330,7 +332,7 @@ public class ExecMojoTest
             assertEquals( "Command execution failed.", e.getMessage() );
         }
 
-        checkMojo( "mvn --version" );
+        checkMojo( MVN_EXECUTABLE + " --version" );
     }
 
     public void testOverrides()
@@ -339,7 +341,7 @@ public class ExecMojoTest
         mojo.systemProperties.put( "exec.args", "-f pom.xml" );
         mojo.execute();
 
-        checkMojo( "mvn -f pom.xml" );
+        checkMojo( MVN_EXECUTABLE + " -f pom.xml" );
     }
 
     public void testOverrides3()
@@ -348,13 +350,13 @@ public class ExecMojoTest
         mojo.systemProperties.put( "exec.args", null );
         mojo.execute();
 
-        checkMojo( "mvn --version" );
+        checkMojo( MVN_EXECUTABLE + " --version" );
 
         mojo.commandLines.clear();
         mojo.systemProperties.put( "exec.args", "" );
         mojo.execute();
 
-        checkMojo( "mvn --version" );
+        checkMojo( MVN_EXECUTABLE + " --version" );
     }
 
     public void testIsResultCodeAFailure()
