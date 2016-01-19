@@ -43,12 +43,9 @@ import java.util.jar.Manifest;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.ExecuteResultHandler;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.OS;
-import org.apache.commons.exec.ProcessDestroyer;
 import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
@@ -180,20 +177,6 @@ public class ExecMojo
      */
     @Parameter( property = "exec.longClasspath", defaultValue = "false" )
     private boolean longClasspath;
-
-    /**
-     * If set to true the child process executes asynchronously and build execution continues in parallel.
-     */
-    @Parameter( property = "exec.async", defaultValue = "false" )
-    private boolean async;
-
-    /**
-     * If set to true, the asynchronous child process is destroyed upon JVM shutdown. If set to false, asynchronous
-     * child process continues execution after JVM shutdown. Applies only to asynchronous processes; ignored for
-     * synchronous processes.
-     */
-    @Parameter( property = "exec.asyncDestroyOnShutdown", defaultValue = "true" )
-    private boolean asyncDestroyOnShutdown = true;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
 
@@ -573,8 +556,6 @@ public class ExecMojo
 
     private final String[] WINDOWS_SPECIAL_EXTS = new String[] { ".bat", ".cmd" };
 
-    private ProcessDestroyer processDestroyer;
-
     CommandLine getExecutablePath( Map<String, String> enviro, File dir )
     {
         File execFile = new File( executable );
@@ -669,9 +650,21 @@ public class ExecMojo
                                       OutputStream out, OutputStream err )
                                           throws ExecuteException, IOException
     {
-        // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
+        // note: dont use BufferedOutputStream here since it delays the outputs MEXEC-138
         PumpStreamHandler psh = new PumpStreamHandler( out, err, System.in );
-        return executeCommandLine( exec, commandLine, enviro, psh );
+        exec.setStreamHandler( psh );
+
+        int result;
+        try
+        {
+            psh.start();
+            result = exec.execute( commandLine, enviro );
+        }
+        finally
+        {
+            psh.stop();
+        }
+        return result;
     }
 
     protected int executeCommandLine( Executor exec, CommandLine commandLine, Map<String, String> enviro,
@@ -680,59 +673,17 @@ public class ExecMojo
     {
         BufferedOutputStream bos = new BufferedOutputStream( outputFile );
         PumpStreamHandler psh = new PumpStreamHandler( bos );
-        return executeCommandLine( exec, commandLine, enviro, psh );
-    }
-
-    protected int executeCommandLine( Executor exec, final CommandLine commandLine, Map<String, String> enviro,
-                                      final PumpStreamHandler psh )
-                                          throws ExecuteException, IOException
-    {
         exec.setStreamHandler( psh );
 
         int result;
         try
         {
             psh.start();
-            if ( async )
-            {
-                if (asyncDestroyOnShutdown)
-                {
-                    exec.setProcessDestroyer( getProcessDestroyer() );
-                }
-
-                exec.execute( commandLine, enviro, new ExecuteResultHandler()
-                {
-                    public void onProcessFailed( ExecuteException e )
-                    {
-                        getLog().error( "Async process failed for: " + commandLine, e );
-                    }
-
-                    public void onProcessComplete( int exitValue )
-                    {
-                        getLog().info( "Async process complete, exit value = " + exitValue + " for: " + commandLine );
-                        try
-                        {
-                            psh.stop();
-                        }
-                        catch ( IOException e )
-                        {
-                            getLog().error( "Error stopping async process stream handler for: " + commandLine, e );
-                        }
-                    }
-                } );
-                result = 0;
-            }
-            else
-            {
-                result = exec.execute( commandLine, enviro );
-            }
+            result = exec.execute( commandLine, enviro );
         }
         finally
         {
-            if ( !async )
-            {
-                psh.stop();
-            }
+            psh.stop();
         }
         return result;
     }
@@ -950,14 +901,5 @@ public class ExecMojo
 
         return tmpFile;
 
-    }
-
-    protected ProcessDestroyer getProcessDestroyer()
-    {
-        if ( processDestroyer == null )
-        {
-            processDestroyer = new ShutdownHookProcessDestroyer();
-        }
-        return processDestroyer;
     }
 }
