@@ -19,3 +19,5 @@
 File log = new File(basedir, 'build.log')
 assert log.exists()
 assert log.getText().contains( "async exec:exec test" )
+assert !log.getText().contains( "async exec:exec post-test" )
+assert log.getText().contains( "post-async-it" )

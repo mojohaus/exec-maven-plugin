@@ -1,0 +1,4 @@
+#! /bin/sh
+# Wait for just long enough for the async-it script to start up and emit its verify message
+sleep 2
+echo post-async-it
