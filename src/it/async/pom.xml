@@ -28,7 +28,6 @@
             </goals>
             <configuration>
               <executable>src/main/scripts/async-it</executable>
-              <!--workingDirectory>src/main/scripts</workingDirectory-->
               <async>true</async>
               <!-- NOTE: there is no easy way to test asyncDestroyOnShutdown, as both cases require guaranteed IT ordering. -->
               <!--asyncDestroyOnSutdown>true</asyncDestroyOnSutdown-->
@@ -43,7 +42,6 @@
             </goals>
             <configuration>
               <executable>src/main/scripts/post-async-it</executable>
-              <!--workingDirectory>src/main/scripts</workingDirectory-->
             </configuration>
           </execution>
         </executions>

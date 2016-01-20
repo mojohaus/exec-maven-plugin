@@ -13,4 +13,3 @@ branches:
 notifications:
     email:
         - khmarbaise@apache.org
-after_failure: "cat /home/travis/build/demonfiddler/exec-maven-plugin/target/it/async/build.log"
