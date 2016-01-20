@@ -1,0 +1,5 @@
+#! /bin/sh
+echo async exec:exec test
+# Block, so that we're still executing when the Maven JVM shuts down and destroys our shell process
+sleep 3600
+echo async exec:exec post-test
