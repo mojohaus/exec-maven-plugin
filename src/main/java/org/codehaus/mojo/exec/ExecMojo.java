@@ -583,28 +583,30 @@ public class ExecMojo
                 if ( OS.isFamilyWindows() )
                 {
                     List<String> paths = this.getExecutablePaths( enviro );
-                    for ( String extension : WINDOWS_SPECIAL_EXTS )
-                    {
-                        String ex = !executable.contains( "." ) ? executable + extension : executable;
-                        File f = new File( dir, ex );
+                    paths.add( 0, dir.getAbsolutePath() );
+
+                    File f = null;
+                    for ( String path : paths ) {
+                        f = new File( path, executable );
                         if ( f.isFile() )
                         {
-                            exec = ex;
+                            break;
                         }
-
-                        if ( exec == null )
+                        else
                         {
-                            for ( String elem : paths )
+                            for ( String extension : WINDOWS_SPECIAL_EXTS )
                             {
-                                f = new File( new File( elem ), ex );
+                                f = new File(path, executable + extension);
                                 if ( f.isFile() )
                                 {
-                                    exec = ex;
                                     break;
                                 }
                             }
                         }
+                    }
 
+                    if ( f != null ) {
+                        exec = f.getAbsolutePath();
                     }
                 }
             }
