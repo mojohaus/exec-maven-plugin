@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo.exec.it</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <artifactId>async</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <properties>
+    <shellscript.qualifier></shellscript.qualifier>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>@pom.version@</version>
+        <executions>
+          <execution>
+            <id>async-it</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${shellscript.qualifier}async-it</executable>
+              <workingDirectory>src/main/scripts</workingDirectory>
+              <async>true</async>
+              <!-- NOTE: there is no easy way to test asyncDestroyOnShutdown, as both cases require guaranteed IT ordering. -->
+              <!--asyncDestroyOnShutdown>true</asyncDestroyOnShutdown-->
+            </configuration>
+          </execution>
+          <!-- Wait for just long enough for the above async-it script to start up and emit its verify message. -->
+          <execution>
+            <id>post-async-it</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${shellscript.qualifier}post-async-it</executable>
+              <workingDirectory>src/main/scripts</workingDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>Unix</id>
+      <activation>
+        <os>
+          <family>unix</family>
+        </os>
+      </activation>
+      <properties>
+        <shellscript.qualifier>./</shellscript.qualifier>
+      </properties>
+    </profile>
+  </profiles>
+ </project>
