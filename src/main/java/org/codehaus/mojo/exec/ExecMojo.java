@@ -102,6 +102,14 @@ public class ExecMojo
     private String executable;
 
     /**
+     * <p>
+     * The toolchain. If omitted, <code>"jdk"</code> is assumed.
+     * </p>
+     */
+    @Parameter( property = "exec.toolchain", defaultValue = "jdk")
+    private String toolchain;
+    
+    /**
      * The current working directory. Optional. If not specified, basedir will be used.
      *
      * @since 1.0
@@ -810,7 +818,7 @@ public class ExecMojo
 
                 if ( toolchainManager != null )
                 {
-                    tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
+                    tc = toolchainManager.getToolchainFromBuildContext( toolchain, session );
                 }
             }
         }
