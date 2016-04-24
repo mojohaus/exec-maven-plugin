@@ -79,6 +79,16 @@
         <role>Patch Contributor</role>
       </roles>
     </contributor>
+    <contributor>
+      <name>Markus KARG</name>
+      <email>markus@headcrashing.eu</email>
+      <organization>Head Crashing Informatics</organization>
+      <organizationUrl>http://www.headcrashing.eu</organizationUrl>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+      <timezone>Europe/Berlin</timezone>
+    </contributor>
   </contributors>
 
   <licenses>
