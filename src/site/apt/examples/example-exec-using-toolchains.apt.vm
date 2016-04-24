@@ -30,7 +30,79 @@ Using Toolchains Instead of Explicit Paths
   Toolchains are configured using the file <<<toolchains.xml>>> and apply different algorithms how to find the wanted tool on disk.
   More information on toolchains can be found on the {{{https://maven.apache.org/guides/mini/guide-using-toolchains.html}Maven web site}}.
   
-  There are two ways of using toolchains: The "jdk" toolchain provided by the Maven Toolchains Plugin, and custom toolchains provided by third party plugins.
+  There are three ways of using toolchains: The "paths" toolchain provided by the Exec Maven Plugin, the "jdk" toolchain provided by the Maven Toolchains Plugin, and custom toolchains provided by third party plugins.
+  
+* The "paths" Toolchain
+
+  The "paths" toolchain is included in the Exec Maven Plugin and must be enabled explicitly in the POM.
+  It searches a configurable list of folders for the requested tool.
+  The first match will be invoked.
+
+** pom.xml
+
+-------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-toolchains-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>toolchain</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <toolchains>
+            <paths>
+              <!-- Select the "foo-bar" Paths Toolchain Configuration -->
+              <id>foo-bar</id>
+            </paths>
+          </toolchains>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <!-- Enable "paths" Toolchain provided by Exec Maven Plugin -->
+        <extensions>true</extensions>
+        ...
+        <configuration>
+          <toolchain>paths</toolchain>
+        </configuration>
+        ...
+      </plugin>
+    </plugins>
+  </build>
+  ...
+</project>
+-------------------
+
+** toolchains.xml
+
+-------------------
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <toolchain>
+    <type>paths</type>
+    <provides>
+      <!-- Defines the folders to search for binaries of the "foo-bar" toolset -->
+      <id>foo-bar</id>
+    </provides>
+    <configuration>
+      <paths>
+        <path>C:\Program Files\FooBar\SDK\bin</path>
+        <path>C:\Program Files\FooBar\Runtime\bin</path>
+      </paths>
+    </configuration>
+  </toolchain>
+  ...
+</toolchains>
+-------------------
 
 * The "jdk" Toolchain
 
