@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -579,8 +578,6 @@ public class ExecMojo
         return filteredArtifacts;
     }
 
-    private final String[] WINDOWS_SPECIAL_EXTS = new String[] { ".bat", ".cmd" };
-
     private ProcessDestroyer processDestroyer;
 
     CommandLine getExecutablePath( Map<String, String> enviro, File dir )
@@ -613,7 +610,7 @@ public class ExecMojo
                     paths.add( 0, dir.getAbsolutePath() );
 
                     File f = null;
-                    for ( String path : paths ) {
+                    search: for ( String path : paths ) {
                         f = new File( path, executable );
                         if ( f.isFile() )
                         {
@@ -621,12 +618,12 @@ public class ExecMojo
                         }
                         else
                         {
-                            for ( String extension : WINDOWS_SPECIAL_EXTS )
+                            for ( String extension : getExecutableExtensions() )
                             {
                                 f = new File(path, executable + extension);
                                 if ( f.isFile() )
                                 {
-                                    break;
+                                    break search;
                                 }
                             }
                         }
@@ -645,8 +642,7 @@ public class ExecMojo
         }
 
         CommandLine toRet;
-        if ( ( OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".bat" ) )
-            || OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".cmd" ) )
+        if ( OS.isFamilyWindows() && !hasNativeExtension( exec ) && hasExecutableExtension( exec ) )
         {
             // run the windows batch script in isolation and exit at the end
             toRet = new CommandLine( "cmd" );
@@ -659,6 +655,25 @@ public class ExecMojo
         }
 
         return toRet;
+    }
+
+    private static boolean hasNativeExtension( final String exec ) {
+        final String lowerCase = exec.toLowerCase();
+        return lowerCase.endsWith( ".exe" ) || lowerCase.endsWith( ".com" );
+    }
+
+    private static boolean hasExecutableExtension( final String exec ) {
+        final String lowerCase = exec.toLowerCase();
+        for (final String ext : getExecutableExtensions() )
+            if ( lowerCase.endsWith(ext) )
+            	return true;
+        
+        return false;
+    }
+
+    private static List<String> getExecutableExtensions() {
+        final String pathExt = System.getenv( "PATHEXT" );
+        return pathExt == null ? Arrays.asList( ".bat", ".cmd" ) : Arrays.asList( StringUtils.split( pathExt.toLowerCase(), File.pathSeparator ) );    	
     }
 
     private List<String> getExecutablePaths( Map<String, String> enviro )
