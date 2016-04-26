@@ -613,7 +613,7 @@ public class ExecMojo
                     paths.add( 0, dir.getAbsolutePath() );
 
                     File f = null;
-                    for ( String path : paths ) {
+                    search: for ( String path : paths ) {
                         f = new File( path, executable );
                         if ( f.isFile() )
                         {
@@ -626,7 +626,7 @@ public class ExecMojo
                                 f = new File(path, executable + extension);
                                 if ( f.isFile() )
                                 {
-                                    break;
+                                    break search;
                                 }
                             }
                         }
