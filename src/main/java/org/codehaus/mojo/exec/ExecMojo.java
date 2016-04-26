@@ -635,6 +635,10 @@ public class ExecMojo
                     if ( f != null ) {
                         exec = f.getAbsolutePath();
                     }
+
+                    if ( !f.exists() ) {
+                        exec = null;
+                    }
                 }
             }
         }
