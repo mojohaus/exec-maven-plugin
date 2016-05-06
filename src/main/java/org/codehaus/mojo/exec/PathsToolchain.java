@@ -32,39 +32,49 @@ import org.codehaus.plexus.util.Os;
  *
  * @author Markus KARG (markus@headcrashing.eu)
  */
-class PathsToolchain extends DefaultToolchain {
-	private List<String> paths;
+class PathsToolchain
+    extends DefaultToolchain
+{
+    private List<String> paths;
 
-	public PathsToolchain(final ToolchainModel model, final Logger logger) {
-		super(model, "paths", logger); // NOI18N
-	}
+    public PathsToolchain( final ToolchainModel model, final Logger logger )
+    {
+        super( model, "paths", logger ); // NOI18N
+    }
 
-	public List<String> getPaths() {
-		return this.paths;
-	}
+    public List<String> getPaths()
+    {
+        return this.paths;
+    }
 
-	public void setPaths(final List<String> paths) {
-		this.paths = paths;
-	}
+    public void setPaths( final List<String> paths )
+    {
+        this.paths = paths;
+    }
 
-	@Override
-	public String toString() {
-		return "Paths" + this.getPaths(); // NOI18N
-	}
+    @Override
+    public String toString()
+    {
+        return "Paths" + this.getPaths(); // NOI18N
+    }
 
-	public String findTool(final String toolName) {
-		for (final String path : this.paths) {
-			final File tool = findTool(toolName, new File(path));
-			if (tool != null)
-				return tool.getAbsolutePath();
-		}
+    public String findTool( final String toolName )
+    {
+        for ( final String path : this.paths )
+        {
+            final File tool = findTool( toolName, new File( path ) );
+            if ( tool != null )
+                return tool.getAbsolutePath();
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	private static File findTool(final String toolName, final File folder) {
-		final File tool = new File(folder, toolName + (Os.isFamily("windows") && !toolName.contains(".") ? ".exe" : "")); // NOI18N
+    private static File findTool( final String toolName, final File folder )
+    {
+        final File tool =
+            new File( folder, toolName + ( Os.isFamily( "windows" ) && !toolName.contains( "." ) ? ".exe" : "" ) ); // NOI18N
 
-		return tool.exists() ? tool : null;
-	}
+        return tool.exists() ? tool : null;
+    }
 }

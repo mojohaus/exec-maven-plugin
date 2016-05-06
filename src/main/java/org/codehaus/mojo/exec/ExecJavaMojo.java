@@ -202,8 +202,8 @@ public class ExecJavaMojo
      * <code>false</code>, or if {@link Thread#stop()} fails to get the thread to stop, then a warning is logged and
      * Maven will continue on while the affected threads (and related objects in memory) linger on. Consider setting
      * this to <code>true</code> if you are invoking problematic code that you can't fix. An example is
-     * {@link java.util.Timer} which doesn't respond to interruption. To have <code>Timer</code> fixed, vote for <a
-     * href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
+     * {@link java.util.Timer} which doesn't respond to interruption. To have <code>Timer</code> fixed, vote for
+     * <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
      * 
      * @since 1.1-beta-1
      */
@@ -271,7 +271,7 @@ public class ExecJavaMojo
             getLog().debug( msg );
         }
 
-        IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */);
+        IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
         Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
             public void run()
@@ -280,7 +280,8 @@ public class ExecJavaMojo
                 {
                     Method main =
                         Thread.currentThread().getContextClassLoader().loadClass( mainClass ).getMethod( "main",
-                                                                                                         new Class[] { String[].class } );
+                                                                                                         new Class[] {
+                                                                                                             String[].class } );
                     if ( !main.isAccessible() )
                     {
                         getLog().debug( "Setting accessibility to true in order to invoke main()." );
@@ -295,8 +296,7 @@ public class ExecJavaMojo
                 catch ( NoSuchMethodException e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(),
-                                                                               new Exception(
-                                                                                              "The specified mainClass doesn't contain a main method with appropriate signature.",
+                                                                               new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.",
                                                                                               e ) );
                 }
                 catch ( Exception e )
@@ -415,7 +415,7 @@ public class ExecJavaMojo
         if ( thread.isAlive() ) // generally abnormal
         {
             getLog().warn( "thread " + thread + " was interrupted but is still alive after waiting at least "
-                               + timeoutMsecs + "msecs" );
+                + timeoutMsecs + "msecs" );
         }
     }
 
@@ -468,11 +468,9 @@ public class ExecJavaMojo
         }
         if ( !uncooperativeThreads.isEmpty() )
         {
-            getLog().warn( "NOTE: "
-                               + uncooperativeThreads.size()
-                               + " thread(s) did not finish despite being asked to "
-                               + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
-                               + " Although not serious, it should be remedied." );
+            getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to "
+                + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
+                + " Although not serious, it should be remedied." );
         }
         else
         {
@@ -483,7 +481,7 @@ public class ExecJavaMojo
                 Thread[] threadsArray = new Thread[1];
                 threadGroup.enumerate( threadsArray );
                 getLog().debug( "strange; " + activeCount + " thread(s) still active in the group " + threadGroup
-                                    + " such as " + threadsArray[0] );
+                    + " such as " + threadsArray[0] );
             }
         }
     }
@@ -577,7 +575,7 @@ public class ExecJavaMojo
             for ( Artifact classPathElement : this.determineRelevantPluginDependencies() )
             {
                 getLog().debug( "Adding plugin dependency artifact: " + classPathElement.getArtifactId()
-                                    + " to classpath" );
+                    + " to classpath" );
                 path.add( classPathElement.getFile().toURI().toURL() );
             }
         }
@@ -618,7 +616,7 @@ public class ExecJavaMojo
                 for ( Artifact classPathElement : artifacts )
                 {
                     getLog().debug( "Adding project dependency artifact: " + classPathElement.getArtifactId()
-                                        + " to classpath" );
+                        + " to classpath" );
                     path.add( classPathElement.getFile().toURI().toURL() );
                 }
 

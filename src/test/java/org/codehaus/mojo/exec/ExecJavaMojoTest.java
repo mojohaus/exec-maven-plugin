@@ -123,8 +123,8 @@ public class ExecJavaMojoTest
      */
 
     /**
-     * For cases where the Java code spawns Threads and main returns soon. See <a
-     * href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
+     * For cases where the Java code spawns Threads and main returns soon. See
+     * <a href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
      */
     public void testWaitNoDaemonThreads()
         throws Exception
@@ -138,8 +138,8 @@ public class ExecJavaMojoTest
 
     /**
      * For cases where the Java code spawns Threads and main returns soon, but code contains non interruptible threads.
-     * User is required to timeout the execution, otherwise it will hang. See <a
-     * href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
+     * User is required to timeout the execution, otherwise it will hang. See
+     * <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
      */
     public void testWaitNonInterruptibleDaemonThreads()
         throws Exception

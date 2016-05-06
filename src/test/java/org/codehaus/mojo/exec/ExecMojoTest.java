@@ -43,7 +43,8 @@ import org.codehaus.plexus.util.StringOutputStream;
 public class ExecMojoTest
     extends AbstractMojoTestCase
 {
-    private static final String MVN_EXECUTABLE = System.getProperty("os.name").toLowerCase().contains( "win" ) ? "mvn.cmd" : "mvn";
+    private static final String MVN_EXECUTABLE =
+        System.getProperty( "os.name" ).toLowerCase().contains( "win" ) ? "mvn.cmd" : "mvn";
 
     private MockExecMojo mojo;
 
@@ -60,7 +61,7 @@ public class ExecMojoTest
 
         protected int executeCommandLine( Executor exec, CommandLine commandLine, Map enviro, OutputStream out,
                                           OutputStream err )
-            throws IOException, ExecuteException
+                                              throws IOException, ExecuteException
         {
             commandLines.add( commandLine );
             if ( failureMsg != null )
@@ -91,7 +92,7 @@ public class ExecMojoTest
     {
         super.setUp();
         mojo = new MockExecMojo();
-        // note: most of the tests below assume that the specified 
+        // note: most of the tests below assume that the specified
         // executable path is not fully specicied. See ExecMojo#getExecutablePath
         mojo.setExecutable( "mvn" );
         mojo.setArguments( Arrays.asList( new String[] { "--version" } ) );
@@ -122,61 +123,61 @@ public class ExecMojoTest
      * generate a file whose contains are compared to expected output
      */
 
-//    public void testRunOKWithAutoComputedClasspath()
-//        throws MojoExecutionException, Exception
-//    {
-//        String projectName = "project1";
-//
-//        ExecMojo mojo = new ExecMojo();
-//
-//        setUpProject( projectName, mojo );
-//
-//        // compile project
-//        mojo.setExecutable( "mvn" );
-//        mojo.setWorkingDirectory( new File( "src/test/projects/" + projectName + "/" ) );
-//        mojo.setArguments( Arrays.asList( new String[]{"clean", "compile"} ) );
-//
-//        mojo.execute();
-//
-//        mojo.getLog().info( "executed mvn clean compile" );
-//
-//        // the command executes the test class
-//        mojo.setExecutable( "java" );
-//        mojo.setWorkingDirectory( (File) null );
-//        Classpath classpath = new Classpath();
-//        mojo.setArguments( Arrays.asList( new Object[]{"-Dproject.env1=value1", "-classpath", classpath,
-//            "org.codehaus.mojo.exec.test.Test",
-//            new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), "arg1",
-//            "arg2"} ) );
-//
-//        mojo.execute();
-//
-//        // checking the command line would involve resolving the repository
-//        // checkMojo( "java -cp" );
-//
-//        assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
-//                          getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
-//
-//        // the command executes the test class, this time specifying the dependencies
-//        mojo.setExecutable( "java" );
-//        mojo.setWorkingDirectory( (File) null );
-//        classpath = new Classpath();
-//        List dependencies = new ArrayList();
-//        dependencies.add( "commons-io:commons-io" );
-//        classpath.setDependencies( dependencies );
-//        mojo.setArguments( Arrays.asList( new Object[]{"-Dproject.env1=value1", "-classpath", classpath,
-//            "org.codehaus.mojo.exec.test.Test",
-//            new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), "arg1",
-//            "arg2"} ) );
-//
-//        mojo.execute();
-//
-//        // checking the command line would involve resolving the repository
-//        // checkMojo( "java -cp" );
-//
-//        assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
-//                          getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
-//    }
+    // public void testRunOKWithAutoComputedClasspath()
+    // throws MojoExecutionException, Exception
+    // {
+    // String projectName = "project1";
+    //
+    // ExecMojo mojo = new ExecMojo();
+    //
+    // setUpProject( projectName, mojo );
+    //
+    // // compile project
+    // mojo.setExecutable( "mvn" );
+    // mojo.setWorkingDirectory( new File( "src/test/projects/" + projectName + "/" ) );
+    // mojo.setArguments( Arrays.asList( new String[]{"clean", "compile"} ) );
+    //
+    // mojo.execute();
+    //
+    // mojo.getLog().info( "executed mvn clean compile" );
+    //
+    // // the command executes the test class
+    // mojo.setExecutable( "java" );
+    // mojo.setWorkingDirectory( (File) null );
+    // Classpath classpath = new Classpath();
+    // mojo.setArguments( Arrays.asList( new Object[]{"-Dproject.env1=value1", "-classpath", classpath,
+    // "org.codehaus.mojo.exec.test.Test",
+    // new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), "arg1",
+    // "arg2"} ) );
+    //
+    // mojo.execute();
+    //
+    // // checking the command line would involve resolving the repository
+    // // checkMojo( "java -cp" );
+    //
+    // assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
+    // getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
+    //
+    // // the command executes the test class, this time specifying the dependencies
+    // mojo.setExecutable( "java" );
+    // mojo.setWorkingDirectory( (File) null );
+    // classpath = new Classpath();
+    // List dependencies = new ArrayList();
+    // dependencies.add( "commons-io:commons-io" );
+    // classpath.setDependencies( dependencies );
+    // mojo.setArguments( Arrays.asList( new Object[]{"-Dproject.env1=value1", "-classpath", classpath,
+    // "org.codehaus.mojo.exec.test.Test",
+    // new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), "arg1",
+    // "arg2"} ) );
+    //
+    // mojo.execute();
+    //
+    // // checking the command line would involve resolving the repository
+    // // checkMojo( "java -cp" );
+    //
+    // assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
+    // getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
+    // }
 
     /**
      * @return output from System.out during mojo execution
@@ -192,7 +193,7 @@ public class ExecMojoTest
 
         MavenProject project = (MavenProject) getVariableValueFromObject( mojo, "project" );
 
-        // why isn't this set up by the harness based on the default-value?  TODO get to bottom of this!
+        // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
         // setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
         // setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
 
@@ -281,7 +282,7 @@ public class ExecMojoTest
         cmd = realMojo.getExecutablePath( enviro, workdir );
         assertEquals( "File doesn't exist. Let the system find it (in that PATH?)", myJavaPath, cmd.getExecutable() );
 
-        if ( OS.isFamilyWindows() ) //how to make this part of the test run on other platforms as well??
+        if ( OS.isFamilyWindows() ) // how to make this part of the test run on other platforms as well??
         {
 
             myJavaPath = "target" + File.separator + "javax.bat";
@@ -398,8 +399,8 @@ public class ExecMojoTest
 
     private String getCommandLineAsString( CommandLine commandline )
     {
-        //for the sake of the test comparisons, cut out the eventual
-        //cmd /c *.bat conversion
+        // for the sake of the test comparisons, cut out the eventual
+        // cmd /c *.bat conversion
         String result = commandline.getExecutable();
         boolean isCmd = false;
         if ( OS.isFamilyWindows() && result.equals( "cmd" ) )

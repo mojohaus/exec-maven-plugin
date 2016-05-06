@@ -61,7 +61,6 @@ public abstract class AbstractExecMojo
 
     /**
      * Arguments separated by space for the executed program. For example: "-j 20"
-     *
      */
     @Parameter( property = "exec.args" )
     private String commandlineArgs;
@@ -74,13 +73,13 @@ public abstract class AbstractExecMojo
     protected String classpathScope;
 
     /**
-     * Skip the execution.
-     * Starting with version 1.4.0 the former name <code>skip</code> has been
-     * changed into <code>exec.skip</code>.
+     * Skip the execution. Starting with version 1.4.0 the former name <code>skip</code> has been changed into
+     * <code>exec.skip</code>.
+     * 
      * @since 1.0.1
      */
-    //TODO: Remove the alias in version 1.5.0 of the plugin.
-    @Parameter( property = "exec.skip", defaultValue = "false", alias="skip" )
+    // TODO: Remove the alias in version 1.5.0 of the plugin.
+    @Parameter( property = "exec.skip", defaultValue = "false", alias = "skip" )
     private boolean skip;
 
     /**

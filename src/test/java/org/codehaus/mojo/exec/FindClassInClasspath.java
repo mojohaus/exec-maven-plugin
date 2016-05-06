@@ -1,6 +1,5 @@
 package org.codehaus.mojo.exec;
 
-
 /**
  * @author <a href="mailto:jerome@coffeebreaks.org">Jerome Lacoste</a>
  */

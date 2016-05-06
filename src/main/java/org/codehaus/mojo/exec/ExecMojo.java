@@ -105,9 +105,9 @@ public class ExecMojo
      * The toolchain. If omitted, <code>"jdk"</code> is assumed.
      * </p>
      */
-    @Parameter( property = "exec.toolchain", defaultValue = "jdk")
+    @Parameter( property = "exec.toolchain", defaultValue = "jdk" )
     private String toolchain;
-    
+
     /**
      * The current working directory. Optional. If not specified, basedir will be used.
      *
@@ -610,7 +610,8 @@ public class ExecMojo
                     paths.add( 0, dir.getAbsolutePath() );
 
                     File f = null;
-                    search: for ( String path : paths ) {
+                    search: for ( String path : paths )
+                    {
                         f = new File( path, executable );
                         if ( f.isFile() )
                         {
@@ -620,7 +621,7 @@ public class ExecMojo
                         {
                             for ( String extension : getExecutableExtensions() )
                             {
-                                f = new File(path, executable + extension);
+                                f = new File( path, executable + extension );
                                 if ( f.isFile() )
                                 {
                                     break search;
@@ -629,11 +630,13 @@ public class ExecMojo
                         }
                     }
 
-                    if ( f != null ) {
+                    if ( f != null )
+                    {
                         exec = f.getAbsolutePath();
                     }
 
-                    if ( !f.exists() ) {
+                    if ( !f.exists() )
+                    {
                         exec = null;
                     }
                 }
@@ -662,23 +665,27 @@ public class ExecMojo
         return toRet;
     }
 
-    private static boolean hasNativeExtension( final String exec ) {
+    private static boolean hasNativeExtension( final String exec )
+    {
         final String lowerCase = exec.toLowerCase();
         return lowerCase.endsWith( ".exe" ) || lowerCase.endsWith( ".com" );
     }
 
-    private static boolean hasExecutableExtension( final String exec ) {
+    private static boolean hasExecutableExtension( final String exec )
+    {
         final String lowerCase = exec.toLowerCase();
-        for (final String ext : getExecutableExtensions() )
-            if ( lowerCase.endsWith(ext) )
-            	return true;
-        
+        for ( final String ext : getExecutableExtensions() )
+            if ( lowerCase.endsWith( ext ) )
+                return true;
+
         return false;
     }
 
-    private static List<String> getExecutableExtensions() {
+    private static List<String> getExecutableExtensions()
+    {
         final String pathExt = System.getenv( "PATHEXT" );
-        return pathExt == null ? Arrays.asList( ".bat", ".cmd" ) : Arrays.asList( StringUtils.split( pathExt.toLowerCase(), File.pathSeparator ) );    	
+        return pathExt == null ? Arrays.asList( ".bat", ".cmd" )
+                        : Arrays.asList( StringUtils.split( pathExt.toLowerCase(), File.pathSeparator ) );
     }
 
     private List<String> getExecutablePaths( Map<String, String> enviro )
@@ -725,7 +732,7 @@ public class ExecMojo
             psh.start();
             if ( async )
             {
-                if (asyncDestroyOnShutdown)
+                if ( asyncDestroyOnShutdown )
                 {
                     exec.setProcessDestroyer( getProcessDestroyer() );
                 }
