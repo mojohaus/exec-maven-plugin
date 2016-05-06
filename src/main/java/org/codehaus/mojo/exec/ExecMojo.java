@@ -649,7 +649,8 @@ public class ExecMojo
             || OS.isFamilyWindows() && exec.toLowerCase( Locale.getDefault() ).endsWith( ".cmd" ) )
         {
             // run the windows batch script in isolation and exit at the end
-            toRet = new CommandLine( "cmd" );
+            final String comSpec = System.getenv( "ComSpec" );
+            toRet = new CommandLine( comSpec == null ? "cmd" : comSpec );
             toRet.addArgument( "/c" );
             toRet.addArgument( exec );
         }
