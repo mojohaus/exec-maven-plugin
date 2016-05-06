@@ -1,0 +1,238 @@
+ ------
+ Using toolchains with the exec:exec goal
+ ------
+ Markus KARG 
+ ------
+ 2016-04-24
+ ------
+
+ ~~ Copyright 2016 The Codehaus
+ ~~
+ ~~ Licensed under the Apache License, Version 2.0 (the "License");
+ ~~ you may not use this file except in compliance with the License.
+ ~~ You may obtain a copy of the License at
+ ~~
+ ~~      http://www.apache.org/licenses/LICENSE-2.0
+ ~~
+ ~~ Unless required by applicable law or agreed to in writing, software
+ ~~ distributed under the License is distributed on an "AS IS" BASIS,
+ ~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ~~ See the License for the specific language governing permissions and
+ ~~ limitations under the License.
+
+ ~~ NOTE: For help with the syntax of this file, see:
+ ~~ http://maven.apache.org/doxia/references/apt-format.html
+
+
+Using Toolchains Instead of Explicit Paths
+
+  To keep both, the POM and the <<<PATH>>> free of explicit paths, the <<<exec:exec>>> goal supports Maven Toolchains.
+  Toolchains are configured using the file <<<toolchains.xml>>> and apply different algorithms how to find the wanted tool on disk.
+  More information on toolchains can be found on the {{{https://maven.apache.org/guides/mini/guide-using-toolchains.html}Maven web site}}.
+  
+  There are three ways of using toolchains: The "paths" toolchain provided by the Exec Maven Plugin, the "jdk" toolchain provided by the Maven Toolchains Plugin, and custom toolchains provided by third party plugins.
+  
+* The "paths" Toolchain
+
+  The "paths" toolchain is included in the Exec Maven Plugin and must be enabled explicitly in the POM.
+  It searches a configurable list of folders for the requested tool.
+  The first match will be invoked.
+
+** pom.xml
+
+-------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-toolchains-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>toolchain</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <toolchains>
+            <paths>
+              <!-- Select the "foo-bar" Paths Toolchain Configuration -->
+              <id>foo-bar</id>
+            </paths>
+          </toolchains>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <!-- Enable "paths" Toolchain provided by Exec Maven Plugin -->
+        <extensions>true</extensions>
+        ...
+        <configuration>
+          <toolchain>paths</toolchain>
+        </configuration>
+        ...
+      </plugin>
+    </plugins>
+  </build>
+  ...
+</project>
+-------------------
+
+** toolchains.xml
+
+-------------------
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <toolchain>
+    <type>paths</type>
+    <provides>
+      <!-- Defines the folders to search for binaries of the "foo-bar" toolset -->
+      <id>foo-bar</id>
+    </provides>
+    <configuration>
+      <paths>
+        <path>C:\Program Files\FooBar\SDK\bin</path>
+        <path>C:\Program Files\FooBar\Runtime\bin</path>
+      </paths>
+    </configuration>
+  </toolchain>
+  ...
+</toolchains>
+-------------------
+
+* The "jdk" Toolchain
+
+  The "jdk" toolchain is included in the Maven Toolchains Plugin and enabled by default.
+  It searches the <<<bin>>> folder of the specified JDK for the requested tool.
+
+** pom.xml
+
+-------------------
+<project>
+  ...
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-toolchains-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>toolchain</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <toolchains>
+            <jdk>
+              <!-- Select the JDK to be searched --> 
+              <version>[1.5,)</version>
+            </jdk>
+          </toolchains>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        ...
+      </plugin>
+    </plugins>
+  </build>
+  ...
+</project>
+-------------------
+
+** toolchains.xml
+
+-------------------
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <toolchain>
+    <type>jdk</type>
+    <provides>
+      <!-- Defines the root folder of the "sun-jdk-1.5" JDK -->
+      <version>1.5</version>
+      <vendor>sun</vendor>
+      <id>sun-jdk-1.5</id>
+    </provides>
+    <configuration>
+      <jdkHome>C:\Program Files\Java\jdk1.5.0</jdkHome>
+    </configuration>
+  </toolchain>
+  ...
+</toolchains>
+-------------------
+
+* Custom Toolchains
+
+  Custom toolchains are included in third party Maven plugins and must be enabled explicitly in the POM.
+  Their type id, configuration and search algorithms are plugin specific.
+  See particular plugin's documentation.
+
+** pom.xml
+
+-------------------
+<project>
+  ...
+  <build>
+    <extensions>
+      <extension>
+        <!-- plugin's GAV coordinates go here -->
+      </extension>
+    </extensions>
+    ...
+    <plugins>
+      <plugin>
+        <artifactId>maven-toolchains-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>toolchain</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <toolchains>
+            <!-- toolchain-specific selector goes here -->
+          </toolchains>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        ...
+        <configuration>
+          <toolchain><!-- toolchain's type id goes here --></toolchain>
+        </configuration>
+        ...
+      </plugin>
+    </plugins>
+  </build>
+  ...
+</project>
+-------------------
+
+** toolchains.xml
+
+-------------------
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <toolchain>
+    <type><!-- toolchain's type id goes here --></type>
+    <provides>
+      <!-- toolchain-specific provision goes here -->
+    </provides>
+    <configuration>
+      <!-- toolchain-specific configuration goes here -->
+    </configuration>
+  </toolchain>
+  ...
+</toolchains>
+-------------------
