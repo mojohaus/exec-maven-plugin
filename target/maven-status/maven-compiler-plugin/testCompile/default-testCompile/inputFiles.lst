@@ -1,0 +1,10 @@
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/FindClassInClasspath.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/NoMain.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/plexus/util/interpolation/ValueSource.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/plexus/util/interpolation/Interpolator.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/MainUncooperative.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/MainWithThreads.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/ExecJavaMojoTest.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/ExecMojoTest.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/mojo/exec/DummyMain.java
+/Users/kama/ws-git-codehaus/exec-maven-plugin/src/test/java/org/codehaus/plexus/util/interpolation/RegexBasedInterpolator.java
