@@ -282,21 +282,22 @@ public class ExecMojoTest
         cmd = realMojo.getExecutablePath( enviro, workdir );
         assertEquals( "File doesn't exist. Let the system find it (in that PATH?)", myJavaPath, cmd.getExecutable() );
 
-        if ( OS.isFamilyWindows() ) // how to make this part of the test run on other platforms as well??
+        if ( OS.isFamilyWindows() ) // Exec Maven Plugin only supports Batch detection and PATH search on Windows
         {
-
             myJavaPath = "target" + File.separator + "javax.bat";
             f = new File( myJavaPath );
             assertTrue( "file created...", f.createNewFile() );
             assertTrue( "file exists...", f.exists() );
 
+            final String comSpec = System.getenv( "ComSpec" );
+            
             realMojo.setExecutable( "javax.bat" );
             cmd = realMojo.getExecutablePath( enviro, workdir );
-            assertTrue( "is bat file on windows, execute using cmd.", cmd.getExecutable().equals( "cmd" ) );
+            assertTrue( "is bat file on windows, execute using ComSpec.", cmd.getExecutable().equals( comSpec ) );
 
             enviro.put( "PATH", workdir.getAbsolutePath() + File.separator + "target" );
             cmd = realMojo.getExecutablePath( enviro, workdir );
-            assertTrue( "is bat file on windows' PATH, execute using cmd.", cmd.getExecutable().equals( "cmd" ) );
+            assertTrue( "is bat file on windows' PATH, execute using ComSpec.", cmd.getExecutable().equals( comSpec ) );
             f.delete();
             assertFalse( "file deleted...", f.exists() );
         }
