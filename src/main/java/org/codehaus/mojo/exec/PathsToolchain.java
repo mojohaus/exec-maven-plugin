@@ -19,13 +19,11 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
-import java.io.File;
 import java.util.List;
 
 import org.apache.maven.toolchain.DefaultToolchain;
 import org.apache.maven.toolchain.model.ToolchainModel;
 import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.util.Os;
 
 /**
  * Searches a list of configured paths for the requested tool.
@@ -60,21 +58,6 @@ class PathsToolchain
 
     public String findTool( final String toolName )
     {
-        for ( final String path : this.paths )
-        {
-            final File tool = findTool( toolName, new File( path ) );
-            if ( tool != null )
-                return tool.getAbsolutePath();
-        }
-
-        return null;
-    }
-
-    private static File findTool( final String toolName, final File folder )
-    {
-        final File tool =
-            new File( folder, toolName + ( Os.isFamily( "windows" ) && !toolName.contains( "." ) ? ".exe" : "" ) ); // NOI18N
-
-        return tool.exists() ? tool : null;
+        return ExecMojo.findExecutable( toolName, this.paths );
     }
 }
