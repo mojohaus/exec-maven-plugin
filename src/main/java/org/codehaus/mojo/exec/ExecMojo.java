@@ -612,20 +612,20 @@ public class ExecMojo
                     File f = null;
                     search: for ( String path : paths )
                     {
-                        f = new File( path, executable );
-                        if ( f.isFile() )
+                        if (executable.contains(".")) 
                         {
-                            break;
+                            f = new File( path, executable );
+                            if ( f.isFile() )
+                            { 
+                                break;
+                            }
                         }
-                        else
+                        for ( String extension : getExecutableExtensions() )
                         {
-                            for ( String extension : getExecutableExtensions() )
+                            f = new File( path, executable + extension );
+                            if ( f.isFile() )
                             {
-                                f = new File( path, executable + extension );
-                                if ( f.isFile() )
-                                {
-                                    break search;
-                                }
+                                break search;
                             }
                         }
                     }
