@@ -29,6 +29,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,14 +50,23 @@ import org.apache.commons.exec.ProcessDestroyer;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.artifact.MavenMetadataSource;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
@@ -82,7 +92,7 @@ public class ExecMojo
     /**
      * <p>
      * The executable. Can be a full path or the name of the executable. In the latter case, the executable must be in
-     * the PATH for the execution to work.
+     * the PATH for the execution to work. Omit when using <code>executableDependency</code>.
      * </p>
      * <p>
      * The plugin will search for the executable in the following order:
@@ -97,7 +107,7 @@ public class ExecMojo
      *
      * @since 1.0
      */
-    @Parameter( property = "exec.executable", required = true )
+    @Parameter( property = "exec.executable" )
     private String executable;
 
     /**
@@ -212,6 +222,17 @@ public class ExecMojo
     public void execute()
         throws MojoExecutionException
     {
+        if ( executable == null )
+        {
+            if (executableDependency == null)
+            {
+                throw new MojoExecutionException( "The parameter 'executable' is missing or invalid" );
+            }
+
+            executable = findExecutableArtifact().getFile().getAbsolutePath();
+            getLog().debug( "using executable dependency " + executable);
+        }
+
         if ( isSkip() )
         {
             getLog().info( "skipping execute as per configuration" );

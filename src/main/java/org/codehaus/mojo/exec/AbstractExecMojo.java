@@ -23,10 +23,16 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectBuilder;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
@@ -44,6 +50,40 @@ public abstract class AbstractExecMojo
      */
     @Parameter( defaultValue = "${project}", readonly = true )
     protected MavenProject project;
+
+    @Component
+    private ArtifactResolver artifactResolver;
+
+    @Component
+    private ArtifactFactory artifactFactory;
+
+    @Component
+    private MavenProjectBuilder projectBuilder;
+
+    @Component
+    private ArtifactMetadataSource metadataSource;
+
+    @Parameter( readonly = true, required = true, defaultValue = "${localRepository}" )
+    private ArtifactRepository localRepository;
+
+    @Parameter( readonly = true, required = true, defaultValue = "${project.remoteArtifactRepositories}" )
+    private List<ArtifactRepository> remoteRepositories;
+
+    @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
+    private List<Artifact> pluginDependencies;
+
+    /**
+     * If provided the ExecutableDependency identifies which of the plugin dependencies contains the executable class.
+     * This will have the affect of only including plugin dependencies required by the identified ExecutableDependency.
+     * <p/>
+     * If includeProjectDependencies is set to <code>true</code>, all of the project dependencies will be included on
+     * the executable's classpath. Whether a particular project dependency is a dependency of the identified
+     * ExecutableDependency will be irrelevant to its inclusion in the classpath.
+     * 
+     * @since 1.1-beta-1
+     */
+    @Parameter
+    protected ExecutableDependency executableDependency;
 
     /**
      * This folder is added to the list of those folders containing source to be compiled. Use this if your plugin
@@ -184,5 +224,35 @@ public abstract class AbstractExecMojo
     protected boolean isSkip()
     {
         return skip;
+    }
+
+    /**
+     * Examine the plugin dependencies to find the executable artifact.
+     * 
+     * @return an artifact which refers to the actual executable tool (not a POM)
+     * @throws MojoExecutionException if no executable artifact was found
+     */
+    protected Artifact findExecutableArtifact()
+        throws MojoExecutionException
+    {
+        // ILimitedArtifactIdentifier execToolAssembly = this.getExecutableToolAssembly();
+
+        Artifact executableTool = null;
+        for ( Artifact pluginDep : this.pluginDependencies )
+        {
+            if ( this.executableDependency.matches( pluginDep ) )
+            {
+                executableTool = pluginDep;
+                break;
+            }
+        }
+
+        if ( executableTool == null )
+        {
+            throw new MojoExecutionException( "No dependency of the plugin matches the specified executableDependency."
+                + "  Specified executableToolAssembly is: " + executableDependency.toString() );
+        }
+
+        return executableTool;
     }
 }

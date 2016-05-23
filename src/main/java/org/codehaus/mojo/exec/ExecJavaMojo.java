@@ -151,19 +151,6 @@ public class ExecJavaMojo
     private boolean includePluginDependencies;
 
     /**
-     * If provided the ExecutableDependency identifies which of the plugin dependencies contains the executable class.
-     * This will have the affect of only including plugin dependencies required by the identified ExecutableDependency.
-     * <p/>
-     * If includeProjectDependencies is set to <code>true</code>, all of the project dependencies will be included on
-     * the executable's classpath. Whether a particular project dependency is a dependency of the identified
-     * ExecutableDependency will be irrelevant to its inclusion in the classpath.
-     * 
-     * @since 1.1-beta-1
-     */
-    @Parameter
-    private ExecutableDependency executableDependency;
-
-    /**
      * Whether to interrupt/join and possibly stop the daemon threads upon quitting. <br/>
      * If this is <code>false</code>, maven does nothing about the daemon threads. When maven has no more work to do,
      * the VM will normally terminate any remaining daemon threads.
@@ -678,36 +665,6 @@ public class ExecJavaMojo
         return this.artifactFactory.createBuildArtifact( executableArtifact.getGroupId(),
                                                          executableArtifact.getArtifactId(),
                                                          executableArtifact.getVersion(), "pom" );
-    }
-
-    /**
-     * Examine the plugin dependencies to find the executable artifact.
-     * 
-     * @return an artifact which refers to the actual executable tool (not a POM)
-     * @throws MojoExecutionException if no executable artifact was found
-     */
-    private Artifact findExecutableArtifact()
-        throws MojoExecutionException
-    {
-        // ILimitedArtifactIdentifier execToolAssembly = this.getExecutableToolAssembly();
-
-        Artifact executableTool = null;
-        for ( Artifact pluginDep : this.pluginDependencies )
-        {
-            if ( this.executableDependency.matches( pluginDep ) )
-            {
-                executableTool = pluginDep;
-                break;
-            }
-        }
-
-        if ( executableTool == null )
-        {
-            throw new MojoExecutionException( "No dependency of the plugin matches the specified executableDependency."
-                + "  Specified executableToolAssembly is: " + executableDependency.toString() );
-        }
-
-        return executableTool;
     }
 
     /**

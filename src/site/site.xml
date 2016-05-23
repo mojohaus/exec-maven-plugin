@@ -13,6 +13,7 @@
       <item name="Changing the classpath scope when running Java programs" href="examples/example-exec-or-java-change-classpath-scope.html"/>
       <item name="Using plugin dependencies with exec:exec" href="examples/example-exec-using-plugin-dependencies.html"/>
       <item name="Using toolchains with exec:exec" href="examples/example-exec-using-toolchains.html"/>
+      <item name="Using executable binary dependencies instead of local executables" href="examples/example-exec-using-executabledependency.html"/>
     </menu>
   </body>
 </project>
