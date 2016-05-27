@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteException;
@@ -43,8 +44,11 @@ import org.codehaus.plexus.util.StringOutputStream;
 public class ExecMojoTest
     extends AbstractMojoTestCase
 {
-    private static final String MVN_EXECUTABLE =
-        System.getProperty( "os.name" ).toLowerCase().contains( "win" ) ? "mvn.cmd" : "mvn";
+    /*
+     * Finding a file actually on disk of the test system makes some of the tests fail.
+     * Hence a purely random UUID is used to prevent this situation. 
+     */
+    private static final String SOME_EXECUTABLE = UUID.randomUUID().toString();
 
     private MockExecMojo mojo;
 
@@ -94,7 +98,7 @@ public class ExecMojoTest
         mojo = new MockExecMojo();
         // note: most of the tests below assume that the specified
         // executable path is not fully specicied. See ExecMojo#getExecutablePath
-        mojo.setExecutable( "mvn" );
+        mojo.setExecutable( SOME_EXECUTABLE );
         mojo.setArguments( Arrays.asList( new String[] { "--version" } ) );
         mojo.executeResult = 0;
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
@@ -107,7 +111,7 @@ public class ExecMojoTest
     {
         mojo.execute();
 
-        checkMojo( MVN_EXECUTABLE + " --version" );
+        checkMojo( SOME_EXECUTABLE + " --version" );
     }
 
     /*
@@ -133,7 +137,7 @@ public class ExecMojoTest
     // setUpProject( projectName, mojo );
     //
     // // compile project
-    // mojo.setExecutable( "mvn" );
+    // mojo.setExecutable( SOME_EXECUTABLE );
     // mojo.setWorkingDirectory( new File( "src/test/projects/" + projectName + "/" ) );
     // mojo.setArguments( Arrays.asList( new String[]{"clean", "compile"} ) );
     //
@@ -282,21 +286,22 @@ public class ExecMojoTest
         cmd = realMojo.getExecutablePath( enviro, workdir );
         assertEquals( "File doesn't exist. Let the system find it (in that PATH?)", myJavaPath, cmd.getExecutable() );
 
-        if ( OS.isFamilyWindows() ) // how to make this part of the test run on other platforms as well??
+        if ( OS.isFamilyWindows() ) // Exec Maven Plugin only supports Batch detection and PATH search on Windows
         {
-
             myJavaPath = "target" + File.separator + "javax.bat";
             f = new File( myJavaPath );
             assertTrue( "file created...", f.createNewFile() );
             assertTrue( "file exists...", f.exists() );
 
+            final String comSpec = System.getenv( "ComSpec" );
+            
             realMojo.setExecutable( "javax.bat" );
             cmd = realMojo.getExecutablePath( enviro, workdir );
-            assertTrue( "is bat file on windows, execute using cmd.", cmd.getExecutable().equals( "cmd" ) );
+            assertTrue( "is bat file on windows, execute using ComSpec.", cmd.getExecutable().equals( comSpec ) );
 
             enviro.put( "PATH", workdir.getAbsolutePath() + File.separator + "target" );
             cmd = realMojo.getExecutablePath( enviro, workdir );
-            assertTrue( "is bat file on windows' PATH, execute using cmd.", cmd.getExecutable().equals( "cmd" ) );
+            assertTrue( "is bat file on windows' PATH, execute using ComSpec.", cmd.getExecutable().equals( comSpec ) );
             f.delete();
             assertFalse( "file deleted...", f.exists() );
         }
@@ -316,7 +321,7 @@ public class ExecMojoTest
             assertEquals( "Result of " + mojo.getExecutedCommandline( 0 ) + " execution is: '1'.", e.getMessage() );
         }
 
-        checkMojo( MVN_EXECUTABLE + " --version" );
+        checkMojo( SOME_EXECUTABLE + " --version" );
     }
 
     public void testRunError()
@@ -333,7 +338,7 @@ public class ExecMojoTest
             assertEquals( "Command execution failed.", e.getMessage() );
         }
 
-        checkMojo( MVN_EXECUTABLE + " --version" );
+        checkMojo( SOME_EXECUTABLE + " --version" );
     }
 
     public void testOverrides()
@@ -342,7 +347,7 @@ public class ExecMojoTest
         mojo.systemProperties.put( "exec.args", "-f pom.xml" );
         mojo.execute();
 
-        checkMojo( MVN_EXECUTABLE + " -f pom.xml" );
+        checkMojo( SOME_EXECUTABLE + " -f pom.xml" );
     }
 
     public void testOverrides3()
@@ -351,13 +356,13 @@ public class ExecMojoTest
         mojo.systemProperties.put( "exec.args", null );
         mojo.execute();
 
-        checkMojo( MVN_EXECUTABLE + " --version" );
+        checkMojo( SOME_EXECUTABLE + " --version" );
 
         mojo.commandLines.clear();
         mojo.systemProperties.put( "exec.args", "" );
         mojo.execute();
 
-        checkMojo( MVN_EXECUTABLE + " --version" );
+        checkMojo( SOME_EXECUTABLE + " --version" );
     }
 
     public void testIsResultCodeAFailure()
