@@ -662,16 +662,23 @@ public class ExecMojo
         File f = null;
         search: for ( final String path : paths )
         {
-            f = new File( path, executable );
-            if ( f.isFile() )
-                break;
+            if (executable.contains("."))
+            {
+                f = new File( path, executable );
+                if ( f.isFile() )
+                {
+                    break;
+                }
+            }
             else
+            {
                 for ( final String extension : getExecutableExtensions() )
                 {
                     f = new File( path, executable + extension );
                     if ( f.isFile() )
                         break search;
                 }
+            }
         }
 
         if ( f == null || !f.exists() )

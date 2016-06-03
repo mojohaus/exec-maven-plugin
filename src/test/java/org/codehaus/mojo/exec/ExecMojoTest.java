@@ -304,8 +304,16 @@ public class ExecMojoTest
             assertTrue( "is bat file on windows' PATH, execute using ComSpec.", cmd.getExecutable().equals( comSpec ) );
             f.delete();
             assertFalse( "file deleted...", f.exists() );
+            
+            // ISSUE-42
+            String executableInPath = "javax";
+            realMojo.setExecutable(executableInPath);
+            cmd = realMojo.getExecutablePath( enviro, workdir );
+            assertTrue( "file without extension is supposed in PATH", executableInPath.equals(cmd.getExecutable()));
+            
         }
     }
+    
 
     public void testRunFailure()
     {
