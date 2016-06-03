@@ -609,36 +609,7 @@ public class ExecMojo
                     List<String> paths = this.getExecutablePaths( enviro );
                     paths.add( 0, dir.getAbsolutePath() );
 
-                    File f = null;
-                    search: for ( String path : paths )
-                    {
-                        if (executable.contains(".")) 
-                        {
-                            f = new File( path, executable );
-                            if ( f.isFile() )
-                            { 
-                                break;
-                            }
-                        }
-                        for ( String extension : getExecutableExtensions() )
-                        {
-                            f = new File( path, executable + extension );
-                            if ( f.isFile() )
-                            {
-                                break search;
-                            }
-                        }
-                    }
-
-                    if ( f != null )
-                    {
-                        exec = f.getAbsolutePath();
-                    }
-
-                    if ( !f.exists() )
-                    {
-                        exec = null;
-                    }
+                    exec = findExecutable( executable, paths );
                 }
             }
         }
@@ -663,6 +634,36 @@ public class ExecMojo
         }
 
         return toRet;
+    }
+
+    static String findExecutable( final String executable, final List<String> paths )
+    {
+        File f = null;
+        search: for ( final String path : paths )
+        {
+            if (executable.contains(".")) 
+            {
+                f = new File( path, executable );
+                if ( f.isFile() )
+                { 
+                    break;
+                }
+            }
+            else
+            {
+                for ( final String extension : getExecutableExtensions() )
+                {
+                    f = new File( path, executable + extension );
+                    if ( f.isFile() )
+                        break search;
+                }
+            }
+        }
+
+        if ( f == null || !f.exists() )
+            return null;
+
+        return f.getAbsolutePath();
     }
 
     private static boolean hasNativeExtension( final String exec )
