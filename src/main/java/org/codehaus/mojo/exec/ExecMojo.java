@@ -641,11 +641,11 @@ public class ExecMojo
         File f = null;
         search: for ( final String path : paths )
         {
-            if (executable.contains(".")) 
+            if (executable.contains("."))
             {
                 f = new File( path, executable );
                 if ( f.isFile() )
-                { 
+                {
                     break;
                 }
             }
