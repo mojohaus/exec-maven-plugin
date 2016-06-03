@@ -64,3 +64,5 @@ Exec Maven Plugin
   * {{{./examples/example-exec-using-plugin-dependencies.html} Using plugin dependencies with exec:exec}}
 
   * {{{./examples/example-exec-using-toolchains.html} Using toolchains instead of explicit paths}}
+  
+  * {{{./examples/example-exec-using-executabledependency.html} Using executable binary dependencies instead of local executables}}
