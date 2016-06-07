@@ -663,15 +663,14 @@ public class ExecMojo
         search: for ( final String path : paths )
         {
             f = new File( path, executable );
+            for ( final String extension : getExecutableExtensions() )
+            {
+                f = new File( path, executable + extension );
+                if ( f.isFile() )
+                    break search;
+            }
             if ( f.isFile() )
-                break;
-            else
-                for ( final String extension : getExecutableExtensions() )
-                {
-                    f = new File( path, executable + extension );
-                    if ( f.isFile() )
-                        break search;
-                }
+              break;
         }
 
         if ( f == null || !f.exists() )

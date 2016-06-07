@@ -35,7 +35,11 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
+import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringOutputStream;
+import org.junit.Assume;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * @author Jerome Lacoste <jerome@coffeebreaks.org>
@@ -61,7 +65,7 @@ public class ExecMojoTest
 
         public String failureMsg;
 
-        public Map systemProperties = new HashMap();
+        public Map<String, String> systemProperties = new HashMap<String, String>();
 
         protected int executeCommandLine( Executor exec, CommandLine commandLine, Map enviro, OutputStream out,
                                           OutputStream err )
@@ -77,7 +81,7 @@ public class ExecMojoTest
 
         protected String getSystemProperty( String key )
         {
-            return (String) systemProperties.get( key );
+            return systemProperties.get( key );
         }
 
         int getAmountExecutedCommandLines()
@@ -87,7 +91,7 @@ public class ExecMojoTest
 
         CommandLine getExecutedCommandline( int index )
         {
-            return ( (CommandLine) commandLines.get( index ) );
+            return commandLines.get( index );
         }
     }
 
@@ -268,7 +272,7 @@ public class ExecMojoTest
         ExecMojo realMojo = new ExecMojo();
 
         File workdir = new File( System.getProperty( "user.dir" ) );
-        Map enviro = new HashMap();
+        Map<String, String> enviro = new HashMap<String, String>();
 
         String myJavaPath = "target" + File.separator + "javax";
         File f = new File( myJavaPath );
@@ -305,6 +309,42 @@ public class ExecMojoTest
             f.delete();
             assertFalse( "file deleted...", f.exists() );
         }
+    }
+    
+    // under Windows cmd/bat files should be preferred over files with the same prefix without extension, e.g.
+    // if there are "node" and "node.cmd" the mojo should pick "node.cmd"
+    // see https://github.com/mojohaus/exec-maven-plugin/issues/42
+    public void testGetExecutablePathPreferExecutableExtensionsOnWindows()
+    		throws IOException
+    {
+    	Assume.assumeTrue(OS.isFamilyWindows());
+    	final ExecMojo realMojo = new ExecMojo();
+    	
+    	final String tmp = System.getProperty("java.io.tmpdir");
+    	final File workdir = new File(tmp, "testGetExecutablePathPreferExecutableExtensionsOnWindows");
+    	workdir.mkdirs();
+    	
+    	final Map<String, String> enviro = new HashMap<String, String>();
+    	
+    	final File f = new File(workdir, "mycmd");
+    	final File fCmd = new File(workdir, "mycmd.cmd");
+    	f.createNewFile();
+    	fCmd.createNewFile();
+    	assertTrue( "file exists...", f.exists() );
+    	assertTrue( "file exists...", fCmd.exists() );
+    	
+    	realMojo.setExecutable( "mycmd" );
+    	
+    	final CommandLine cmd = realMojo.getExecutablePath( enviro, workdir );
+    	// cmdline argumets are: [/c, %path-to-temp%\mycmd.cmd], so check second argument
+    	assertTrue( "File should have cmd extension",
+    			cmd.getArguments()[1].endsWith( "mycmd.cmd" ) );
+    	
+    	f.delete();
+    	fCmd.delete();
+    	assertFalse( "file deleted...", f.exists() );
+    	assertFalse( "file deleted...", fCmd.exists() );
+    	
     }
 
     public void testRunFailure()
