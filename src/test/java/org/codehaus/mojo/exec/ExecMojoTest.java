@@ -317,7 +317,10 @@ public class ExecMojoTest
     public void testGetExecutablePathPreferExecutableExtensionsOnWindows()
     		throws IOException
     {
-    	Assume.assumeTrue(OS.isFamilyWindows());
+    	// this test is for Windows
+    	if (!OS.isFamilyWindows()) {
+    		return;
+    	}
     	final ExecMojo realMojo = new ExecMojo();
     	
     	final String tmp = System.getProperty("java.io.tmpdir");
