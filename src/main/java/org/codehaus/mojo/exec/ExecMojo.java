@@ -663,7 +663,7 @@ public class ExecMojo
         search: for ( final String path : paths )
         {
             f = new File( path, executable );
-            if ( f.isFile() )
+            if ( !OS.isFamilyWindows() && f.isFile() )
                 break;
             else
                 for ( final String extension : getExecutableExtensions() )
