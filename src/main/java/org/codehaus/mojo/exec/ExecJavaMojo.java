@@ -25,7 +25,6 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +49,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.artifact.MavenMetadataSource;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -216,10 +214,8 @@ public class ExecJavaMojo
      * 
      * @since 1.3
      */
+    @Parameter( property = "exec.additionalClasspathElements", defaultValue = "")
     private List<String> additionalClasspathElements;
-
-    @Parameter( property = "exec.additionalClasspathElements" )
-    private String additionalClasspathElementsFromCLI;
 
     /**
      * Execute goal.
@@ -522,28 +518,7 @@ public class ExecJavaMojo
     }
 
     private void addAdditionalClasspathElements( List<URL> path )
-      throws MojoExecutionException
     {
-        if (additionalClasspathElementsFromCLI != null) {
-          try
-          {
-              String[] result = CommandLineUtils.translateCommandline( additionalClasspathElementsFromCLI );
-              for (int i = 0; i < result.length; i++) {
-                getLog().debug(result[i]);
-
-                if (additionalClasspathElements == null) {
-                  additionalClasspathElements = new ArrayList<String>();
-                }
-
-                additionalClasspathElements.add(result[i]);
-              }
-          }
-          catch ( Exception e )
-          {
-              throw new MojoExecutionException( e.getMessage() );
-          }
-        }
-
         if ( additionalClasspathElements != null )
         {
             for ( String classPathElement : additionalClasspathElements )
