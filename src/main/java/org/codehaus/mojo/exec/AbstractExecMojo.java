@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Resource;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -123,6 +124,24 @@ public abstract class AbstractExecMojo
     private boolean skip;
 
     /**
+     * Add project resource directories to classpath. This is especially useful if the exec plugin is used for a code
+     * generator that reads its settings from the classpath.
+     * 
+     * @since 1.5.1
+     */
+    @Parameter( property = "addResourcesToClasspath", defaultValue = "false" )
+    private boolean addResourcesToClasspath;
+
+    /**
+     * Add project output directory to classpath. This might be undesirable when the exec plugin is run before the
+     * compile step. Default is <code>true</code>.
+     * 
+     * @since 1.5.1
+     */
+    @Parameter( property = "addOutputToClasspath", defaultValue = "true" )
+    private boolean addOutputToClasspath;
+
+    /**
      * Collects the project artifacts in the specified List and the project specific classpath (build output and build
      * test output) Files in the specified List, depending on the plugin classpathScope value.
      *
@@ -132,22 +151,38 @@ public abstract class AbstractExecMojo
     @SuppressWarnings( "unchecked" )
     protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<File> theClasspathFiles )
     {
+        if ( addResourcesToClasspath )
+        {
+            for ( Resource r : project.getBuild().getResources() )
+            {
+                theClasspathFiles.add( new File( r.getDirectory() ) );
+            }
+        }
 
         if ( "compile".equals( classpathScope ) )
         {
             artifacts.addAll( project.getCompileArtifacts() );
-            theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            if ( addOutputToClasspath )
+            {
+                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            }
         }
         else if ( "test".equals( classpathScope ) )
         {
             artifacts.addAll( project.getTestArtifacts() );
-            theClasspathFiles.add( new File( project.getBuild().getTestOutputDirectory() ) );
-            theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            if ( addOutputToClasspath )
+            {
+                theClasspathFiles.add( new File( project.getBuild().getTestOutputDirectory() ) );
+                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            }
         }
         else if ( "runtime".equals( classpathScope ) )
         {
             artifacts.addAll( project.getRuntimeArtifacts() );
-            theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            if ( addOutputToClasspath )
+            {
+                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            }
         }
         else if ( "system".equals( classpathScope ) )
         {
