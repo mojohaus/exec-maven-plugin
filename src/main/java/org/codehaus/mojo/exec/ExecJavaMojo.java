@@ -214,7 +214,7 @@ public class ExecJavaMojo
      * 
      * @since 1.3
      */
-    @Parameter( property = "exec.additionalClasspathElements", defaultValue = "")
+    @Parameter
     private List<String> additionalClasspathElements;
 
     /**
