@@ -33,7 +33,7 @@
           </execution>
         </executions>
         <configuration>
-          <executable>java</executable>
+          <executable>${JAVA_HOME}/bin/java</executable>
         </configuration>
       </plugin>
     </plugins>

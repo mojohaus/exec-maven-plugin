@@ -27,7 +27,7 @@
 							<environmentVariables>
 								<key></key>
 							</environmentVariables>
-							<executable>java</executable>
+							<executable>${JAVA_HOME}/bin/java</executable>
 							<arguments>
 								<argument>-cp</argument>
 								<argument>target/classes</argument>

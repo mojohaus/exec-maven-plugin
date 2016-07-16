@@ -19,7 +19,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>@pom.version@</version>
         <configuration>
-          <executable>java</executable>
+          <executable>${JAVA_HOME}/bin/java</executable>
           <arguments>
             <argument>-version</argument>
           </arguments>

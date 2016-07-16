@@ -20,7 +20,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>@project.version@</version>
         <configuration>
-          <executable>java</executable>
+          <executable>${JAVA_HOME}/bin/java</executable>
           <arguments>
             <argument>-cp</argument>
             <argument>target/classes</argument>
