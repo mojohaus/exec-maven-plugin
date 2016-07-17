@@ -20,7 +20,5 @@ install:
   - cmd: java -version
 build_script:
   - mvn -B -Prun-its clean verify
-#test_script:
-#- mvn -Prun-its verify -B
 cache:
   - C:\Users\appveyor\.m2
