@@ -14,10 +14,10 @@ install:
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
       }
 # Prepend Java entry, remove Ruby entry (C:\Ruby193\bin;) from PATH
-- cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH:C:\Ruby193\bin;=%
-- cmd: SET MAVEN_OPTS=-Xmx768m
-- cmd: mvn --version
-- cmd: java -version
+  - cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH:C:\Ruby193\bin;=%
+  - cmd: SET MAVEN_OPTS=-Xmx768m
+  - cmd: mvn --version
+  - cmd: java -version
 build_script:
   - mvn -B -Prun-its clean verify
 #test_script:
