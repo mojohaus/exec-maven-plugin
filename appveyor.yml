@@ -19,7 +19,7 @@ install:
   - cmd: mvn --version
   - cmd: java -version
 build_script:
-  - mvn -B -Prun-its clean verify
+  - mvn -Dmaven.repo.local=C:\maven -B -Prun-its clean verify
 #test_script:
 #- mvn -Prun-its verify -B
 cache:
