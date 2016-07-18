@@ -186,7 +186,6 @@
 
   <properties>
     <mavenVersion>2.2.1</mavenVersion>
-    <mojo.java.target>1.5</mojo.java.target>
   </properties>
 
   <build>
@@ -226,7 +225,7 @@
         <configuration>
           <signature>
             <groupId>org.codehaus.mojo.signature</groupId>
-            <artifactId>java15</artifactId>
+            <artifactId>java17</artifactId>
             <version>1.0</version>
           </signature>
         </configuration>
