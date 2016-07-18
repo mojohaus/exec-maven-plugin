@@ -30,17 +30,17 @@ Running Java programs with the exec goal
   Note: With the <<<exec>>> goal, there are some confusion caused by the almost duplication of functionality between the <<<arguments>>> and
   <<<commandlineArgs>>> configuration parameters.
 
-  *  If <<<commandlineArgs>>> is specified, it will be used as is, except for replacing %classpath with proper classpath using dependencies
+  *  If <<<commandlineArgs>>> is specified, it will be used as is, except for replacing %classpath and %modulepath with their matching path using dependencies
 
   * Otherwise if the property <<<exec.args>>> is specified, it will be used
 
-  * Otherwise the list of <argument> and <classpath> will be parsed and used
+  * Otherwise the list of <argument>, <classpath> and <modulepath> will be parsed and used
 
 
 * Command line
 
  If specified as part of the <<<exec.args>>> argument, the special string <<<%classpath>>>
- will be replaced by the project classpath as computed by Maven.
+ will be replaced by the project classpath as computed by Maven. Same couunts for <<<%modulepath>>>
 
 -----
 mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
@@ -54,7 +54,6 @@ mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
         <configuration>
           <executable>java</executable>
           <arguments>
-            <argument>-Dmyproperty=myvalue</argument>
             <argument>-classpath</argument>
             <!-- automatically creates the classpath using all project dependencies,
                  also adding the project build directory -->
@@ -71,13 +70,29 @@ mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
         <configuration>
           <executable>java</executable>
           <arguments>
-            <argument>-Dmyproperty=myvalue</argument>
             <argument>-classpath</argument>
             <classpath>
               <dependency>commons-io:commons-io</dependency>
               <dependency>commons-lang:commons-lang</dependency>
             </classpath>
             <argument>com.example.Main</argument>
+            ...
+          </arguments>
+        </configuration>
+-------------------
+
+In case of the modules as supported since Java9 the configuration looks like
+
+-------------------
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>--module-path</argument> <!-- or -p  -->
+            <!-- automatically creates the classpath using all project dependencies,
+                 also adding the project build directory -->
+            <modulepath/>
+            <argument>--module</argument> <!-- or -m -->
+            <argument>mymodule/com.example.Main</argument>
             ...
           </arguments>
         </configuration>

@@ -22,6 +22,7 @@ package org.codehaus.mojo.exec;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -50,23 +51,14 @@ import org.apache.commons.exec.ProcessDestroyer;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.project.artifact.MavenMetadataSource;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
@@ -199,6 +191,15 @@ public class ExecMojo
     private boolean longClasspath;
 
     /**
+     * If set to true the modulepath and the main class will be written as an @arg file
+     * Instead of '--module-path/-p MODULEPATH ' the exec plugin executes '@modulepath'.
+     *
+     * @since 1.1.2
+     */
+    @Parameter( property = "exec.longModulepath", defaultValue = "true" )
+    private boolean longModulepath;
+
+    /**
      * If set to true the child process executes asynchronously and build execution continues in parallel.
      */
     @Parameter( property = "exec.async", defaultValue = "false" )
@@ -213,6 +214,8 @@ public class ExecMojo
     private boolean asyncDestroyOnShutdown = true;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
+    
+    public static final String MODULEPATH_TOKEN = "%modulepath";
 
     /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
@@ -437,7 +440,7 @@ public class ExecMojo
                 // the arguments are replaced with: -jar $TMP/maven-exec.jar
                 // NOTE: the jar will contain the classpath and the main class
                 commandArguments.add( "-jar" );
-                File tmpFile = createJar( computeClasspath( null ), args[i + 2] );
+                File tmpFile = createJar( computePath( null ), args[i + 2] );
                 commandArguments.add( tmpFile.getAbsolutePath() );
                 i += 2;
             }
@@ -466,16 +469,33 @@ public class ExecMojo
                 // the arguments are replaced with: -jar $TMP/maven-exec.jar
                 // NOTE: the jar will contain the classpath and the main class
                 commandArguments.add( "-jar" );
-                File tmpFile = createJar( computeClasspath( (Classpath) arguments.get( i + 1 ) ),
+                File tmpFile = createJar( computePath( (Classpath) arguments.get( i + 1 ) ),
                                           (String) arguments.get( i + 2 ) );
                 commandArguments.add( tmpFile.getAbsolutePath() );
                 i += 2;
+            }
+            if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
+            {
+                String filePath = "target/modulepath";
+                
+                commandArguments.add( '@' + filePath );
+                
+                String modulePath = StringUtils.join( computePath( (Modulepath) arguments.get( ++i ) ).iterator(), File.pathSeparator );
+                
+                createArgFile( filePath, Arrays.asList( "-p", modulePath ) );
             }
             else if ( argument instanceof Classpath )
             {
                 Classpath specifiedClasspath = (Classpath) argument;
 
                 arg = computeClasspathString( specifiedClasspath );
+                commandArguments.add( arg );
+            }
+            else if ( argument instanceof Modulepath )
+            {
+                Modulepath specifiedModulepath = (Modulepath) argument;
+                
+                arg = computeClasspathString( specifiedModulepath );
                 commandArguments.add( arg );
             }
             else
@@ -514,6 +534,11 @@ public class ExecMojo
         return longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
     }
 
+    private boolean isLongModulePathArgument( String arg )
+    {
+        return longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+    }
+
     /**
      * Compute the classpath from the specified Classpath. The computed classpath is based on the classpathScope. The
      * plugin cannot know from maven the phase it is executed in. So we have to depend on the user to tell us he wants
@@ -523,9 +548,9 @@ public class ExecMojo
      *            default classpath will be used)
      * @return a platform specific String representation of the classpath
      */
-    private String computeClasspathString( Classpath specifiedClasspath )
+    private String computeClasspathString( AbstractPath specifiedClasspath )
     {
-        List<String> resultList = computeClasspath( specifiedClasspath );
+        List<String> resultList = computePath( specifiedClasspath );
         StringBuffer theClasspath = new StringBuffer();
 
         for ( String str : resultList )
@@ -545,7 +570,7 @@ public class ExecMojo
      *            default classpath will be used)
      * @return a list of class path elements
      */
-    private List<String> computeClasspath( Classpath specifiedClasspath )
+    private List<String> computePath( AbstractPath specifiedClasspath )
     {
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> theClasspathFiles = new ArrayList<File>();
@@ -909,6 +934,27 @@ public class ExecMojo
         jos.close();
 
         return file;
+    }
+    
+    private void createArgFile( String filePath, List<String> lines )
+        throws IOException
+    {
+        final String EOL = System.getProperty( "line.separator", "\\n" );
+        
+        FileWriter writer = null;
+        try
+        {
+            writer = new FileWriter( filePath );
+            for ( String line : lines )
+            {
+                writer.append( line ).append( EOL );
+            }
+
+        }
+        finally
+        {
+            IOUtil.close( writer );
+        }
     }
 
     protected Map<String, String> createEnvs( File envScriptFile )
