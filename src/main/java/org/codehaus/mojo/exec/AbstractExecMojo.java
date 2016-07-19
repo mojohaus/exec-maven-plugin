@@ -105,6 +105,12 @@ public abstract class AbstractExecMojo
      */
     @Parameter( property = "exec.args" )
     private String commandlineArgs;
+    
+    /**
+     * Arguments separated by space to add last to the executed program.  For example "file1.txt file2.txt"
+     */
+    @Parameter( property = "exec.additionalArgs" )
+    private String additionalArgs;
 
     /**
      * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your
@@ -224,6 +230,34 @@ public abstract class AbstractExecMojo
             }
         }
     }
+    
+     /**
+     * Parses the argument string given by the user. Strings are recognized as everything between STRING_WRAPPER.
+     * PARAMETER_DELIMITER is ignored inside a string. STRING_WRAPPER and PARAMETER_DELIMITER can be escaped using
+     * ESCAPE_CHAR.
+     *
+     * @return Array of String representing the arguments
+     * @throws MojoExecutionException for wrong formatted arguments
+     */
+    protected String[] parseAdditionalArgs()
+        throws MojoExecutionException
+    {
+        if ( additionalArgs == null )
+        {
+            return null;
+        }
+        else
+        {
+            try
+            {
+                return CommandLineUtils.translateCommandline( additionalArgs );
+            }
+            catch ( Exception e )
+            {
+                throw new MojoExecutionException( e.getMessage() );
+            }
+        }
+    }
 
     /**
      * @return true of the mojo has command line arguments
@@ -231,6 +265,14 @@ public abstract class AbstractExecMojo
     protected boolean hasCommandlineArgs()
     {
         return ( commandlineArgs != null );
+    }
+    
+    /**
+     * @return true if the mojo has additional command line arguments
+     */
+    protected boolean hasAdditionalArgs()
+    {
+        return ( additionalArgs != null );
     }
 
     /**

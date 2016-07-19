@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -240,6 +241,11 @@ public class ExecJavaMojo
         {
             arguments = new String[0];
         }
+        
+        if ( hasAdditionalArgs() )
+        {
+            arguments = argumentsWithAdditionalArgs();
+        }
 
         if ( getLog().isDebugEnabled() )
         {
@@ -335,6 +341,22 @@ public class ExecJavaMojo
         }
 
         registerSourceRoots();
+    }
+    
+    private String[] argumentsWithAdditionalArgs() throws MojoExecutionException
+    {
+        String[] additionalArgArray = parseAdditionalArgs();
+        int combinedLength = arguments.length + additionalArgArray.length;
+        String[] combinedArray = new String[combinedLength];
+        for ( int i = 0; i < arguments.length; i++ )
+        {
+            combinedArray[i] = arguments[i];
+        }
+        for ( int i = 0; i < additionalArgArray.length; i++ )
+        {
+            combinedArray[i + arguments.length] = additionalArgArray[i];
+        }
+        return combinedArray;
     }
 
     /**
