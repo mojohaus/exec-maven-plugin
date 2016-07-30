@@ -1,6 +1,5 @@
 language: java
 jdk:
-  - openjdk6
   - oraclejdk7
   - oraclejdk8
 script: "mvn --show-version --errors --batch-mode -Prun-its clean verify"
