@@ -20,6 +20,7 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
@@ -107,8 +108,17 @@ public abstract class AbstractExecMojo
     private String commandlineArgs;
 
     /**
-     * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your
-     * needs. Since 1.1.2, the default value is 'runtime' instead of 'compile'.
+     * Defines the scope of the classpath passed to the plugin.
+     *
+     * <ul>
+     *     <li><code>runtime</code> (default): Include "compile" and "runtime" scopes</li>
+     *     <li><code>compile</code>: Include "compile", "provided", and "system" scopes</li>
+     *     <li><code>test</code>: Include all scopes</li>
+     *     <li><code>provided</code>: Include "compile", "runtime", "provided", and "system" scopes</li>
+     *     <li><code>system</code>: Include "system" scope</li>
+     * </ul>
+     *
+     * Since 1.1.2, the default value is 'runtime' instead of 'compile'.
      */
     @Parameter( property = "exec.classpathScope", defaultValue = "runtime" )
     protected String classpathScope;
@@ -179,6 +189,18 @@ public abstract class AbstractExecMojo
         else if ( "runtime".equals( classpathScope ) )
         {
             artifacts.addAll( project.getRuntimeArtifacts() );
+            if ( addOutputToClasspath )
+            {
+                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+            }
+        }
+        else if ( "provided".equals( classpathScope ) )
+        {
+            // "compile" gives compile, provided, and system scopes
+            // "runtime" gives compile and runtime scopes
+            HashSet<Artifact> artifactSet = new HashSet<>( project.getCompileArtifacts() );
+            artifactSet.addAll( project.getRuntimeArtifacts() );
+            artifacts.addAll( artifactSet );
             if ( addOutputToClasspath )
             {
                 theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
