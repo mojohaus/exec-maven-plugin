@@ -2,7 +2,9 @@ language: java
 jdk:
   - oraclejdk7
   - oraclejdk8
-script: "mvn --show-version --errors --batch-mode -Prun-its clean verify"
+script:
+  - "mvn --show-version --errors --batch-mode -Prun-its clean verify"
+  - ./showbuildoutput.sh
 cache:
     directories:
     - $HOME/.m2
@@ -11,4 +13,4 @@ branches:
         - gh-pages
 notifications:
     email:
-        - khmarbaise@apache.org
+        - rehevkor5@gmail.com
