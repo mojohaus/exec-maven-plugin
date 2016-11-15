@@ -150,7 +150,7 @@ public abstract class AbstractExecMojo
      * List of dependencies to exclude from the test classpath. Each dependency string must follow the format
      * <i>groupId:artifactId</i>. For example: <i>org.acme:project-a</i>
      *
-     * @since 2.6
+     * @since 1.5.1
      */
     @Parameter( property = "exec.classpathDependencyExcludes" )
     private String[] classpathDependencyExcludes;
