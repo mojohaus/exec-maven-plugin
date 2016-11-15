@@ -20,20 +20,24 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.model.Resource;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.shared.artifact.filter.PatternIncludesArtifactFilter;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
@@ -140,6 +144,17 @@ public abstract class AbstractExecMojo
      */
     @Parameter( property = "addOutputToClasspath", defaultValue = "true" )
     private boolean addOutputToClasspath;
+    
+    
+    /**
+     * List of dependencies to exclude from the test classpath. Each dependency string must follow the format
+     * <i>groupId:artifactId</i>. For example: <i>org.acme:project-a</i>
+     *
+     * @since 1.5.1
+     */
+    @Parameter( property = "exec.classpathDependencyExcludes" )
+    private String[] classpathDependencyExcludes;
+
 
     /**
      * Collects the project artifacts in the specified List and the project specific classpath (build output and build
@@ -192,9 +207,43 @@ public abstract class AbstractExecMojo
         {
             throw new IllegalStateException( "Invalid classpath scope: " + classpathScope );
         }
-
+        
         getLog().debug( "Collected project artifacts " + artifacts );
+        //filter dependency
+        if ( classpathDependencyExcludes != null )
+        {
+            ArtifactFilter dependencyFilter =
+                new PatternIncludesArtifactFilter( Arrays.asList( classpathDependencyExcludes ) );
+           List<Artifact> filterList = this.filterArtifacts( artifacts, dependencyFilter );
+           artifacts.clear();
+           artifacts.addAll(filterList);
+           getLog().debug( "Collected project artifacts after filter " + artifacts );
+        }
+
+        
         getLog().debug( "Collected project classpath " + theClasspathFiles );
+    }
+    
+    /**
+     * Return a new set containing only the artifacts accepted by the given filter.
+     *
+     * @param artifacts The unfiltered artifacts
+     * @param filter    The filter to apply
+     * @return The filtered result
+     */
+    private List<Artifact> filterArtifacts( List<Artifact> artifacts, ArtifactFilter filter )
+    {
+        List<Artifact> filteredArtifacts = new ArrayList<Artifact>();
+
+        for ( Artifact artifact : artifacts )
+        {
+            if ( !filter.include( artifact ) )
+            {
+                filteredArtifacts.add( artifact );
+            }
+        }
+
+        return filteredArtifacts;
     }
 
     /**

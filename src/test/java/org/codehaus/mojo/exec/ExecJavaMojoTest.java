@@ -18,6 +18,8 @@ package org.codehaus.mojo.exec;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.DefaultArtifactRepository;
@@ -135,6 +137,32 @@ public class ExecJavaMojoTest
 
         assertEquals( MainWithThreads.ALL_EXITED, output.trim() );
     }
+    
+    
+
+    public void testClasspathDependencyExcludes()
+        throws Exception
+    {
+    	File pom = new File( getBasedir(), "src/test/projects/project15/pom.xml" );
+    	String output = executeDebug( pom, "java" );
+    	String expectedExcludeDependency = "commons-logging:commons-logging";
+    
+    	Pattern pattern = Pattern.compile(".*?Collected project artifacts \\[(.*?)\\].*");
+    	Matcher matcher = pattern.matcher(output.trim()); 
+    	String result = expectedExcludeDependency;
+    	//check it present in project dependency
+    	if(matcher.find()){
+    		pattern = Pattern.compile(".*?Collected project artifacts after filter \\[(.*?)\\].*");
+    		matcher = pattern.matcher(output.trim());
+    		//check it present after filter
+    		if(matcher.find()){
+    			result = matcher.group(0);
+    		}
+    	}
+    	
+    	assertFalse(result.contains(expectedExcludeDependency) );
+    }
+    
 
     /**
      * For cases where the Java code spawns Threads and main returns soon, but code contains non interruptible threads.
@@ -235,6 +263,52 @@ public class ExecJavaMojoTest
 
         return stringOutputStream.toString();
     }
+    
+    
+    /**
+     * @return output from System.out during mojo execution
+     */
+    private String executeDebug( File pom, String goal )
+        throws Exception
+    {
+
+        ExecJavaMojo mojo;
+        mojo = (ExecJavaMojo) lookupMojo( goal, pom );
+
+        setUpProject( pom, mojo );
+
+        MavenProject project = (MavenProject) getVariableValueFromObject( mojo, "project" );
+
+        // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
+        setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
+        setVariableValueToObject( mojo, "killAfter", (long) -1 );
+        setVariableValueToObject( mojo, "cleanupDaemonThreads", Boolean.TRUE );
+        setVariableValueToObject( mojo, "classpathScope", "compile" );
+
+        assertNotNull( mojo );
+        assertNotNull( project );
+
+        // trap System.out
+        PrintStream out = System.out;
+        StringOutputStream stringOutputStream = new StringOutputStream();
+        System.setOut( new PrintStream( stringOutputStream ) );
+        // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
+        mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_DEBUG, "exec:java" ) ) );
+
+        try
+        {
+            mojo.execute();
+        }
+        finally
+        {
+            // see testUncooperativeThread() for explaination
+            Thread.sleep( 300 ); // time seems about right
+            System.setOut( out );
+        }
+
+        return stringOutputStream.toString();
+    }
+
 
     private void setUpProject( File pomFile, AbstractMojo mojo )
         throws Exception
