@@ -54,7 +54,7 @@ import org.apache.maven.project.artifact.MavenMetadataSource;
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
  * 
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>, <a href="mailto:dsmiley@mitre.org">David Smiley</a>
+ * @author Kaare Nilsen (kaare.nilsen@gmail.com), David Smiley (dsmiley@mitre.org)
  * @since 1.0
  */
 @Mojo( name = "java", threadSafe = true, requiresDependencyResolution = ResolutionScope.TEST )

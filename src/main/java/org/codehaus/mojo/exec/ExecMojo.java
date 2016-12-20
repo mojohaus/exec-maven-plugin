@@ -73,7 +73,7 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 /**
  * A Plugin for executing external programs.
  *
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste (jerome@coffeebreaks.org)
  * @version $Id$
  * @since 1.0
  */

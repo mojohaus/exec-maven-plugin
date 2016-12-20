@@ -22,7 +22,7 @@ package org.codehaus.mojo.exec;
 /**
  * Wrapper class for the systemPropery argument type.
  * 
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
+ * @author Kaare Nilsen (kaare.nilsen@gmail.com)
  */
 public class Property
 {
