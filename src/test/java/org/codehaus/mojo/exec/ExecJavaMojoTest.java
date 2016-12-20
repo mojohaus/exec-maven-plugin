@@ -17,6 +17,7 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -24,6 +25,7 @@ import org.apache.maven.artifact.repository.DefaultArtifactRepository;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.monitor.logging.DefaultLog;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
@@ -76,6 +78,33 @@ public class ExecJavaMojoTest
         execute( pom, "java" );
 
         assertEquals( "System property now empty", "", System.getProperty( "project5.property.with.no.value" ) );
+    }
+
+    /**
+     * Check that an execution that throws propagates the cause of the failure into the output
+     * and correctly unwraps the InvocationTargetException.
+     *
+     * @author Lukasz Cwik <lcwik@google.com>
+     */
+    public void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException()
+        throws Exception
+    {
+      File pom = new File( getBasedir(), "src/test/projects/project15/pom.xml" );
+
+      try
+      {
+          execute( pom, "java" );
+
+          fail( "Expected Exception to be thrown but none was thrown" );
+      }
+      catch ( Throwable e )
+      {
+          assertTrue( e instanceof MojoExecutionException );
+
+          assertTrue( e.getCause() instanceof IOException );
+
+          assertEquals( "expected IOException thrown by test", e.getCause().getMessage() );
+      }
     }
 
     /**

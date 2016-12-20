@@ -20,6 +20,7 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -285,6 +286,11 @@ public class ExecJavaMojo
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(),
                                                                                new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.",
                                                                                               e ) );
+                }
+                catch ( InvocationTargetException e )
+                { // use the cause if available to improve the plugin execution output
+                   Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
+                   Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), exceptionToReport );
                 }
                 catch ( Exception e )
                 { // just pass it on
