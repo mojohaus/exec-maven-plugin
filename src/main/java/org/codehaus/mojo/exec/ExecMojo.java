@@ -131,6 +131,9 @@ public class ExecMojo
     @Parameter( property = "exec.outputFile" )
     private File outputFile;
 
+    @Parameter( property = "exec.inheritIo" )
+    private boolean inheritIo;
+
     /**
      * <p>
      * A list of arguments passed to the {@code executable}, which should be of type <code>&lt;argument&gt;</code> or
@@ -280,7 +283,7 @@ public class ExecMojo
 
             commandLine.addArguments( args, false );
 
-            Executor exec = new DefaultExecutor();
+            Executor exec = inheritIo ? new ExtendedExecutor(inheritIo) : new DefaultExecutor();
             exec.setWorkingDirectory( workingDirectory );
             fillSuccessCodes( exec );
 
