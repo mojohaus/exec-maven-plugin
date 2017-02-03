@@ -131,6 +131,13 @@ public class ExecMojo
     @Parameter( property = "exec.outputFile" )
     private File outputFile;
 
+    /**
+     * Program standard input, output and error streams will be inherited from the maven process.
+     * This allow tighter control of the streams and the console.
+     *
+     * @since 1.5.2
+     * @see ProcessBuilder#inheritIO()
+     */
     @Parameter( property = "exec.inheritIo" )
     private boolean inheritIo;
 
