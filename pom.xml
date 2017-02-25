@@ -307,6 +307,10 @@
                 ! see also https://issues.apache.org/jira/browse/MINVOKER-147 
                -->
               <parallelThreads>1</parallelThreads>
+              <properties>
+                <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
+                <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
+              </properties>
             </configuration>
             <executions>
               <execution>
