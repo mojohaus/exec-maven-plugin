@@ -34,7 +34,7 @@ import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.StringOutputStream;
 
 /**
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste
  * @version $Id$
  */
 public class ExecJavaMojoTest
@@ -48,9 +48,10 @@ public class ExecJavaMojoTest
      */
 
     /**
-     * Check that a simple execution with no arguments and no system properties produces the expected result
-     * <p/>
-     * we load the config from a pom file and fill up the MavenProject property ourselves
+     * Check that a simple execution with no arguments and no system properties produces the expected result.<br>
+     * We load the config from a pom file and fill up the MavenProject property ourselves
+     * 
+     * @throws Exception if any exception occurs
      */
     public void testSimpleRun()
         throws Exception
@@ -64,9 +65,10 @@ public class ExecJavaMojoTest
 
     /**
      * MEXEC-10 Check that an execution with no arguments and an system property with no value produces the expected
-     * result
-     * <p/>
-     * we load the config from a pom file and fill up the MavenProject property ourselves
+     * result<br>
+     * We load the config from a pom file and fill up the MavenProject property ourselves
+     * 
+     * @throws Exception if any exception occurs
      */
     public void testEmptySystemProperty()
         throws Exception
@@ -84,7 +86,8 @@ public class ExecJavaMojoTest
      * Check that an execution that throws propagates the cause of the failure into the output
      * and correctly unwraps the InvocationTargetException.
      *
-     * @author Lukasz Cwik <lcwik@google.com>
+     * @author Lukasz Cwik
+     * @throws Exception if any exception occurs
      */
     public void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException()
         throws Exception
@@ -109,7 +112,6 @@ public class ExecJavaMojoTest
 
     /**
      * MEXEC-29 exec:java throws NPE if the mainClass main method has not a correct signature
-     * <p/>
      */
     // Moved this test to src/it/mexec-29 (integration test)
     // cause it will fail. This is based of trying to
@@ -154,6 +156,8 @@ public class ExecJavaMojoTest
     /**
      * For cases where the Java code spawns Threads and main returns soon. See
      * <a href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
+     * 
+     * @throws Exception if any exception occurs
      */
     public void testWaitNoDaemonThreads()
         throws Exception
@@ -169,6 +173,8 @@ public class ExecJavaMojoTest
      * For cases where the Java code spawns Threads and main returns soon, but code contains non interruptible threads.
      * User is required to timeout the execution, otherwise it will hang. See
      * <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
+     * 
+     * @throws Exception if any exception occurs
      */
     public void testWaitNonInterruptibleDaemonThreads()
         throws Exception
@@ -182,7 +188,9 @@ public class ExecJavaMojoTest
 
     /**
      * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>. FIXME: this sometimes fail with
-     * unit.framework.ComparisonFailure: expected:<...> but was:<...3(f)>
+     * unit.framework.ComparisonFailure: expected:&lt;...&gt; but was:&lt;...3(f)&gt;
+     * 
+     * @throws Exception if any exception occurs
      */
     public void testUncooperativeThread()
         throws Exception
@@ -209,6 +217,7 @@ public class ExecJavaMojoTest
 
     /**
      * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
+     * @throws Exception if any exception occurs
      */
     public void testRunWithArgs()
         throws Exception

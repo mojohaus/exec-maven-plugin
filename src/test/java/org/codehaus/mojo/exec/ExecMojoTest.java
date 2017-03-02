@@ -35,14 +35,10 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
-import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringOutputStream;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 /**
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste
  * @version $Id$
  */
 public class ExecMojoTest
@@ -108,8 +104,6 @@ public class ExecMojoTest
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
     }
 
-    /**
-     */
     public void testRunOK()
         throws MojoExecutionException
     {
@@ -188,9 +182,13 @@ public class ExecMojoTest
     // }
 
     /**
+     * 
+     * @param pom the pom file
+     * @param goal the goal to execute
      * @return output from System.out during mojo execution
+     * @throws Exception if any exception occurs
      */
-    private String execute( File pom, String goal )
+    protected String execute( File pom, String goal )
         throws Exception
     {
 

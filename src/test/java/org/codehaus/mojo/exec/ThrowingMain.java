@@ -21,7 +21,7 @@ import java.io.IOException;
 /**
  * Executable used to test applications which exit exceptionally.
  *
- * @author Lukasz Cwik <lcwik@google.com>
+ * @author Lukasz Cwik
  */
 public class ThrowingMain
 {
