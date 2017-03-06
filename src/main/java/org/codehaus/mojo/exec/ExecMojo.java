@@ -572,9 +572,9 @@ public class ExecMojo
      */
     private List<String> computePath( AbstractPath specifiedClasspath )
     {
-        List<Artifact> artifacts = new ArrayList<Artifact>();
-        List<File> theClasspathFiles = new ArrayList<File>();
-        List<String> resultList = new ArrayList<String>();
+        List<Artifact> artifacts = new ArrayList<>();
+        List<File> theClasspathFiles = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
 
         collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
