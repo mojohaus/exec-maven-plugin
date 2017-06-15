@@ -435,6 +435,38 @@ public class ExecMojoTest
         assertEquals( javaHome, args[0] );
     }
 
+    /**
+     * Test for GitHub issue #75.
+     *
+     * @see <a href="https://github.com/mojohaus/exec-maven-plugin/issues/75">mojohaus/exec-maven-plugin#75</a>
+     */
+    public void testClassCastExceptionOnExecuteableArgumentP() throws Exception {
+
+        ExecMojo execMojo = new MockExecMojo();
+        execMojo.setBasedir(File.createTempFile("mvn-temp", "txt").getParentFile());
+        execMojo.setExecutable(SOME_EXECUTABLE);
+        setVariableValueToObject( execMojo, "longModulepath", true);
+        setVariableValueToObject( execMojo, "arguments", Arrays.asList("-p", "a"));
+
+        execMojo.execute();
+    }
+
+    /**
+     * Test for GitHub issue #75.
+     *
+     * @see <a href="https://github.com/mojohaus/exec-maven-plugin/issues/75">mojohaus/exec-maven-plugin#75</a>
+     */
+    public void testClassCastExceptionOnExecuteableArgumentCP() throws Exception {
+
+        ExecMojo execMojo = new MockExecMojo();
+        execMojo.setBasedir(File.createTempFile("mvn-temp", "txt").getParentFile());
+        execMojo.setExecutable(SOME_EXECUTABLE);
+        setVariableValueToObject( execMojo, "longClasspath", true);
+        setVariableValueToObject( execMojo, "arguments", Arrays.asList("-cp", "a"));
+
+        execMojo.execute();
+    }
+
     private void checkMojo( String expectedCommandLine )
     {
         assertEquals( 1, mojo.getAmountExecutedCommandLines() );
