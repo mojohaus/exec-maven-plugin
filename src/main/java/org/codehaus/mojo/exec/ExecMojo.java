@@ -30,7 +30,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -462,7 +461,7 @@ public class ExecMojo
         {
             Object argument = arguments.get( i );
             String arg;
-            if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
+            if ( argument instanceof Classpath && isLongClassPathArgument( (String) argument ) )
             {
                 // it is assumed that starting from -cp or -classpath the arguments
                 // are: -classpath/-cp %classpath mainClass
@@ -474,7 +473,7 @@ public class ExecMojo
                 commandArguments.add( tmpFile.getAbsolutePath() );
                 i += 2;
             }
-            if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
+            if ( argument instanceof Modulepath && isLongModulePathArgument( (String) argument ) )
             {
                 String filePath = "target/modulepath";
                 
