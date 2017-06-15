@@ -448,12 +448,7 @@ public class ExecMojoTest
         setVariableValueToObject( execMojo, "longModulepath", true);
         setVariableValueToObject( execMojo, "arguments", Arrays.asList("-p", "a"));
 
-        try {
-            execMojo.execute();
-            fail("Expected exception not thrown");
-        } catch (ClassCastException e) {
-            assertEquals("java.lang.String cannot be cast to org.codehaus.mojo.exec.Modulepath", e.getMessage());
-        }
+        execMojo.execute();
     }
 
     /**
@@ -469,12 +464,7 @@ public class ExecMojoTest
         setVariableValueToObject( execMojo, "longClasspath", true);
         setVariableValueToObject( execMojo, "arguments", Arrays.asList("-cp", "a"));
 
-        try {
-            execMojo.execute();
-            fail("Expected exception not thrown");
-        } catch (ClassCastException e) {
-            assertEquals("java.lang.String cannot be cast to org.codehaus.mojo.exec.Classpath", e.getMessage());
-        }
+        execMojo.execute();
     }
 
     private void checkMojo( String expectedCommandLine )
