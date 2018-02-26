@@ -460,6 +460,10 @@ public class ExecMojo
             {
                 commandArguments.add( args[i].replace( CLASSPATH_TOKEN, computeClasspathString( null ) ) );
             }
+            else if ( args[i].contains( MODULEPATH_TOKEN ) )
+            {
+                commandArguments.add( args[i].replace( MODULEPATH_TOKEN, computeClasspathString( null ) ) );
+            }
             else
             {
                 commandArguments.add( args[i] );
