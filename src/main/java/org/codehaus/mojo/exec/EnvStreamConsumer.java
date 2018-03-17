@@ -37,7 +37,16 @@ public class EnvStreamConsumer
             {
                 envs.put( tokens[0], tokens[1] );
             } else {
-                unparsed.add( line );
+                // Don't hide an environment variable with no value e.g. APP_OVERRIDE=
+                if ( line.trim().endsWith("=") )
+                {
+                    String trimmed = line.trim();
+                    envs.put( trimmed.substring( 0, ( trimmed.length() - 1 ) ), null );
+                }
+                else
+                {
+                    unparsed.add( line );
+                }
             }
         }
         else
