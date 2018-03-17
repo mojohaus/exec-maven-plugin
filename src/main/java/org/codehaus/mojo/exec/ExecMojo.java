@@ -485,7 +485,7 @@ public class ExecMojo
                 String filePath = new File(buildDir, "modulepath").getAbsolutePath();
                 commandArguments.add( '@' + filePath );
 
-                String modulePath = StringUtils.join( computePath( (Modulepath) arguments.get( ++i ) ).iterator(), File.pathSeparator );
+                String modulePath = getModulePath(arguments.get( ++i ));
 
                 createArgFile( filePath, Arrays.asList( "-p", modulePath ) );
             }
@@ -507,6 +507,21 @@ public class ExecMojo
             {
                 commandArguments.add( (String) argument );
             }
+        }
+    }
+
+    /**
+     * Builds a module path string from the given argument.
+     */
+    private String getModulePath(Object modulePathArg) throws MojoExecutionException {
+        if ( modulePathArg instanceof Modulepath ) {
+            return StringUtils.join( computePath( (Modulepath) modulePathArg ).iterator(), File.pathSeparator );
+        }
+        else if ( modulePathArg instanceof String ) {
+            return (String) modulePathArg;
+        }
+        else {
+            throw new MojoExecutionException( "Value of unsupported type for modulepath argument: "+ modulePathArg );
         }
     }
 
