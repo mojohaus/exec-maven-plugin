@@ -30,7 +30,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,6 +148,12 @@ public class ExecMojo
     private File basedir;
 
     /**
+     * @since 1.6.1
+     */
+    @Parameter( readonly = true, required = true, defaultValue = "${project.build.directory}" )
+    private File buildDir;
+
+    /**
      * Environment variables to pass to the executed program.
      *
      * @since 1.1-beta-2
@@ -214,7 +219,7 @@ public class ExecMojo
     private boolean asyncDestroyOnShutdown = true;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
-    
+
     public static final String MODULEPATH_TOKEN = "%modulepath";
 
     /**
@@ -222,6 +227,7 @@ public class ExecMojo
      *
      * @throws MojoExecutionException if a failure happens
      */
+    @Override
     public void execute()
         throws MojoExecutionException
     {
@@ -476,12 +482,11 @@ public class ExecMojo
             }
             if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
             {
-                String filePath = "target/modulepath";
-                
+                String filePath = new File(buildDir, "modulepath").getAbsolutePath();
                 commandArguments.add( '@' + filePath );
-                
+
                 String modulePath = StringUtils.join( computePath( (Modulepath) arguments.get( ++i ) ).iterator(), File.pathSeparator );
-                
+
                 createArgFile( filePath, Arrays.asList( "-p", modulePath ) );
             }
             else if ( argument instanceof Classpath )
@@ -494,7 +499,7 @@ public class ExecMojo
             else if ( argument instanceof Modulepath )
             {
                 Modulepath specifiedModulepath = (Modulepath) argument;
-                
+
                 arg = computeClasspathString( specifiedModulepath );
                 commandArguments.add( arg );
             }
@@ -779,11 +784,13 @@ public class ExecMojo
 
                 exec.execute( commandLine, enviro, new ExecuteResultHandler()
                 {
+                    @Override
                     public void onProcessFailed( ExecuteException e )
                     {
                         getLog().error( "Async process failed for: " + commandLine, e );
                     }
 
+                    @Override
                     public void onProcessComplete( int exitValue )
                     {
                         getLog().info( "Async process complete, exit value = " + exitValue + " for: " + commandLine );
@@ -935,12 +942,12 @@ public class ExecMojo
 
         return file;
     }
-    
+
     private void createArgFile( String filePath, List<String> lines )
         throws IOException
     {
         final String EOL = System.getProperty( "line.separator", "\\n" );
-        
+
         FileWriter writer = null;
         try
         {
