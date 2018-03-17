@@ -1,6 +1,8 @@
 package org.codehaus.mojo.exec;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.plexus.util.StringUtils;
@@ -15,6 +17,8 @@ public class EnvStreamConsumer
 
     private Map<String, String> envs = new HashMap<String, String>();
 
+    private List<String> unparsed = new ArrayList<String>();
+
     private boolean startParsing = false;
 
     public void consumeLine( String line )
@@ -28,10 +32,12 @@ public class EnvStreamConsumer
 
         if ( this.startParsing )
         {
-            String[] tokens = StringUtils.split( line, "=" );
+            String[] tokens = StringUtils.split( line, "=", 2 );
             if ( tokens.length == 2 )
             {
                 envs.put( tokens[0], tokens[1] );
+            } else {
+                unparsed.add( line );
             }
         }
         else
@@ -46,4 +52,8 @@ public class EnvStreamConsumer
         return this.envs;
     }
 
+    public List<String> getUnparsedLines()
+    {
+        return this.unparsed;
+    }
 }
