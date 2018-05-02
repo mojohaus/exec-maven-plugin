@@ -149,7 +149,12 @@ public class ExecMojo
     private File basedir;
 
     /**
-     * Environment variables to pass to the executed program.
+     * <p>Environment variables to pass to the executed program. For example if you want to set the LANG var:
+     * <code>&lt;environmentVariables&gt;
+     *     &lt;LANG&gt;en_US&lt;/LANG&gt;
+     * &lt;/environmentVariables&gt;
+     * </code>
+     * </p>
      *
      * @since 1.1-beta-2
      */
