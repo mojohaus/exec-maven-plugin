@@ -233,6 +233,10 @@ public class ExecMojo
             }
 
             executable = findExecutableArtifact().getFile().getAbsolutePath();
+
+            // At Unix-like systems artifacts come to the local Maven repository without "executable" bit set.
+            new File( executable ).setExecutable( true );
+
             getLog().debug( "using executable dependency " + executable);
         }
 
