@@ -474,7 +474,7 @@ public class ExecMojo
                 commandArguments.add( tmpFile.getAbsolutePath() );
                 i += 2;
             }
-            if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
+            else if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
             {
                 String filePath = "target/modulepath";
                 
