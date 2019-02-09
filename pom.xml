@@ -287,65 +287,54 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
+            <version>3.2.0</version>
             <configuration>
               <addTestClassPath>true</addTestClassPath>
-              <debug>true</debug>
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-              <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-              <projectsDirectory>src/it</projectsDirectory>
+              <projectsDirectory>src/it/projects</projectsDirectory>
               <showVersion>true</showVersion>
-              <setupIncludes>
-                <setupInclude>setup/pom.xml</setupInclude>
-              </setupIncludes>
-              <pomIncludes>
-                <pomInclude>*/pom.xml</pomInclude>
-              </pomIncludes>
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
-              <settingsFile>src/it/settings.xml</settingsFile>
-              <!-- 
-                ! Currently working with more than one thread does not work, 
-                ! cause it is not guaranteed that the setup-config
-                ! project is build at first. 
-                ! see also https://issues.apache.org/jira/browse/MINVOKER-147 
-               -->
-              <parallelThreads>1</parallelThreads>
+              <settingsFile>src/it/mrm/settings.xml</settingsFile>
               <properties>
                 <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
                 <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
+				<!-- e.g. ensure that Java7 picks up TLSv1.2 when connecting with Central -->
+                <https.protocols>${https.protocols}</https.protocols>
               </properties>
+              <filterProperties>
+                <mrm.repository.url>${mrm.repository.url}</mrm.repository.url>
+              </filterProperties>
             </configuration>
             <executions>
               <execution>
-                <id>pre-integration-tests</id>
                 <goals>
                   <goal>install</goal>
-                </goals>
-                <configuration>
-                  <extraArtifacts>
-                    <extraArtifact>org.apache.maven.plugins:maven-compiler-plugin:3.8.0:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-install-plugin:2.4:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-clean-plugin:2.5:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-surefire-plugin:2.16:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-assembly-plugin:2.4:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-jar-plugin:2.4:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-war-plugin:2.3:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-resources-plugin:2.6:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-site-plugin:3.3:maven-plugin</extraArtifact>
-                    <extraArtifact>org.apache.maven.plugins:maven-site-plugin:2.0.1:maven-plugin</extraArtifact>
-                    <extraArtifact>commons-io:commons-io:1.1:jar</extraArtifact>
-                    <extraArtifact>commons-logging:commons-logging:1.0.4:jar</extraArtifact>
-                    <extraArtifact>org.codehaus.plexus:plexus-utils:1.1:jar</extraArtifact>
-                  </extraArtifacts>
-                </configuration>
-              </execution>
-              <execution>
-                <id>integration-tests</id>
-                <goals>
                   <goal>run</goal>
                 </goals>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>mrm-maven-plugin</artifactId>
+            <version>1.2.0</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>start</goal>
+                  <goal>stop</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <repositories>
+                <mockRepo>
+                  <source>src/it/mrm/repository</source>
+                </mockRepo>
+                <proxyRepo/>
+              </repositories>
+            </configuration>
           </plugin>
         </plugins>
       </build>
