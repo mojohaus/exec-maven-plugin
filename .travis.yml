@@ -9,7 +9,7 @@ jdk:
   
 dist: trusty
 
-script: "mvn --show-version --errors --batch-mode -Prun-its clean verify"
+script: "mvn --show-version --errors --batch-mode -Prun-its clean verify -Dinvoker.streamLogs"
 
 cache:
     directories:
