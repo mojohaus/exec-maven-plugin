@@ -296,6 +296,8 @@
               <properties>
                 <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
                 <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
+				<!-- e.g. ensure that Java7 picks up TLSv1.2 when connecting with Central -->
+                <https.protocols>${https.protocols}</https.protocols>
               </properties>
               <filterProperties>
                 <mrm.repository.url>${mrm.repository.url}</mrm.repository.url>
