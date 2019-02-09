@@ -17,18 +17,5 @@
  * under the License.
  */
 
-import java.io.*
-import java.util.*
-
-t = new IntegrationBase()
-
-def buildLog = new File( basedir, "build.log" )
-
-t.checkExistenceAndContentOfAFile(buildLog, [
-  "[DEBUG] Setting accessibility to true in order to invoke main().",
-  "org.apache.maven.plugin.MojoExecutionException: Can't call main(String[])-method because it is not static.",
-])
-
-
-
-
+def buildLog = new File( basedir, 'build.log' )
+assert buildLog.text.contains('The specified mainClass doesn\'t contain a main method with appropriate signature.')

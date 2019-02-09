@@ -18,4 +18,4 @@
  */
 File log = new File(basedir, 'build.log')
 assert log.exists()
-assert log.getText().contains( "Can't call main(String[])-method because it is not static.")
+assert log.getText().contains( "The specified mainClass doesn't contain a main method with appropriate signature.")

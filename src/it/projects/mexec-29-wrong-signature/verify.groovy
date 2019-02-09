@@ -17,15 +17,5 @@
  * under the License.
  */
 
- import java.io.*
- import java.util.*
- 
- t = new IntegrationBase()
- 
- def buildLog = new File( basedir, "build.log" )
- 
- t.checkExistenceAndContentOfAFile(buildLog, [
-   "java.lang.Exception: The specified mainClass doesn't contain a main method with appropriate signature."
- ])
- 
- 
+def buildLog = new File( basedir, 'build.log' )
+assert buildLog.text.contains('java.lang.NoSuchMethodException: no such method: org.codehaus.mojo.exec.Main.main(String[])void')

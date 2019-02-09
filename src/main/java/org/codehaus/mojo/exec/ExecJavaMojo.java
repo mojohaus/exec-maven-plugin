@@ -20,9 +20,10 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -266,22 +267,17 @@ public class ExecJavaMojo
             {
                 try
                 {
-                    Method main =
-                        Thread.currentThread().getContextClassLoader().loadClass( mainClass ).getMethod( "main",
-                                                                                                         new Class[] {
-                                                                                                             String[].class } );
-                    if ( !main.isAccessible() )
-                    {
-                        getLog().debug( "Setting accessibility to true in order to invoke main()." );
-                        main.setAccessible( true );
-                    }
-                    if ( !Modifier.isStatic( main.getModifiers() ) )
-                    {
-                        throw new MojoExecutionException( "Can't call main(String[])-method because it is not static." );
-                    }
-                    main.invoke( null, new Object[] { arguments } );
+                    Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass( mainClass );
+                    
+                    MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+
+                    MethodHandle mainHandle =
+                        publicLookup.findStatic( bootClass, "main",
+                                                 MethodType.methodType( void.class, String[].class ) );
+                    
+                    mainHandle.invoke( arguments );
                 }
-                catch ( NoSuchMethodException e )
+                catch ( IllegalAccessException e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(),
                                                                                new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.",
@@ -292,7 +288,7 @@ public class ExecJavaMojo
                    Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), exceptionToReport );
                 }
-                catch ( Exception e )
+                catch ( Throwable e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
                 }
