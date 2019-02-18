@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -572,9 +572,9 @@ public class ExecMojo
      */
     private List<String> computePath( AbstractPath specifiedClasspath )
     {
-        List<Artifact> artifacts = new ArrayList<Artifact>();
-        List<File> theClasspathFiles = new ArrayList<File>();
-        List<String> resultList = new ArrayList<String>();
+        List<Artifact> artifacts = new ArrayList<>();
+        List<Path> theClasspathFiles = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
 
         collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
@@ -583,9 +583,9 @@ public class ExecMojo
             artifacts = filterArtifacts( artifacts, specifiedClasspath.getDependencies() );
         }
 
-        for ( File f : theClasspathFiles )
+        for ( Path f : theClasspathFiles )
         {
-            resultList.add( f.getAbsolutePath() );
+            resultList.add( f.toAbsolutePath().toString() );
         }
 
         for ( Artifact artifact : artifacts )

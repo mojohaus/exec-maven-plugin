@@ -20,6 +20,8 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
@@ -151,13 +153,13 @@ public abstract class AbstractExecMojo
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
     @SuppressWarnings( "unchecked" )
-    protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<File> theClasspathFiles )
+    protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<Path> theClasspathFiles )
     {
         if ( addResourcesToClasspath )
         {
             for ( Resource r : project.getBuild().getResources() )
             {
-                theClasspathFiles.add( new File( r.getDirectory() ) );
+                theClasspathFiles.add( Paths.get( r.getDirectory() ) );
             }
         }
 
@@ -166,7 +168,7 @@ public abstract class AbstractExecMojo
             artifacts.addAll( project.getCompileArtifacts() );
             if ( addOutputToClasspath )
             {
-                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
             }
         }
         else if ( "test".equals( classpathScope ) )
@@ -174,8 +176,8 @@ public abstract class AbstractExecMojo
             artifacts.addAll( project.getTestArtifacts() );
             if ( addOutputToClasspath )
             {
-                theClasspathFiles.add( new File( project.getBuild().getTestOutputDirectory() ) );
-                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getTestOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
             }
         }
         else if ( "runtime".equals( classpathScope ) )
@@ -183,7 +185,7 @@ public abstract class AbstractExecMojo
             artifacts.addAll( project.getRuntimeArtifacts() );
             if ( addOutputToClasspath )
             {
-                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
             }
         }
         else if ( "system".equals( classpathScope ) )
