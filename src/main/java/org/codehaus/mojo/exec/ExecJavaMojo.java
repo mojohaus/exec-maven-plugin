@@ -20,6 +20,7 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -27,6 +28,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -96,7 +99,9 @@ public class ExecJavaMojo
     private List<Artifact> pluginDependencies;
 
     /**
-     * The main class to execute.
+     * The main class to execute.<br>
+     * With Java 9 and above you can prefix it with the modulename, e.g. <code>com.greetings/com.greetings.Main</code>
+     * Without modulename the classpath will be used, with modulename a new modulelayer will be created.
      * 
      * @since 1.0
      */
@@ -265,14 +270,26 @@ public class ExecJavaMojo
         {
             public void run()
             {
+                int sepIndex = mainClass.indexOf( '/' );
+
+                final String bootClassName;
+                if ( sepIndex >= 0 )
+                {
+                    bootClassName = mainClass.substring( sepIndex + 1 );
+                }
+                else 
+                {
+                    bootClassName = mainClass;
+                }
+                
                 try
                 {
-                    Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass( mainClass );
+                    Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass( bootClassName );
                     
-                    MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+                    MethodHandles.Lookup lookup = MethodHandles.lookup();
 
                     MethodHandle mainHandle =
-                        publicLookup.findStatic( bootClass, "main",
+                        lookup.findStatic( bootClass, "main",
                                                  MethodType.methodType( void.class, String[].class ) );
                     
                     mainHandle.invoke( arguments );
@@ -512,34 +529,35 @@ public class ExecJavaMojo
     private ClassLoader getClassLoader()
         throws MojoExecutionException
     {
-        List<URL> classpathURLs = new ArrayList<URL>();
+        List<Path> classpathURLs = new ArrayList<>();
         this.addRelevantPluginDependenciesToClasspath( classpathURLs );
         this.addRelevantProjectDependenciesToClasspath( classpathURLs );
         this.addAdditionalClasspathElements( classpathURLs );
-        return new URLClassLoader( classpathURLs.toArray( new URL[classpathURLs.size()] ) );
+        
+        try
+        {
+            return LoaderFinder.find( classpathURLs, mainClass );
+        }
+        catch ( NullPointerException | IOException e )
+        {
+            throw new MojoExecutionException( e.getMessage(), e );
+        }
+
     }
 
-    private void addAdditionalClasspathElements( List<URL> path )
+    private void addAdditionalClasspathElements( List<Path> path )
     {
         if ( additionalClasspathElements != null )
         {
             for ( String classPathElement : additionalClasspathElements )
             {
-                try
+                Path file = Paths.get( classPathElement );
+                if ( !file.isAbsolute() )
                 {
-                    File file = new File( classPathElement );
-                    if ( !file.isAbsolute() )
-                    {
-                        file = new File( project.getBasedir(), classPathElement );
-                    }
-                    URL url = file.toURI().toURL();
-                    getLog().debug( "Adding additional classpath element: " + url + " to classpath" );
-                    path.add( url );
+                    file = project.getBasedir().toPath().resolve( file );
                 }
-                catch ( MalformedURLException e )
-                {
-                    getLog().warn( "Skipping additional classpath element: " + classPathElement, e );
-                }
+                getLog().debug( "Adding additional classpath element: " + file + " to classpath" );
+                path.add( file );
             }
         }
     }
@@ -551,7 +569,7 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantPluginDependenciesToClasspath( List<URL> path )
+    private void addRelevantPluginDependenciesToClasspath( List<Path> path )
         throws MojoExecutionException
     {
         if ( hasCommandlineArgs() )
@@ -559,20 +577,12 @@ public class ExecJavaMojo
             arguments = parseCommandlineArgs();
         }
 
-        try
+        for ( Artifact classPathElement : this.determineRelevantPluginDependencies() )
         {
-            for ( Artifact classPathElement : this.determineRelevantPluginDependencies() )
-            {
-                getLog().debug( "Adding plugin dependency artifact: " + classPathElement.getArtifactId()
-                    + " to classpath" );
-                path.add( classPathElement.getFile().toURI().toURL() );
-            }
+            getLog().debug( "Adding plugin dependency artifact: " + classPathElement.getArtifactId()
+                + " to classpath" );
+            path.add( classPathElement.getFile().toPath() );
         }
-        catch ( MalformedURLException e )
-        {
-            throw new MojoExecutionException( "Error during setting up classpath", e );
-        }
-
     }
 
     /**
@@ -581,38 +591,29 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantProjectDependenciesToClasspath( List<URL> path )
+    private void addRelevantProjectDependenciesToClasspath( List<Path> path )
         throws MojoExecutionException
     {
         if ( this.includeProjectDependencies )
         {
-            try
+            getLog().debug( "Project Dependencies will be included." );
+
+            List<Artifact> artifacts = new ArrayList<>();
+            List<Path> theClasspathFiles = new ArrayList<>();
+
+            collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
+
+            for ( Path classpathFile : theClasspathFiles )
             {
-                getLog().debug( "Project Dependencies will be included." );
-
-                List<Artifact> artifacts = new ArrayList<Artifact>();
-                List<File> theClasspathFiles = new ArrayList<File>();
-
-                collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
-
-                for ( File classpathFile : theClasspathFiles )
-                {
-                    URL url = classpathFile.toURI().toURL();
-                    getLog().debug( "Adding to classpath : " + url );
-                    path.add( url );
-                }
-
-                for ( Artifact classPathElement : artifacts )
-                {
-                    getLog().debug( "Adding project dependency artifact: " + classPathElement.getArtifactId()
-                        + " to classpath" );
-                    path.add( classPathElement.getFile().toURI().toURL() );
-                }
-
+                getLog().debug( "Adding to classpath : " + classpathFile );
+                path.add( classpathFile );
             }
-            catch ( MalformedURLException e )
+
+            for ( Artifact classPathElement : artifacts )
             {
-                throw new MojoExecutionException( "Error during setting up classpath", e );
+                getLog().debug( "Adding project dependency artifact: " + classPathElement.getArtifactId()
+                    + " to classpath" );
+                path.add( classPathElement.getFile().toPath() );
             }
         }
         else
