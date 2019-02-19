@@ -68,6 +68,9 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
             <argument>myproject:dist</argument>
             ...
           </arguments>
+          <environmentVariables>
+            <LANG>en_US</LANG>
+          </environmentVariables>
         </configuration>
       </plugin>
     </plugins>
