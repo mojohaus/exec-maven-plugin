@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -485,9 +486,21 @@ public class ExecMojo
                 
                 commandArguments.add( '@' + filePath );
                 
-                String modulePath = StringUtils.join( computePath( (Modulepath) arguments.get( ++i ) ).iterator(), File.pathSeparator );
+                StringBuilder modulePath = new StringBuilder();
+                modulePath.append( '"' );
+
+                for ( Iterator<String> it = computePath( (Modulepath) arguments.get( ++i ) ).iterator(); it.hasNext(); )
+                {
+                    modulePath.append( it.next().replace( "\\", "\\\\" ) );
+                    if ( it.hasNext() )
+                    {
+                        modulePath.append( File.pathSeparatorChar );
+                    }
+                }
+
+                modulePath.append( '"' );
                 
-                createArgFile( filePath, Arrays.asList( "-p", modulePath ) );
+                createArgFile( filePath, Arrays.asList( "-p", modulePath.toString() ) );
             }
             else if ( argument instanceof Classpath )
             {
