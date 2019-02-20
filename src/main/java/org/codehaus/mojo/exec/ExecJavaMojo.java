@@ -1,50 +1,23 @@
 package org.codehaus.mojo.exec;
 
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -52,8 +25,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.project.artifact.MavenMetadataSource;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
+import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
+import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -66,31 +42,14 @@ public class ExecJavaMojo
     extends AbstractExecMojo
 {
     @Component
-    private ArtifactResolver artifactResolver;
+    private DependencyResolver dependencyResolver;
 
-    @Component
-    private ArtifactFactory artifactFactory;
-
-    @Component
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * @since 1.0
-     */
-    @Parameter( readonly = true, required = true, defaultValue = "${localRepository}" )
-    private ArtifactRepository localRepository;
-
-    /**
-     * @since 1.1-beta-1
-     */
-    @Parameter( readonly = true, required = true, defaultValue = "${project.remoteArtifactRepositories}" )
-    private List<ArtifactRepository> remoteRepositories;
 
     /**
      * @since 1.0
      */
     @Component
-    private MavenProjectBuilder projectBuilder;
+    private ProjectBuilder projectBuilder;
 
     /**
      * @since 1.1-beta-1
@@ -645,8 +604,7 @@ public class ExecJavaMojo
             {
                 getLog().debug( "Selected plugin Dependencies will be included." );
                 Artifact executableArtifact = this.findExecutableArtifact();
-                Artifact executablePomArtifact = this.getExecutablePomArtifact( executableArtifact );
-                relevantDependencies = this.resolveExecutableDependencies( executablePomArtifact );
+                relevantDependencies = this.resolveExecutableDependencies( executableArtifact );
             }
         }
         else
@@ -655,19 +613,6 @@ public class ExecJavaMojo
             getLog().debug( "Plugin Dependencies will be excluded." );
         }
         return relevantDependencies;
-    }
-
-    /**
-     * Get the artifact which refers to the POM of the executable artifact.
-     * 
-     * @param executableArtifact this artifact refers to the actual assembly.
-     * @return an artifact which refers to the POM of the executable artifact.
-     */
-    private Artifact getExecutablePomArtifact( Artifact executableArtifact )
-    {
-        return this.artifactFactory.createBuildArtifact( executableArtifact.getGroupId(),
-                                                         executableArtifact.getArtifactId(),
-                                                         executableArtifact.getVersion(), "pom" );
     }
 
     /**
@@ -681,30 +626,18 @@ public class ExecJavaMojo
         throws MojoExecutionException
     {
 
-        Set<Artifact> executableDependencies;
+        Set<Artifact> executableDependencies = new LinkedHashSet<>();
         try
         {
+            ProjectBuildingRequest buildingRequest = getSession().getProjectBuildingRequest();
+            
             MavenProject executableProject =
-                this.projectBuilder.buildFromRepository( executablePomArtifact, this.remoteRepositories,
-                                                         this.localRepository );
+                this.projectBuilder.build( executablePomArtifact, buildingRequest ).getProject();
 
-            // get all of the dependencies for the executable project
-            List<Dependency> dependencies = executableProject.getDependencies();
-
-            // make Artifacts of all the dependencies
-            Set<Artifact> dependencyArtifacts =
-                MavenMetadataSource.createArtifacts( this.artifactFactory, dependencies, null, null, null );
-
-            // not forgetting the Artifact of the project itself
-            dependencyArtifacts.add( executableProject.getArtifact() );
-
-            // resolve all dependencies transitively to obtain a comprehensive list of assemblies
-            ArtifactResolutionResult result =
-                artifactResolver.resolveTransitively( dependencyArtifacts, executablePomArtifact,
-                                                      Collections.emptyMap(), this.localRepository,
-                                                      this.remoteRepositories, metadataSource, null,
-                                                      Collections.emptyList() );
-            executableDependencies = result.getArtifacts();
+            for ( ArtifactResult artifactResult : dependencyResolver.resolveDependencies( buildingRequest, executableProject.getModel(), null ) )
+            {
+                executableDependencies.add( artifactResult.getArtifact() );
+            }
         }
         catch ( Exception ex )
         {

@@ -25,17 +25,16 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
@@ -53,25 +52,19 @@ public abstract class AbstractExecMojo
      */
     @Parameter( defaultValue = "${project}", readonly = true )
     protected MavenProject project;
+    
+    @Parameter( defaultValue = "${session}", readonly = true, required = true )
+    private MavenSession session;
 
     @Component
     private ArtifactResolver artifactResolver;
 
     @Component
-    private ArtifactFactory artifactFactory;
+    private ProjectBuilder projectBuilder;
 
-    @Component
-    private MavenProjectBuilder projectBuilder;
-
-    @Component
-    private ArtifactMetadataSource metadataSource;
-
-    @Parameter( readonly = true, required = true, defaultValue = "${localRepository}" )
-    private ArtifactRepository localRepository;
-
-    @Parameter( readonly = true, required = true, defaultValue = "${project.remoteArtifactRepositories}" )
-    private List<ArtifactRepository> remoteRepositories;
-
+    @Parameter( defaultValue = "${plugin}", readonly = true ) // Maven 3 only
+    private PluginDescriptor plugin;
+    
     @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
     private List<Artifact> pluginDependencies;
 
@@ -152,7 +145,6 @@ public abstract class AbstractExecMojo
      * @param artifacts the list where to collect the scope specific artifacts
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
-    @SuppressWarnings( "unchecked" )
     protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<Path> theClasspathFiles )
     {
         if ( addResourcesToClasspath )
@@ -263,6 +255,11 @@ public abstract class AbstractExecMojo
     protected boolean isSkip()
     {
         return skip;
+    }
+
+    protected final MavenSession getSession()
+    {
+        return session;
     }
 
     /**

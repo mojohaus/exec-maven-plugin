@@ -15,23 +15,28 @@ package org.codehaus.mojo.exec;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.DefaultArtifactRepository;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.monitor.logging.DefaultLog;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.StringOutputStream;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.sonatype.aether.impl.internal.SimpleLocalRepositoryManager;
 
 /**
  * @author Jerome Lacoste
@@ -40,6 +45,10 @@ import org.codehaus.plexus.util.StringOutputStream;
 public class ExecJavaMojoTest
     extends AbstractMojoTestCase
 {
+    @Mock
+    private MavenSession session;
+    
+    private static final File LOCAL_REPO = new File( "src/test/repository" );
 
     /*
      * This one won't work yet public void xxtestSimpleRunPropertiesAndArguments() throws MojoExecutionException,
@@ -277,18 +286,19 @@ public class ExecJavaMojoTest
     private void setUpProject( File pomFile, AbstractMojo mojo )
         throws Exception
     {
-        MavenProjectBuilder builder = (MavenProjectBuilder) lookup( MavenProjectBuilder.ROLE );
+        super.setUp();
+        
+        MockitoAnnotations.initMocks( this );
+        
+        ProjectBuildingRequest buildingRequest = mock( ProjectBuildingRequest.class );
+        when( session.getProjectBuildingRequest() ).thenReturn( buildingRequest );
+        MavenRepositorySystemSession repositorySession = new MavenRepositorySystemSession();
+        repositorySession.setLocalRepositoryManager( new SimpleLocalRepositoryManager( LOCAL_REPO ) );
+        when( buildingRequest.getRepositorySession() ).thenReturn( repositorySession );
+        
+        ProjectBuilder builder = lookup( ProjectBuilder.class );
 
-        ArtifactRepositoryLayout localRepositoryLayout =
-            (ArtifactRepositoryLayout) lookup( ArtifactRepositoryLayout.ROLE, "default" );
-
-        String path = "src/test/repository";
-
-        ArtifactRepository localRepository =
-            new DefaultArtifactRepository( "local", "file://" + new File( path ).getAbsolutePath(),
-                                           localRepositoryLayout );
-
-        MavenProject project = builder.buildWithDependencies( pomFile, localRepository, null );
+        MavenProject project = builder.build( pomFile, buildingRequest ).getProject();
         // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
         project.getBuild().setOutputDirectory( new File( "target/test-classes" ).getAbsolutePath() );
         setVariableValueToObject( mojo, "project", project );
