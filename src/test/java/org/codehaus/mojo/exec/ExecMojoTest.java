@@ -1,5 +1,8 @@
 package org.codehaus.mojo.exec;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /*
  * Copyright 2005 The Codehaus. Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
@@ -24,18 +27,21 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.OS;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.DefaultArtifactRepository;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.monitor.logging.DefaultLog;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.StringOutputStream;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.sonatype.aether.impl.internal.SimpleLocalRepositoryManager;
 
 /**
  * @author Jerome Lacoste
@@ -44,6 +50,11 @@ import org.codehaus.plexus.util.StringOutputStream;
 public class ExecMojoTest
     extends AbstractMojoTestCase
 {
+    @Mock
+    private MavenSession session;
+    
+    private static final File LOCAL_REPO = new File( "src/test/repository" );
+    
     /*
      * Finding a file actually on disk of the test system makes some of the tests fail.
      * Hence a purely random UUID is used to prevent this situation. 
@@ -233,20 +244,21 @@ public class ExecMojoTest
     private void setUpProject( File pomFile, ExecMojo mojo )
         throws Exception
     {
-        MavenProjectBuilder builder = (MavenProjectBuilder) lookup( MavenProjectBuilder.ROLE );
-
-        ArtifactRepositoryLayout localRepositoryLayout =
-            (ArtifactRepositoryLayout) lookup( ArtifactRepositoryLayout.ROLE, "default" );
-
-        String path = "src/test/repository";
-
-        ArtifactRepository localRepository =
-            new DefaultArtifactRepository( "local", "file://" + new File( path ).getAbsolutePath(),
-                                           localRepositoryLayout );
+        super.setUp();
+        
+        MockitoAnnotations.initMocks( this );
+        
+        ProjectBuildingRequest buildingRequest = mock( ProjectBuildingRequest.class );
+        when( session.getProjectBuildingRequest() ).thenReturn( buildingRequest );
+        MavenRepositorySystemSession repositorySession = new MavenRepositorySystemSession();
+        repositorySession.setLocalRepositoryManager( new SimpleLocalRepositoryManager( LOCAL_REPO ) );
+        when( buildingRequest.getRepositorySession() ).thenReturn( repositorySession );
+        
+        ProjectBuilder builder = lookup( ProjectBuilder.class );
 
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
 
-        MavenProject project = builder.buildWithDependencies( pomFile, localRepository, null );
+        MavenProject project = builder.build( pomFile, buildingRequest ).getProject();
 
         // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
         project.getBuild().setOutputDirectory( new File( "target/test-classes" ).getAbsolutePath() );
