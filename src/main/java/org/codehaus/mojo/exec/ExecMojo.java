@@ -148,6 +148,12 @@ public class ExecMojo
      */
     @Parameter( readonly = true, required = true, defaultValue = "${basedir}" )
     private File basedir;
+    
+    /**
+     * @since 3.0.0
+     */
+    @Parameter( readonly = true, required = true, defaultValue = "${project.build.directory}" )
+    private File buildDirectory;
 
     /**
      * <p>Environment variables to pass to the executed program. For example if you want to set the LANG var:
@@ -482,10 +488,10 @@ public class ExecMojo
             }
             else if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
             {
-                String filePath = "target/modulepath";
-                
+                String filePath = new File( buildDirectory, "modulepath" ).getAbsolutePath();
+
                 commandArguments.add( '@' + filePath );
-                
+
                 StringBuilder modulePath = new StringBuilder();
                 modulePath.append( '"' );
 
@@ -499,7 +505,7 @@ public class ExecMojo
                 }
 
                 modulePath.append( '"' );
-                
+
                 createArgFile( filePath, Arrays.asList( "-p", modulePath.toString() ) );
             }
             else if ( argument instanceof Classpath )
@@ -512,7 +518,7 @@ public class ExecMojo
             else if ( argument instanceof Modulepath )
             {
                 Modulepath specifiedModulepath = (Modulepath) argument;
-                
+
                 arg = computeClasspathString( specifiedModulepath );
                 commandArguments.add( arg );
             }
