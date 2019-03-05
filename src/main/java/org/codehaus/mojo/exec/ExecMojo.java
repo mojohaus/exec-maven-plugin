@@ -470,57 +470,70 @@ public class ExecMojo
     private void handleArguments( List<String> commandArguments )
         throws MojoExecutionException, IOException
     {
+        String specialArg = null;
+        
         for ( int i = 0; i < arguments.size(); i++ )
         {
             Object argument = arguments.get( i );
-            String arg;
-            if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
+
+            if ( specialArg != null )
             {
-                // it is assumed that starting from -cp or -classpath the arguments
-                // are: -classpath/-cp %classpath mainClass
-                // the arguments are replaced with: -jar $TMP/maven-exec.jar
-                // NOTE: the jar will contain the classpath and the main class
-                commandArguments.add( "-jar" );
-                File tmpFile = createJar( computePath( (Classpath) arguments.get( i + 1 ) ),
-                                          (String) arguments.get( i + 2 ) );
-                commandArguments.add( tmpFile.getAbsolutePath() );
-                i += 2;
-            }
-            else if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
-            {
-                String filePath = new File( buildDirectory, "modulepath" ).getAbsolutePath();
-
-                commandArguments.add( '@' + filePath );
-
-                StringBuilder modulePath = new StringBuilder();
-                modulePath.append( '"' );
-
-                for ( Iterator<String> it = computePath( (Modulepath) arguments.get( ++i ) ).iterator(); it.hasNext(); )
+                if ( isLongClassPathArgument( specialArg ) && argument instanceof Classpath )
                 {
-                    modulePath.append( it.next().replace( "\\", "\\\\" ) );
-                    if ( it.hasNext() )
+                    // it is assumed that starting from -cp or -classpath the arguments
+                    // are: -classpath/-cp %classpath mainClass
+                    // the arguments are replaced with: -jar $TMP/maven-exec.jar
+                    // NOTE: the jar will contain the classpath and the main class
+                    commandArguments.add( "-jar" );
+
+                    File tmpFile = createJar( computePath( (Classpath) argument ),
+                                              (String) arguments.get( ++i ) );
+                    commandArguments.add( tmpFile.getAbsolutePath() );
+                }
+                else if ( isLongModulePathArgument( specialArg ) && argument instanceof Modulepath )
+                {
+                    String filePath = new File( buildDirectory, "modulepath" ).getAbsolutePath();
+
+                    StringBuilder modulePath = new StringBuilder();
+                    modulePath.append( '"' );
+
+                    for ( Iterator<String> it = computePath( (Modulepath) argument ).iterator(); it.hasNext(); )
                     {
-                        modulePath.append( File.pathSeparatorChar );
+                        modulePath.append( it.next().replace( "\\", "\\\\" ) );
+                        if ( it.hasNext() )
+                        {
+                            modulePath.append( File.pathSeparatorChar );
+                        }
                     }
+
+                    modulePath.append( '"' );
+
+                    createArgFile( filePath, Arrays.asList( "-p", modulePath.toString() ) );
+                    commandArguments.add( '@' + filePath );
+                }
+                else
+                {
+                    commandArguments.add( specialArg );
                 }
 
-                modulePath.append( '"' );
+                specialArg = null;
 
-                createArgFile( filePath, Arrays.asList( "-p", modulePath.toString() ) );
+                continue;
             }
-            else if ( argument instanceof Classpath )
+
+            if ( argument instanceof Classpath )
             {
                 Classpath specifiedClasspath = (Classpath) argument;
-
-                arg = computeClasspathString( specifiedClasspath );
-                commandArguments.add( arg );
+                commandArguments.add( computeClasspathString( specifiedClasspath ) );
             }
             else if ( argument instanceof Modulepath )
             {
                 Modulepath specifiedModulepath = (Modulepath) argument;
-
-                arg = computeClasspathString( specifiedModulepath );
-                commandArguments.add( arg );
+                commandArguments.add( computeClasspathString( specifiedModulepath ) );
+            }
+            else if ( isLongModulePathArgument( specialArg ) || isLongClassPathArgument( specialArg ) )
+            {
+                specialArg = (String) argument;
             }
             else
             {
