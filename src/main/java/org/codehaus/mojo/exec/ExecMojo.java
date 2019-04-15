@@ -46,6 +46,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.OS;
 import org.apache.commons.exec.ProcessDestroyer;
@@ -105,6 +106,21 @@ public class ExecMojo
 
     /**
      * <p>
+     * Timeout in full milliseconds, default is {@code 0}.
+     * <p>
+     * <p>
+     * When set to a value larger than zero, the executable is forcefully
+     * terminated if it did not finish within this time, and the build will
+     * fail.
+     * </p>
+     *
+     * @since 3.0.0
+     */
+    @Parameter( property = "exec.timeout", defaultValue = "0" )
+    private int timeout;
+
+    /**
+     * <p>
      * The toolchain. If omitted, <code>"jdk"</code> is assumed.
      * </p>
      */
@@ -148,7 +164,7 @@ public class ExecMojo
      */
     @Parameter( readonly = true, required = true, defaultValue = "${basedir}" )
     private File basedir;
-    
+
     /**
      * @since 3.0.0
      */
@@ -226,7 +242,7 @@ public class ExecMojo
     private boolean asyncDestroyOnShutdown = true;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
-    
+
     public static final String MODULEPATH_TOKEN = "%modulepath";
 
     /**
@@ -293,6 +309,10 @@ public class ExecMojo
             commandLine.addArguments( args, false );
 
             Executor exec = new DefaultExecutor();
+            if ( this.timeout > 0 )
+            {
+                exec.setWatchdog( new ExecuteWatchdog( this.timeout ) );
+            }
             exec.setWorkingDirectory( workingDirectory );
             fillSuccessCodes( exec );
 
@@ -334,8 +354,17 @@ public class ExecMojo
             }
             catch ( ExecuteException e )
             {
-                getLog().error( "Command execution failed.", e );
-                throw new MojoExecutionException( "Command execution failed.", e );
+                if ( exec.getWatchdog() != null && exec.getWatchdog().killedProcess() )
+                {
+                    final String message = "Timeout. Process runs longer than " + this.timeout + " ms.";
+                    getLog().error( message );
+                    throw new MojoExecutionException( message, e );
+                }
+                else
+                {
+                    getLog().error( "Command execution failed.", e );
+                    throw new MojoExecutionException( "Command execution failed.", e );
+                }
             }
             catch ( IOException e )
             {
@@ -471,7 +500,7 @@ public class ExecMojo
         throws MojoExecutionException, IOException
     {
         String specialArg = null;
-        
+
         for ( int i = 0; i < arguments.size(); i++ )
         {
             Object argument = arguments.get( i );
@@ -972,12 +1001,12 @@ public class ExecMojo
 
         return file;
     }
-    
+
     private void createArgFile( String filePath, List<String> lines )
         throws IOException
     {
         final String EOL = System.getProperty( "line.separator", "\\n" );
-        
+
         FileWriter writer = null;
         try
         {
