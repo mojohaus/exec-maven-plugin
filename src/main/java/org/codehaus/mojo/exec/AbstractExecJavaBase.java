@@ -1,6 +1,9 @@
 package org.codehaus.mojo.exec;
 
 import javax.inject.Inject;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import java.io.File;
 import java.io.IOException;
@@ -163,6 +166,35 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      */
     @Parameter(property = "exec.keepClassLoaderOpen", defaultValue = "false")
     protected boolean keepClassLoaderOpen;
+
+    /**
+     * If set to true the Java class executes asynchronously and build execution continues in parallel.
+     */
+    @Parameter(property = "exec.async", defaultValue = "false")
+    protected boolean async;
+
+    /**
+     * Sets the script code to check if the Java class is successfully started.
+     * <p>
+     * The script is evaluated until it returns <code>true</code>. It is only supported when {@link #async} is
+     * <code>true</code>.
+     */
+    @Parameter(property = "exec.asyncStartCheck")
+    protected String asyncStartCheck;
+
+    /**
+     * Sets the script language to evaluate the {@link #asyncStartCheck}.
+     * <p>
+     * It is possible to add new plugin dependencies of script libraries supporting JSR-223.
+     */
+    @Parameter(property = "exec.asyncStartCheckScriptLanguage", defaultValue = "JavaScript")
+    protected String asyncStartCheckScriptLanguage;
+
+    /**
+     * Sets the poll interval in ms to evaluate the {@link #asyncStartCheck}.
+     */
+    @Parameter(property = "exec.asyncStartCheckPollInterval", defaultValue = "1000")
+    protected int asyncStartCheckPollInterval;
 
     /**
      * This defines the number of milliseconds to wait for daemon threads to quit following their interruption.<br/>
@@ -361,6 +393,53 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         setSystemProperties();
 
         bootstrapThread.start();
+        if (!async) {
+            terminate(threadGroup, classLoader);
+        } else if (asyncStartCheck != null) {
+            // wait until condition to know that java thread has started
+            ScriptEngineManager factory = new ScriptEngineManager();
+            // create a JavaScript engine
+            ScriptEngine engine = factory.getEngineByName(asyncStartCheckScriptLanguage);
+            if (engine == null) {
+                throw new MojoExecutionException(
+                        "Couldn't find engine for script language " + asyncStartCheckScriptLanguage);
+            }
+            // evaluate JavaScript code from String
+            while (true) {
+                try {
+                    Thread.sleep(asyncStartCheckPollInterval);
+                } catch (InterruptedException e) {
+                    throw new MojoExecutionException("Couldn't not sleep for poll interval.", e);
+                }
+                try {
+                    if ((Boolean) engine.eval(asyncStartCheck)) {
+                        getLog().info("Java class is ready.");
+                        break;
+                    } else {
+                        getLog().info("Java class is not yet ready. Waiting ...");
+                    }
+                } catch (ScriptException e) {
+                    throw new MojoExecutionException("Couldn't evaluate start check expression.", e);
+                }
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    try {
+                        terminate(threadGroup, classLoader);
+                    } catch (MojoExecutionException e) {
+                        getLog().error(e);
+                    }
+                }
+            });
+        }
+
+        registerSourceRoots();
+    }
+
+    /**
+     * Waits for the program to finish and cleans up. In asynchronous mode it is called by a shutdown hook.
+     */
+    private void terminate(IsolatedThreadGroup threadGroup, URLClassLoader classLoader) throws MojoExecutionException {
         joinNonDaemonThreads(threadGroup);
         // It's plausible that spontaneously a non-daemon thread might be created as we try and shut down,
         // but it's too late since the termination condition (only daemon threads) has been triggered.
@@ -401,8 +480,6 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                         threadGroup.uncaughtException);
             }
         }
-
-        registerSourceRoots();
     }
 
     /**
