@@ -198,7 +198,7 @@ public class ExecJavaMojoTest
     /**
      * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>. FIXME: this sometimes fail with
      * unit.framework.ComparisonFailure: expected:&lt;...&gt; but was:&lt;...3(f)&gt;
-     * 
+     *
      * @throws Exception if any exception occurs
      */
     public void testUncooperativeThread()
@@ -237,6 +237,20 @@ public class ExecJavaMojoTest
         String LS = System.getProperty( "line.separator" );
         String expectedResult = "Hello" + LS + "Arg1" + LS + "Arg2a Arg2b" + LS;
         assertEquals( expectedResult, resultString );
+    }
+
+    /**
+     * Test the async feature.
+     *
+     * @throws Exception if any exception occurs
+     */
+    public void testAsync()
+            throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project16/pom.xml" );
+        String output = execute(pom, "java");
+        assertTrue(output.trim().contains("Started test server."));
+        TestServerMain.stop();
     }
 
     /**

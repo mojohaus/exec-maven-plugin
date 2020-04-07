@@ -17,7 +17,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -28,8 +27,11 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
-import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -173,6 +175,33 @@ public class ExecJavaMojo
     @Deprecated
     private long killAfter;
 
+    /**
+     * If set to true the Java class executes asynchronously and build execution continues in parallel.
+     */
+    @Parameter( property = "exec.async", defaultValue = "false" )
+    private boolean async;
+
+    /**
+     * Sets the script code to check if the Java class is successfully started.
+     */
+    @Parameter( property = "exec.asyncStartCheck")
+    private String asyncStartCheck;
+
+    /**
+     * Sets the script language to evaluate the {@link #asyncStartCheck}.
+     * <p>
+     *     It is possible to add new plugin dependencies of script libraries supporting JSR-223.
+     * </p>
+     */
+    @Parameter( property = "exec.asyncStartCheckScriptLanguage", defaultValue = "JavaScript")
+    private String asyncStartCheckScriptLanguage;
+
+    /**
+     * Sets the poll interval in ms to evaluate the {@link #asyncStartCheck}.
+     */
+    @Parameter( property = "exec.asyncStartCheckPollInterval", defaultValue = "1000")
+    private int asyncStartCheckPollInterval;
+
     private Properties originalSystemProperties;
 
     /**
@@ -224,7 +253,7 @@ public class ExecJavaMojo
             getLog().debug( msg );
         }
 
-        IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
+        final IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
         Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
             public void run()
@@ -274,45 +303,79 @@ public class ExecJavaMojo
         setSystemProperties();
 
         bootstrapThread.start();
-        joinNonDaemonThreads( threadGroup );
-        // It's plausible that spontaneously a non-daemon thread might be created as we try and shut down,
-        // but it's too late since the termination condition (only daemon threads) has been triggered.
-        if ( keepAlive )
-        {
-            getLog().warn( "Warning: keepAlive is now deprecated and obsolete. Do you need it? Please comment on MEXEC-6." );
-            waitFor( 0 );
+        if (!async) {
+            terminate(threadGroup);
         }
-
-        if ( cleanupDaemonThreads )
-        {
-
-            terminateThreads( threadGroup );
-
-            try
-            {
-                threadGroup.destroy();
+        else {
+            if (asyncStartCheck != null) {
+                // wait until condition to know that java thread has started
+                ScriptEngineManager factory = new ScriptEngineManager();
+                // create a JavaScript engine
+                ScriptEngine engine = factory.getEngineByName(asyncStartCheckScriptLanguage);
+                if (engine == null) {
+                    throw new MojoExecutionException("Couldn't find engine for script language "+asyncStartCheckScriptLanguage);
+                }
+                // evaluate JavaScript code from String
+                while (true) {
+                    try {
+                        Thread.sleep(asyncStartCheckPollInterval);
+                    } catch (InterruptedException e) {
+                        throw new MojoExecutionException("Couldn't not sleep for poll interval.", e);
+                    }
+                    try {
+                        if ((Boolean) engine.eval(asyncStartCheck)) {
+                            getLog().info("Java class is ready.");
+                            break;
+                        }
+                        else {
+                            getLog().info("Java class is not yet ready. Waiting ...");
+                        }
+                    } catch (ScriptException e) {
+                        throw new MojoExecutionException("Couldn't evaluate start check expression.", e);
+                    }
+                }
+                Runtime.getRuntime().addShutdownHook(new Thread()
+                {
+                    public void run()
+                    {
+                        try {
+                            terminate(threadGroup);
+                        } catch (MojoExecutionException e) {
+                            getLog().error(e);
+                        }
+                    }
+                });
             }
-            catch ( IllegalThreadStateException e )
-            {
-                getLog().warn( "Couldn't destroy threadgroup " + threadGroup, e );
-            }
         }
-
-        if ( originalSystemProperties != null )
-        {
-            System.setProperties( originalSystemProperties );
-        }
-
-        synchronized ( threadGroup )
-        {
-            if ( threadGroup.uncaughtException != null )
-            {
-                throw new MojoExecutionException( "An exception occured while executing the Java class. "
-                    + threadGroup.uncaughtException.getMessage(), threadGroup.uncaughtException );
-            }
-        }
-
         registerSourceRoots();
+    }
+
+    private void terminate(IsolatedThreadGroup threadGroup) throws MojoExecutionException {
+        joinNonDaemonThreads(threadGroup);
+
+        if (cleanupDaemonThreads) {
+
+            terminateThreads(threadGroup);
+
+            try {
+                if (!threadGroup.isDestroyed()) {
+                    threadGroup.destroy();
+                }
+            } catch (IllegalThreadStateException e) {
+                getLog().warn("Couldn't destroy threadgroup " + threadGroup, e);
+            }
+        }
+
+        if (originalSystemProperties != null) {
+            System.setProperties(originalSystemProperties);
+        }
+
+        synchronized (threadGroup) {
+            if (threadGroup.uncaughtException != null) {
+                throw new MojoExecutionException("An exception occurred while executing the Java class. "
+                        + threadGroup.uncaughtException.getMessage(), threadGroup.uncaughtException);
+            }
+        }
     }
 
     /**
