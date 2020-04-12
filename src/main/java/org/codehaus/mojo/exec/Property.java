@@ -20,7 +20,7 @@ package org.codehaus.mojo.exec;
  */
 
 /**
- * Wrapper class for the systemPropery argument type.
+ * Wrapper class for the systemProperty argument type.
  * 
  * @author Kaare Nilsen (kaare.nilsen@gmail.com)
  */
