@@ -70,7 +70,7 @@ public abstract class AbstractExecMojo
 
     /**
      * If provided the ExecutableDependency identifies which of the plugin dependencies contains the executable class.
-     * This will have the affect of only including plugin dependencies required by the identified ExecutableDependency.
+     * This will have the effect of only including plugin dependencies required by the identified ExecutableDependency.
      *
      * <p>
      * If includeProjectDependencies is set to <code>true</code>, all of the project dependencies will be included on
