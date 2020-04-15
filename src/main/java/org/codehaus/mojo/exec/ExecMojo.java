@@ -566,7 +566,7 @@ public class ExecMojo
             }
             else if (argument == null)
             {
-                commandArguments.add("");
+                commandArguments.add( "" );
             }
             else
             {
