@@ -564,6 +564,10 @@ public class ExecMojo
             {
                 specialArg = (String) argument;
             }
+            else if (argument == null)
+            {
+                commandArguments.add("");
+            }
             else
             {
                 commandArguments.add( (String) argument );
