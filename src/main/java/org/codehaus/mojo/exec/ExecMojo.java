@@ -149,6 +149,82 @@ public class ExecMojo
     private File outputFile;
 
     /**
+     * When enabled, program standard and error output will be redirected to the
+     * Maven logger as <i>Info</i> and <i>Error</i> level logs, respectively. If not enabled the
+     * traditional behavior of program output being directed to standard System.out
+     * and System.err is used.<br>
+     * <br>
+     * NOTE: When enabled, to log the program standard out as Maven <i>Debug</i> level instead of
+     * <i>Info</i> level use {@code exec.quietLogs=true}. <br>
+     * <br>
+     * This option can be extremely helpful when combined with multithreaded builds
+     * for two reasons:<br>
+     * <ul>
+     * <li>Program output is suffixed with the owning thread name, making it easier
+     * to trace execution of a specific projects build thread.</li>
+     * <li>Program output will not get jumbled with other maven log messages.</li>
+     * </ul>
+     *
+     * For Example, if using {@code exec:exec} to run a script to echo a count from
+     * 1 to 100 as:
+     *
+     * <pre>
+     * for i in {1..100}
+     * do
+     *   echo "${project.artifactId} - $i"
+     * done
+     * </pre>
+     *
+     * When this script is run multi-threaded on two modules, {@code module1} and
+     * {@code module2}, you might get output such as:
+     *
+     * <pre>
+     * [BuilderThread 1] [INFO] --- exec-maven-plugin:1.6.0:exec (test) @ module1 ---
+     * [BuilderThread 2] [INFO] --- exec-maven-plugin:1.6.0:exec (test) @ module2 ---
+     * ...
+     * module2 - 98
+     * modu
+     * module1 - 97
+     * module1 -
+     * le2 - 9899
+     * ...
+     * </pre>
+     *
+     * With this flag enabled, the output will instead come something similar to:
+     *
+     * <pre>
+     * ...
+     * [Exec Stream Pumper] [INFO] [BuilderThread 2] module2 - 98
+     * [Exec Stream Pumper] [INFO] [BuilderThread 1] module1 - 97
+     * [Exec Stream Pumper] [INFO] [BuilderThread 1] module1 - 98
+     * [Exec Stream Pumper] [INFO] [BuilderThread 2] module2 - 99
+     * ...
+     * </pre>
+     *
+     * NOTE 1: To show the thread in the Maven log, configure the Maven
+     * installations <i>conf/logging/simplelogger.properties</i> option:
+     * {@code org.slf4j.simpleLogger.showThreadName=true}<br>
+     *
+     * NOTE 2: This option is ignored when {@code exec.outputFile} is specified.
+     *
+     * @since 3.0.0
+     * @see java.lang.System#err
+     * @see java.lang.System#in
+     */
+    @Parameter( property = "exec.useMavenLogger", defaultValue = "false" )
+    private boolean useMavenLogger;
+
+    /**
+     * When combined with {@code exec.useMavenLogger=true}, prints all executed
+     * program output at debug level instead of the default info level to the Maven
+     * logger.
+     *
+     * @since 3.0.0
+     */
+    @Parameter( property = "exec.quietLogs", defaultValue = "false" )
+    private boolean quietLogs;
+
+    /**
      * <p>
      * A list of arguments passed to the {@code executable}, which should be of type <code>&lt;argument&gt;</code> or
      * <code>&lt;classpath&gt;</code>. Can be overridden by using the <code>exec.args</code> environment variable.
@@ -338,6 +414,42 @@ public class ExecMojo
                     finally
                     {
                         IOUtil.close( outputStream );
+                    }
+                }
+                else if (useMavenLogger)
+                {
+                    getLog().debug("Will redirect program output to Maven logger");
+                    final String parentThreadName = Thread.currentThread().getName();
+                    final String logSuffix = "[" + parentThreadName + "] ";
+                    Invokable<String> mavenOutRedirect = new Invokable<String>()
+                    {
+
+                        @Override
+                        public void accept(String logMessage)
+                        {
+                            if (quietLogs)
+                            {
+                                getLog().debug(logSuffix + logMessage);
+                            }
+                            else
+                            {
+                                getLog().info(logSuffix + logMessage);
+                            }
+                        }
+                    };
+                    Invokable<String> mavenErrRedirect = new Invokable<String>()
+                    {
+
+                        @Override
+                        public void accept(String logMessage)
+                        {
+                            getLog().error(logSuffix + logMessage);
+                        }
+                    };
+
+                    try (OutputStream out = new LineRedirectOutputStream(mavenOutRedirect);
+                            OutputStream err = new LineRedirectOutputStream(mavenErrRedirect)) {
+                        resultCode = executeCommandLine(exec, commandLine, enviro, out, err);
                     }
                 }
                 else
