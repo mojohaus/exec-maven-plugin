@@ -23,11 +23,11 @@ under the License.
     <link>http://www.mojohaus.org/exec-maven-plugin</link>
     <description>Exec Maven Plugin - Checkstyle report</description>
     <language>en-us</language>
-    <copyright>&#169;2005 - 2017 MojoHaus</copyright>
+    <copyright>&#169;2005 - 2020 MojoHaus</copyright>
     <item>
-      <title>File: 13,
-             Errors: 31,
-             Warnings: 12,
+      <title>File: 17,
+             Errors: 79,
+             Warnings: 14,
              Infos: 3
       </title>
             <link>http://www.mojohaus.org/exec-maven-plugin/checkstyle.html</link>
@@ -66,7 +66,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  0
+                  1
                 </td>
                 <td>
                   0
@@ -97,7 +97,7 @@ under the License.
                   0
                 </td>
                 <td>
-                  5
+                  7
                 </td>
               </tr>
                           <tr>
@@ -116,6 +116,20 @@ under the License.
               </tr>
                           <tr>
                 <td>
+                  <a href="http://www.mojohaus.org/exec-maven-plugin/checkstyle.html#org.codehaus.mojo.exec.LoaderFinder.java">org/codehaus/mojo/exec/LoaderFinder.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
                   <a href="http://www.mojohaus.org/exec-maven-plugin/checkstyle.html#org.codehaus.mojo.exec.ExecMojo.java">org/codehaus/mojo/exec/ExecMojo.java</a>
                 </td>
                 <td>
@@ -125,7 +139,21 @@ under the License.
                   10
                 </td>
                 <td>
-                  13
+                  37
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.mojohaus.org/exec-maven-plugin/checkstyle.html#org.codehaus.mojo.exec.LineRedirectOutputStream.java">org/codehaus/mojo/exec/LineRedirectOutputStream.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  19
                 </td>
               </tr>
                           <tr>
@@ -140,6 +168,20 @@ under the License.
                 </td>
                 <td>
                   0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.mojohaus.org/exec-maven-plugin/checkstyle.html#org.codehaus.mojo.exec.Invokable.java">org/codehaus/mojo/exec/Invokable.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  3
                 </td>
               </tr>
                           <tr>
@@ -210,6 +252,20 @@ under the License.
                 </td>
                 <td>
                   1
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.mojohaus.org/exec-maven-plugin/checkstyle.html#org.codehaus.mojo.exec.URLClassLoaderBuilder.java">org/codehaus/mojo/exec/URLClassLoaderBuilder.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  1
+                </td>
+                <td>
+                  0
                 </td>
               </tr>
                           <tr>
