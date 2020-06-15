@@ -1,0 +1,79 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.cb.maven.plugins.exec</groupId>
+    <artifactId>project16</artifactId>
+    <version>0.1</version>
+    <packaging>jar</packaging>
+    <name>Maven Exec Plugin</name>
+    <description>Test that test the async function of the java mojo</description>
+
+    <inceptionYear>2020</inceptionYear>
+    <licenses>
+        <license>
+            <name>Apache License 2</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Karsten Ohme</name>
+            <id>kohme</id>
+            <email>k_o_@users.sourceforge.net</email>
+            <roles>
+                <role>Java Developer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!-- for manual tests. Can't be automated in the unit tests as the plugin's not installed. What about integration tests? -->
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <async>true</async>
+                    <asyncStartCheckScriptLanguage>JavaScript</asyncStartCheckScriptLanguage>
+                    <asyncStartCheckPollInterval>1500</asyncStartCheckPollInterval>
+                    <mainClass>org.codehaus.mojo.exec.TestServerMain</mainClass>
+                    <asyncStartCheckScriptLanguage>groovy</asyncStartCheckScriptLanguage>
+                    <asyncStartCheck>
+                        try {
+                          def code = new URL('http://localhost:9081/test').openConnection().with {
+                            requestMethod = 'HEAD'
+                            connect()
+                            responseCode
+                          }
+
+                          code == 200
+                        }
+                        catch (java.net.ConnectException e) {
+                          false
+                        }
+                    </asyncStartCheck>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
