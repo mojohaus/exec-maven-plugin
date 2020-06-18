@@ -419,8 +419,11 @@ public class ExecMojo
                 else if (useMavenLogger)
                 {
                     getLog().debug("Will redirect program output to Maven logger");
-                    final String parentThreadName = Thread.currentThread().getName();
-                    final String logSuffix = "[" + parentThreadName + "] ";
+                    // If running parallel, append the projects original (i.e. current) thread name to the program
+                    // output as a log prefix, to enable easy tracing of program output when intermixed with other
+                    // Maven log output. NOTE: The accept(..) methods are running in PumpStreamHandler thread,
+                    // which is why we capture the thread name prefix here.
+                    final String logPrefix = session.isParallel() ? "[" + Thread.currentThread().getName() + "] " : "";
                     Invokable<String> mavenOutRedirect = new Invokable<String>()
                     {
 
@@ -429,11 +432,11 @@ public class ExecMojo
                         {
                             if (quietLogs)
                             {
-                                getLog().debug(logSuffix + logMessage);
+                                getLog().debug(logPrefix + logMessage);
                             }
                             else
                             {
-                                getLog().info(logSuffix + logMessage);
+                                getLog().info(logPrefix + logMessage);
                             }
                         }
                     };
@@ -443,7 +446,7 @@ public class ExecMojo
                         @Override
                         public void accept(String logMessage)
                         {
-                            getLog().error(logSuffix + logMessage);
+                            getLog().error(logPrefix + logMessage);
                         }
                     };
 
