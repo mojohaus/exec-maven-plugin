@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -184,6 +185,15 @@ public class ExecJavaMojo
     private List<String> additionalClasspathElements;
 
     /**
+     * List of file to exclude from the classpath.
+     * It matches the jar name, for example {@code slf4j-simple-1.7.30.jar}.
+     *
+     * @since 3.0.1
+     */
+    @Parameter
+    private List<String> classpathFilenameExclusions;
+
+    /**
      * Execute goal.
      * 
      * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
@@ -270,7 +280,8 @@ public class ExecJavaMojo
                 }
             }
         }, mainClass + ".main()" );
-        bootstrapThread.setContextClassLoader( getClassLoader() );
+        URLClassLoader classLoader = getClassLoader();
+        bootstrapThread.setContextClassLoader( classLoader );
         setSystemProperties();
 
         bootstrapThread.start();
@@ -295,6 +306,18 @@ public class ExecJavaMojo
             catch ( IllegalThreadStateException e )
             {
                 getLog().warn( "Couldn't destroy threadgroup " + threadGroup, e );
+            }
+        }
+
+        if ( classLoader != null )
+        {
+            try
+            {
+                classLoader.close();
+            }
+            catch ( IOException e )
+            {
+                getLog().error(e.getMessage(), e);
             }
         }
 
@@ -485,7 +508,7 @@ public class ExecJavaMojo
      * @return the classloader
      * @throws MojoExecutionException if a problem happens
      */
-    private ClassLoader getClassLoader()
+    private URLClassLoader getClassLoader()
         throws MojoExecutionException
     {
         List<Path> classpathURLs = new ArrayList<>();
@@ -495,7 +518,11 @@ public class ExecJavaMojo
         
         try
         {
-            return LoaderFinder.find( classpathURLs, mainClass );
+            return URLClassLoaderBuilder.builder()
+                    .setLogger( getLog() )
+                    .setPaths( classpathURLs )
+                    .setExclusions( classpathFilenameExclusions )
+                    .build();
         }
         catch ( NullPointerException | IOException e )
         {

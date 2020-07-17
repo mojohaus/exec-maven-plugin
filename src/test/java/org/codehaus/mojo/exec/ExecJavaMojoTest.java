@@ -18,9 +18,12 @@ package org.codehaus.mojo.exec;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.monitor.logging.DefaultLog;
@@ -240,9 +243,53 @@ public class ExecJavaMojoTest
     }
 
     /**
+     * Ensures that classpath can be filtered (exclude from plugin deps or project deps) to resolve conflicts.
+     * @throws Exception if something unexpected occurs.
+     */
+    public void testExcludedClasspathElement() throws Exception
+    {
+        String LS = System.getProperty( "line.separator" );
+
+        // slf4j-simple
+        {
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            execute(
+                    new File( getBasedir(), "src/test/projects/project16/pom.xml" ), "java",
+                    stdout, stderr);
+            assertEquals( "org.slf4j.impl.SimpleLogger", stdout.toString().trim() );
+            assertEquals(
+                    "[org.codehaus.mojo.exec.Slf4jMain.main()] INFO org.codehaus.mojo.exec.Slf4jMain - hello[]" + LS,
+                    stderr.toString() );
+        }
+
+        // slf4j-jdk14
+        {
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            execute(
+                    new File( getBasedir(), "src/test/projects/project17/pom.xml" ), "java",
+                    stdout, stderr);
+            assertEquals( "org.slf4j.impl.JDK14LoggerAdapter", stdout.toString().trim() );
+            final String stderrString = stderr.toString(); // simpler check, just validate it is not simple output
+            assertTrue( stderrString.contains( " org.codehaus.mojo.exec.Slf4jMain main" ) );
+            assertTrue( stderrString.contains( ": hello[]" ) );
+        }
+    }
+
+    /**
      * @return output from System.out during mojo execution
      */
     private String execute( File pom, String goal )
+        throws Exception
+    {
+        return execute( pom, goal, new ByteArrayOutputStream(), new ByteArrayOutputStream() );
+    }
+
+    /**
+     * @return output from System.out during mojo execution
+     */
+    private String execute( File pom, String goal, ByteArrayOutputStream stringOutputStream, OutputStream stderr )
         throws Exception
     {
 
@@ -264,8 +311,9 @@ public class ExecJavaMojoTest
 
         // trap System.out
         PrintStream out = System.out;
-        StringOutputStream stringOutputStream = new StringOutputStream();
+        PrintStream err = System.err;
         System.setOut( new PrintStream( stringOutputStream ) );
+        System.setErr( new PrintStream( stderr ) );
         // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
         mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_ERROR, "exec:java" ) ) );
 
@@ -278,6 +326,7 @@ public class ExecJavaMojoTest
             // see testUncooperativeThread() for explaination
             Thread.sleep( 300 ); // time seems about right
             System.setOut( out );
+            System.setErr( err );
         }
 
         return stringOutputStream.toString();
