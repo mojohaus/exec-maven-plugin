@@ -49,4 +49,4 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - name: Build with Maven
-        run: ./mvnw verify -e -B -V -P run-its
+        run: mvn verify -e -B -V -P run-its
