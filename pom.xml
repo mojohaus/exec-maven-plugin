@@ -184,10 +184,17 @@
       <version>1.9.0</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
   </dependencies>
 
   <properties>
     <mavenVersion>3.0</mavenVersion>
+
+    <slf4j.version>1.7.30</slf4j.version>
   </properties>
 
   <build>
@@ -266,6 +273,51 @@
             <goals>
               <goal>generate-metadata</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+        <executions>
+          <execution>
+            <id>copy-test-deps</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-api</artifactId>
+                  <version>${slf4j.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <destFileName>slf4j-api.jar</destFileName>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-simple</artifactId>
+                  <version>${slf4j.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <destFileName>slf4j-simple.jar</destFileName>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-jdk14</artifactId>
+                  <version>${slf4j.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <destFileName>slf4j-jdk14.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/test-dependencies/</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>true</overWriteSnapshots>
+            </configuration>
           </execution>
         </executions>
       </plugin>
