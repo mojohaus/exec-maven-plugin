@@ -192,7 +192,7 @@
   </dependencies>
 
   <properties>
-    <mavenVersion>3.0</mavenVersion>
+    <mavenVersion>3.6.3</mavenVersion>
 
     <slf4j.version>1.7.30</slf4j.version>
   </properties>
