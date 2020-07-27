@@ -672,7 +672,7 @@ public class ExecMojo
                 Modulepath specifiedModulepath = (Modulepath) argument;
                 commandArguments.add( computeClasspathString( specifiedModulepath ) );
             }
-            else if ( isLongModulePathArgument( specialArg ) || isLongClassPathArgument( specialArg ) )
+            else if ( (argument instanceof String) && (isLongModulePathArgument( (String) argument ) || isLongClassPathArgument( (String) argument )) )
             {
                 specialArg = (String) argument;
             }
