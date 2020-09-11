@@ -38,10 +38,10 @@ public class EnvStreamConsumer
                 envs.put( tokens[0], tokens[1] );
             } else {
                 // Don't hide an environment variable with no value e.g. APP_OVERRIDE=
-                if ( line.trim().endsWith("=") )
+                String trimmedLine = line.trim();
+                if ( trimmedLine.endsWith("=") )
                 {
-                    String trimmed = line.trim();
-                    envs.put( trimmed.substring( 0, ( trimmed.length() - 1 ) ), null );
+                    envs.put( trimmedLine.substring( 0, ( trimmedLine.length() - 1 ) ), null );
                 }
                 else
                 {
