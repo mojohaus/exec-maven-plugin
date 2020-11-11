@@ -375,6 +375,11 @@ public class ExecMojo
                     handleArguments( commandArguments );
                 }
             }
+            
+            if ( hasAdditionalArgs() )
+            {
+                handleAdditionalArgs( commandArguments );
+            }
 
             Map<String, String> enviro = handleSystemEnvVariables();
 
@@ -577,6 +582,15 @@ public class ExecMojo
         catch ( Exception e )
         {
             throw new MojoExecutionException( "Couldn't parse systemproperty 'exec.args'" );
+        }
+    }
+    
+    private void handleAdditionalArgs( List<String> commandArguments )
+        throws MojoExecutionException, IOException
+    {
+        for ( String additionalArg: parseAdditionalArgs() )
+        {
+            commandArguments.add( additionalArg );
         }
     }
 
