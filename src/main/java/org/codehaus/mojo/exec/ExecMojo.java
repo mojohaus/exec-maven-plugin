@@ -271,12 +271,6 @@ public class ExecMojo
     private File environmentScript = null;
 
     /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Parameter( defaultValue = "${session}", readonly = true )
-    private MavenSession session;
-
-    /**
      * Exit codes to be resolved as successful execution for non-compliant applications (applications not returning 0
      * for success).
      *
@@ -730,7 +724,7 @@ public class ExecMojo
      *            default classpath will be used)
      * @return a platform specific String representation of the classpath
      */
-    private String computeClasspathString( AbstractPath specifiedClasspath )
+    private String computeClasspathString( AbstractPath specifiedClasspath ) throws MojoExecutionException
     {
         List<String> resultList = computePath( specifiedClasspath );
         StringBuffer theClasspath = new StringBuffer();
@@ -752,13 +746,19 @@ public class ExecMojo
      *            default classpath will be used)
      * @return a list of class path elements
      */
-    private List<String> computePath( AbstractPath specifiedClasspath )
+    private List<String> computePath( AbstractPath specifiedClasspath ) throws MojoExecutionException
     {
         List<Artifact> artifacts = new ArrayList<>();
         List<Path> theClasspathFiles = new ArrayList<>();
         List<String> resultList = new ArrayList<>();
 
         collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
+
+        Set<Artifact> pluginDependencies = determineRelevantPluginDependencies();
+        if ( pluginDependencies != null )
+        {
+            artifacts.addAll(pluginDependencies);
+        }
 
         if ( ( specifiedClasspath != null ) && ( specifiedClasspath.getDependencies() != null ) )
         {
@@ -1060,6 +1060,7 @@ public class ExecMojo
 
         try
         {
+            MavenSession session = getSession();
             if ( session != null ) // session is null in tests..
             {
                 ToolchainManager toolchainManager =
