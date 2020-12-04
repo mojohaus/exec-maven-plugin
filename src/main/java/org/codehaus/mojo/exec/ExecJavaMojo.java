@@ -508,7 +508,7 @@ public class ExecJavaMojo
      * @return the classloader
      * @throws MojoExecutionException if a problem happens
      */
-    private URLClassLoader getClassLoader()
+    protected URLClassLoader getClassLoader()
         throws MojoExecutionException
     {
         List<Path> classpathURLs = new ArrayList<>();
@@ -531,7 +531,7 @@ public class ExecJavaMojo
 
     }
 
-    private void addAdditionalClasspathElements( List<Path> path )
+    protected void addAdditionalClasspathElements( List<Path> path )
     {
         if ( additionalClasspathElements != null )
         {
@@ -555,7 +555,7 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantPluginDependenciesToClasspath( List<Path> path )
+    protected void addRelevantPluginDependenciesToClasspath( List<Path> path )
         throws MojoExecutionException
     {
         if ( hasCommandlineArgs() )
@@ -577,7 +577,7 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantProjectDependenciesToClasspath( List<Path> path )
+    protected void addRelevantProjectDependenciesToClasspath( List<Path> path )
         throws MojoExecutionException
     {
         if ( this.includeProjectDependencies )
@@ -695,6 +695,14 @@ public class ExecJavaMojo
                 getLog().warn( "Spuriously interrupted while waiting for " + millis + "ms", e );
             }
         }
+    }
+
+    protected DependencyResolver getDependencyResolver() {
+        return dependencyResolver;
+    }
+
+    protected List<String> getClasspathFilenameExclusions() {
+        return classpathFilenameExclusions;
     }
 
 }

@@ -262,6 +262,11 @@ public abstract class AbstractExecMojo
         return session;
     }
 
+    protected final ArtifactResolver getArtifactResolver()
+    {
+        return artifactResolver;
+    }
+
     /**
      * Examine the plugin dependencies to find the executable artifact.
      * 
