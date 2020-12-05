@@ -352,6 +352,7 @@ public abstract class AbstractExecMojo extends AbstractMojo {
 
     protected final List<Artifact> getPluginDependencies() {
         return pluginDependencies;
+    }
 
     /**
      * Examine the plugin dependencies to find the executable artifact.
