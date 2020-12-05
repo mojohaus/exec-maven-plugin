@@ -82,10 +82,13 @@ public class ExecAnyJavaMojo
     private List<ArtifactRepository> pomRemoteRepositories;
 
     /**
-     * Resolves artifact dependencies, returning Iterable<Artifact>
+     * Resolves artifacts, as provided by the "artifacts" parameter, optionally with transitive dependencies
      *
-     * @see: https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java
-     * method <code>execute</code>
+     * @return an Iterable of Artifact objects.
+     * @throws MojoExecutionException if a problem happens
+     * @throws MojoFailureException if a problem happens
+     * @see <a href="https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java">
+     *       org.apache.maven.plugins.dependency.GetMojo#execute()</a>
      */
     protected Iterable<Artifact> resolveArtifacts()
         throws MojoExecutionException, MojoFailureException
@@ -231,8 +234,8 @@ public class ExecAnyJavaMojo
     }
 
     /*
-     * @see: https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java
-     * method <code>parseRepository</code>
+     * @see <a href="https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java">
+     *       org.apache.maven.plugins.dependency.GetMojo#parseRepository(String, ArtifactRepositoryPolicy)</a>
      */
     protected ArtifactRepository parseRepository( String repo, ArtifactRepositoryPolicy policy )
         throws MojoFailureException
@@ -263,8 +266,8 @@ public class ExecAnyJavaMojo
     }
 
     /*
-     * @see: https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java
-     * method <code>getLayout</code>
+     * @see <a href="https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java">
+     *       org.apache.maven.plugins.dependency.GetMojo#getLayout(String)</a>
      */
     private ArtifactRepositoryLayout getLayout( String id )
         throws MojoFailureException
@@ -280,8 +283,8 @@ public class ExecAnyJavaMojo
     }
 
     /*
-     * @see: https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java
-     * method <code>toArtifactCoordinate</code>
+     * @see <a href="https://github.com/apache/maven-dependency-plugin/blob/master/src/main/java/org/apache/maven/plugins/dependency/GetMojo.java">
+     *       org.apache.maven.plugins.dependency.GetMojo#toArtifactCoordinate(DependableCoordinate)</a>
      */
     private ArtifactCoordinate toArtifactCoordinate( DependableCoordinate dependableCoordinate )
     {
