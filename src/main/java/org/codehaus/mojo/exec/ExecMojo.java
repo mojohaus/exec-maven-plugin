@@ -1171,6 +1171,15 @@ public class ExecMojo
 
             CommandLineUtils.executeCommandLine( cl, stdout, stderr );
 
+            if(!stdout.getUnparsedLines().isEmpty())
+            {
+                getLog().warn( "The following lines could not be parsed into environment variables :" );
+                for ( String line : stdout.getUnparsedLines() )
+                {
+                    getLog().warn( line );
+                }
+            }
+
             results = stdout.getParsedEnv();
         }
         catch ( CommandLineException e )
