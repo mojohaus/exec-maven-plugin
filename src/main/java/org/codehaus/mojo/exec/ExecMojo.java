@@ -149,6 +149,16 @@ public class ExecMojo
     private File outputFile;
 
     /**
+     * Program standard input, output and error streams will be inherited from the maven process.
+     * This allow tighter control of the streams and the console.
+     *
+     * @since 3.0.1
+     * @see ProcessBuilder#inheritIO()
+     */
+    @Parameter( property = "exec.inheritIo" )
+    private boolean inheritIo;
+
+    /**
      * When enabled, program standard and error output will be redirected to the
      * Maven logger as <i>Info</i> and <i>Error</i> level logs, respectively. If not enabled the
      * traditional behavior of program output being directed to standard System.out
@@ -384,7 +394,7 @@ public class ExecMojo
 
             commandLine.addArguments( args, false );
 
-            Executor exec = new DefaultExecutor();
+            Executor exec = new ExtendedExecutor( inheritIo );
             if ( this.timeout > 0 )
             {
                 exec.setWatchdog( new ExecuteWatchdog( this.timeout ) );
@@ -392,6 +402,10 @@ public class ExecMojo
             exec.setWorkingDirectory( workingDirectory );
             fillSuccessCodes( exec );
 
+            if ( OS.isFamilyOpenVms() && inheritIo )
+            {
+                getLog().warn("The inheritIo flag is not supported on OpenVMS, execution will proceed without stream inheritance.");
+            }
             getLog().debug( "Executing command line: " + commandLine );
 
             try
