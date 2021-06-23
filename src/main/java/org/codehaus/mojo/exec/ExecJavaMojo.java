@@ -28,6 +28,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.artifact.filter.resolve.AndFilter;
+import org.apache.maven.shared.artifact.filter.resolve.TransformableFilter;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
 import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
 import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
@@ -51,12 +53,6 @@ public class ExecJavaMojo
      */
     @Component
     private ProjectBuilder projectBuilder;
-
-    /**
-     * @since 1.1-beta-1
-     */
-    @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
-    private List<Artifact> pluginDependencies;
 
     /**
      * The main class to execute.<br>
@@ -625,7 +621,7 @@ public class ExecJavaMojo
             if ( this.executableDependency == null )
             {
                 getLog().debug( "All Plugin Dependencies will be included." );
-                relevantDependencies = new HashSet<Artifact>( this.pluginDependencies );
+                relevantDependencies = new HashSet<Artifact>( this.getPluginDependencies() );
             }
             else
             {
@@ -661,7 +657,9 @@ public class ExecJavaMojo
             MavenProject executableProject =
                 this.projectBuilder.build( executablePomArtifact, buildingRequest ).getProject();
 
-            for ( ArtifactResult artifactResult : dependencyResolver.resolveDependencies( buildingRequest, executableProject.getModel(), null ) )
+            for ( ArtifactResult artifactResult : dependencyResolver.resolveDependencies( buildingRequest,
+                                                                                          executableProject.getModel(),
+                                                                                          new AndFilter( Collections.<TransformableFilter>emptyList() ) ) )
             {
                 executableDependencies.add( artifactResult.getArtifact() );
             }
