@@ -181,7 +181,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>1.9.0</version>
+      <version>3.11.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -245,7 +245,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <version>1.17</version>
+        <version>1.20</version>
         <executions>
           <execution>
             <goals>
