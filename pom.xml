@@ -157,7 +157,7 @@
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
       <artifactId>maven-artifact-transfer</artifactId>
-      <version>0.10.1</version>
+      <version>0.13.1</version>
     </dependency>
 
     <dependency>
@@ -363,7 +363,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
-            <version>3.2.0</version>
+            <version>3.2.2</version>
             <configuration>
               <addTestClassPath>true</addTestClassPath>
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
