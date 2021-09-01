@@ -675,8 +675,7 @@ public class ExecMojo
 
                 continue;
             }
-
-            if ( argument instanceof Classpath )
+            else if ( argument instanceof Classpath )
             {
                 Classpath specifiedClasspath = (Classpath) argument;
                 commandArguments.add( computeClasspathString( specifiedClasspath ) );
