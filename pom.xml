@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>50</version>
+    <version>65</version>
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
@@ -192,7 +192,7 @@
   </dependencies>
 
   <properties>
-    <mavenVersion>3.0</mavenVersion>
+    <mavenVersion>3.8.4</mavenVersion>
 
     <slf4j.version>1.7.32</slf4j.version>
   </properties>
@@ -208,7 +208,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.2.0</version>
+          <version>3.3.1</version>
           <configuration>
             <detectLinks>false</detectLinks>
             <detectJavaApiLink>false</detectJavaApiLink>
