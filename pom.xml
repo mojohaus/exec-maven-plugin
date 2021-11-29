@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>50</version>
+    <version>65</version>
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
@@ -181,7 +181,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>3.11.2</version>
+      <version>4.1.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -208,7 +208,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.2.0</version>
+          <version>3.3.1</version>
           <configuration>
             <detectLinks>false</detectLinks>
             <detectJavaApiLink>false</detectJavaApiLink>
