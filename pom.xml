@@ -192,7 +192,7 @@
   </dependencies>
 
   <properties>
-    <mavenVersion>3.0</mavenVersion>
+    <mavenVersion>3.8.5</mavenVersion>
 
     <slf4j.version>1.7.36</slf4j.version>
     <project.build.outputTimestamp>2022-01-18T09:14:02Z</project.build.outputTimestamp>
@@ -204,7 +204,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.10.0</version>
+          <version>3.10.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -280,7 +280,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.2.0</version>
+        <version>3.3.0</version>
         <executions>
           <execution>
             <id>copy-test-deps</id>
