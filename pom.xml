@@ -262,6 +262,7 @@
           </signature>
           <ignores>
             <ignore>java.lang.invoke.MethodHandle</ignore>
+            <ignore>java.util.concurrent.ForkJoinPool</ignore>
           </ignores>
         </configuration>
       </plugin>
