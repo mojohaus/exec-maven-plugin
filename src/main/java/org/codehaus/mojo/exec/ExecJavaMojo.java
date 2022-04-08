@@ -358,36 +358,31 @@ public class ExecJavaMojo
         registerSourceRoots();
     }
 
+    /**
+     * To avoid the exec:java to consider common pool threads leaked, let's pre-create them.
+     */
     private void preloadCommonPool()
     {
         try
         {
             // ensure common pool exists in the jvm
-            final Class<?> fjp = Thread.currentThread().getContextClassLoader()
-                    .loadClass("java.util.concurrent.ForkJoinPool");
-            final ExecutorService es = ExecutorService.class.cast(
-                    fjp
-                            .getMethod( "commonPool" )
-                            .invoke( null ) );
+            final ExecutorService es = ForkJoinPool.commonPool();
             final int max = preloadCommonPool > 0
                     ? preloadCommonPool :
-                    Integer.class.cast( fjp.getMethod( "getCommonPoolParallelism" ).invoke( null ) );
+                    ForkJoinPool.getCommonPoolParallelism();
             final CountDownLatch preLoad = new CountDownLatch( 1 );
             for ( int i = 0;
                   i < max;
                   i++ )
             {
-                es.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try
-                        {
-                            preLoad.await();
-                        }
-                        catch ( InterruptedException e )
-                        {
-                            Thread.currentThread().interrupt();
-                        }
+                es.submit(() -> {
+                    try
+                    {
+                        preLoad.await();
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        Thread.currentThread().interrupt();
                     }
                 });
             }
