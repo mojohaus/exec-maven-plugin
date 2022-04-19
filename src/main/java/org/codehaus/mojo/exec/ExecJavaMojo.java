@@ -16,6 +16,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
@@ -67,6 +70,18 @@ public class ExecJavaMojo
      */
     @Parameter( required = true, property = "exec.mainClass" )
     private String mainClass;
+
+
+    /**
+     * Forces the creation of fork join common pool to avoids the threads to be owned by the isolated thread group
+     * and prevent a proper shutdown.
+     * If set to zero the default parallelism is used to precreate all threads,
+     * if negative it is ignored else the value is the one used to create the fork join threads.
+     *
+     * @since 3.0.1
+     */
+    @Parameter( property = "exec.preloadCommonPool", defaultValue = "0" )
+    private int preloadCommonPool;
 
     /**
      * The class arguments.
@@ -234,6 +249,11 @@ public class ExecJavaMojo
             getLog().debug( msg );
         }
 
+        if ( preloadCommonPool >= 0 )
+        {
+            preloadCommonPool();
+        }
+
         IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
         Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
@@ -336,6 +356,42 @@ public class ExecJavaMojo
         }
 
         registerSourceRoots();
+    }
+
+    /**
+     * To avoid the exec:java to consider common pool threads leaked, let's pre-create them.
+     */
+    private void preloadCommonPool()
+    {
+        try
+        {
+            // ensure common pool exists in the jvm
+            final ExecutorService es = ForkJoinPool.commonPool();
+            final int max = preloadCommonPool > 0
+                    ? preloadCommonPool :
+                    ForkJoinPool.getCommonPoolParallelism();
+            final CountDownLatch preLoad = new CountDownLatch( 1 );
+            for ( int i = 0;
+                  i < max;
+                  i++ )
+            {
+                es.submit(() -> {
+                    try
+                    {
+                        preLoad.await();
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
+            preLoad.countDown();
+        }
+        catch (final Exception e)
+        {
+            getLog().debug(e.getMessage() + ", skipping commonpool earger init");
+        }
     }
 
     /**
