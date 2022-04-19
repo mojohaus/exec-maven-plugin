@@ -350,7 +350,7 @@ public class ExecJavaMojo
         {
             if ( threadGroup.uncaughtException != null )
             {
-                throw new MojoExecutionException( "An exception occured while executing the Java class. "
+                throw new MojoExecutionException( "An exception occurred while executing the Java class. "
                     + threadGroup.uncaughtException.getMessage(), threadGroup.uncaughtException );
             }
         }
