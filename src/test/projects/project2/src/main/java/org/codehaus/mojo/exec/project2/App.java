@@ -1,8 +1,6 @@
 package org.codehaus.mojo.exec.project2;
 
-import org.apache.log4j.Logger;
-
-import com.sun.java_cup.internal.runtime.Symbol;
+import java.util.logging.Logger;
 
 /**
  * Used for manual integrationtest of the java goal.
@@ -10,8 +8,6 @@ import com.sun.java_cup.internal.runtime.Symbol;
  */
 public class App 
 {
-    static Logger log = Logger.getLogger(App.class);
-
     public static void main( String[] args )
     {
         System.out.println("I was started. So obviously I found the main class");
