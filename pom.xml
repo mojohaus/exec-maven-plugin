@@ -89,6 +89,16 @@
       </roles>
       <timezone>Europe/Berlin</timezone>
     </contributor>
+    <contributor>
+      <name>Adam Retter</name>
+      <email>adam@evolvedbinary.com</email>
+      <organization>Evolved Binary</organization>
+      <organizationUrl>https://www.evolvedbinary.com</organizationUrl>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+      <timezone>Europe/London</timezone>
+    </contributor>
   </contributors>
 
   <licenses>

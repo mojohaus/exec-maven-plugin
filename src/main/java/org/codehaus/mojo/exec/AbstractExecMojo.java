@@ -22,7 +22,11 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
@@ -34,7 +38,11 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.shared.artifact.filter.resolve.ScopeFilter;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
+import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
+import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
@@ -47,12 +55,18 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 public abstract class AbstractExecMojo
     extends AbstractMojo
 {
+    @Component
+    private DependencyResolver dependencyResolver;
+
     /**
      * The enclosing project.
      */
     @Parameter( defaultValue = "${project}", readonly = true )
     protected MavenProject project;
-    
+
+    /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
     @Parameter( defaultValue = "${session}", readonly = true, required = true )
     private MavenSession session;
 
@@ -137,6 +151,18 @@ public abstract class AbstractExecMojo
      */
     @Parameter( property = "addOutputToClasspath", defaultValue = "true" )
     private boolean addOutputToClasspath;
+
+    /**
+     * Indicates if this plugin's dependencies should be used when executing the main class.
+     * <p/>
+     * This is useful when project dependencies are not appropriate. Using only the plugin dependencies can be
+     * particularly useful when the project is not a java project. For example a mvn project using the csharp plugins
+     * only expects to see dotnet libraries as dependencies.
+     *
+     * @since 1.1-beta-1
+     */
+    @Parameter( property = "exec.includePluginsDependencies", defaultValue = "false" )
+    private boolean includePluginDependencies;
 
     /**
      * Collects the project artifacts in the specified List and the project specific classpath (build output and build
@@ -290,5 +316,72 @@ public abstract class AbstractExecMojo
         }
 
         return executableTool;
+    }
+
+    /**
+     * Determine all plugin dependencies relevant to the executable. Takes includePlugins, and the executableDependency
+     * into consideration.
+     *
+     * @return a set of Artifact objects. (Empty set is returned if there are no relevant plugin dependencies.)
+     * @throws MojoExecutionException if a problem happens resolving the plufin dependencies
+     */
+    protected Set<Artifact> determineRelevantPluginDependencies()
+            throws MojoExecutionException
+    {
+        Set<Artifact> relevantDependencies;
+        if ( this.includePluginDependencies )
+        {
+            if ( this.executableDependency == null )
+            {
+                getLog().debug( "All Plugin Dependencies will be included." );
+                relevantDependencies = new HashSet<Artifact>( this.pluginDependencies );
+            }
+            else
+            {
+                getLog().debug( "Selected plugin Dependencies will be included." );
+                Artifact executableArtifact = this.findExecutableArtifact();
+                relevantDependencies = this.resolveExecutableDependencies( executableArtifact );
+            }
+        }
+        else
+        {
+            relevantDependencies = Collections.emptySet();
+            getLog().debug( "Plugin Dependencies will be excluded." );
+        }
+        return relevantDependencies;
+    }
+
+    /**
+     * Resolve the executable dependencies for the specified project
+     *
+     * @param executablePomArtifact the project's POM
+     * @return a set of Artifacts
+     * @throws MojoExecutionException if a failure happens
+     */
+    private Set<Artifact> resolveExecutableDependencies( Artifact executablePomArtifact )
+            throws MojoExecutionException
+    {
+
+        Set<Artifact> executableDependencies = new LinkedHashSet<>();
+        try
+        {
+            ProjectBuildingRequest buildingRequest = getSession().getProjectBuildingRequest();
+
+            MavenProject executableProject =
+                    this.projectBuilder.build( executablePomArtifact, buildingRequest ).getProject();
+
+            for ( ArtifactResult artifactResult : dependencyResolver.resolveDependencies( buildingRequest, executableProject.getModel(), ScopeFilter
+                    .excluding() ) )
+            {
+                executableDependencies.add( artifactResult.getArtifact() );
+            }
+        }
+        catch ( Exception ex )
+        {
+            throw new MojoExecutionException( "Encountered problems resolving dependencies of the executable "
+                    + "in preparation for its execution.", ex );
+        }
+
+        return executableDependencies;
     }
 }
