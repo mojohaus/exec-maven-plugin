@@ -283,7 +283,7 @@ public class ExecJavaMojo
                     
                     mainHandle.invoke( arguments );
                 }
-                catch ( IllegalAccessException e )
+                catch ( IllegalAccessException | NoSuchMethodException | NoSuchMethodError e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(),
                                                                                new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.",
