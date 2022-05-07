@@ -20,10 +20,11 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.OutputStream;
+import java.util.function.Consumer;
 
 /**
  * An output stream that captures one line of output at a time, and then
- * redirects that line to some {@link Invokable} to act upon as it pleases. This
+ * redirects that line to some {@link Consumer} to act upon as it pleases. This
  * class is not thread safe and expects to have only one active writer consuming
  * it at any given time.
  * 
@@ -32,9 +33,9 @@ import java.io.OutputStream;
 class LineRedirectOutputStream extends OutputStream {
 
     private StringBuilder currentLine = new StringBuilder();
-    private final Invokable<String> linePrinter;
+    private final Consumer<String> linePrinter;
 
-    public LineRedirectOutputStream(Invokable<String> linePrinter) {
+    public LineRedirectOutputStream(Consumer<String> linePrinter) {
         this.linePrinter = linePrinter;
     }
 
