@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -434,7 +435,7 @@ public class ExecMojo
                     getLog().debug("Will redirect program output to Maven logger");
                     final String parentThreadName = Thread.currentThread().getName();
                     final String logSuffix = "[" + parentThreadName + "] ";
-                    Invokable<String> mavenOutRedirect = new Invokable<String>()
+                    Consumer<String> mavenOutRedirect = new Consumer<String>()
                     {
 
                         @Override
@@ -450,7 +451,7 @@ public class ExecMojo
                             }
                         }
                     };
-                    Invokable<String> mavenErrRedirect = new Invokable<String>()
+                    Consumer<String> mavenErrRedirect = new Consumer<String>()
                     {
 
                         @Override
