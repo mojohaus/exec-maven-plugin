@@ -29,12 +29,8 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
@@ -56,15 +52,6 @@ public abstract class AbstractExecMojo
     @Parameter( defaultValue = "${session}", readonly = true, required = true )
     private MavenSession session;
 
-    @Component
-    private ArtifactResolver artifactResolver;
-
-    @Component
-    private ProjectBuilder projectBuilder;
-
-    @Parameter( defaultValue = "${plugin}", readonly = true ) // Maven 3 only
-    private PluginDescriptor plugin;
-    
     @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
     private List<Artifact> pluginDependencies;
 
