@@ -22,7 +22,6 @@ package org.codehaus.mojo.exec;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.OS;
-import org.apache.commons.exec.launcher.CommandLauncherFactory;
 import org.apache.commons.exec.launcher.VmsCommandLauncher;
 
 import java.io.File;
