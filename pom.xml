@@ -415,6 +415,24 @@
               </repositories>
             </configuration>
           </plugin>
+          <plugin>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-JAVA_HOME-is-set</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireEnvironmentVariable>
+                      <variableName>JAVA_HOME</variableName>
+                    </requireEnvironmentVariable>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
       </build>
     </profile>
