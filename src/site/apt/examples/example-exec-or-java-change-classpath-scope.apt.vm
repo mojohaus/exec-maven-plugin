@@ -40,5 +40,5 @@ Changing the classpath scope when running Java programs
   or, on the command line,
 
 -----
-mvn exec:exec [...] -Dexec.classpathScope="java"
+mvn exec:java [...] -Dexec.classpathScope="test"
 -----
