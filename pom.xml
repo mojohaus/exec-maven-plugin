@@ -13,19 +13,12 @@
 
   <name>Exec Maven Plugin</name>
   <description>A plugin to allow execution of system and Java programs</description>
-  <url>http://www.mojohaus.org/exec-maven-plugin</url>
+  <url>https://www.mojohaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
+
   <prerequisites>
     <maven>${mavenVersion}</maven>
   </prerequisites>
-  <issueManagement>
-    <system>GitHub</system>
-    <url>https://github.com/mojohaus/exec-maven-plugin/issues/</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Travis-CI</system>
-    <url>https://travis-ci.org/mojohaus/exec-maven-plugin</url>
-  </ciManagement>
 
   <developers>
     <developer>
@@ -62,6 +55,12 @@
       <email>khmarbaise@apache.org</email>
       <timezone>Europe/Berlin</timezone>
     </developer>
+    <developer>
+      <id>sjaranowski</id>
+      <name>Slawomir Jaranowski</name>
+      <email>sjaranowski@apache.org</email>
+      <timezone>Europe/Warsaw</timezone>
+    </developer>
   </developers>
 
   <contributors>
@@ -94,7 +93,7 @@
   <licenses>
     <license>
       <name>Apache License 2</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -102,7 +101,7 @@
   <scm>
     <connection>scm:git:https://github.com/mojohaus/exec-maven-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/mojohaus/exec-maven-plugin.git</developerConnection>
-    <url>https://github.com/mojohaus/exec-maven-plugin</url>
+    <url>https://github.com/mojohaus/exec-maven-plugin/tree/master</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -111,22 +110,26 @@
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
       <version>${mavenVersion}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -137,7 +140,6 @@
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
-      <version>3.6.4</version>
       <scope>provided</scope>
     </dependency>
 
@@ -188,6 +190,7 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -203,26 +206,11 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.10.1</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.4.0</version>
           <configuration>
             <detectLinks>false</detectLinks>
             <detectJavaApiLink>false</detectJavaApiLink>
             <detectOfflineLinks>false</detectOfflineLinks>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-gpg-plugin</artifactId>
-          <version>3.0.1</version>
-          <configuration>
-            <!-- Temporary solution to get a release out using gpg version 1 -->
-            <useAgent>false</useAgent>
           </configuration>
         </plugin>
         <plugin>
@@ -242,11 +230,11 @@
         </plugin>
       </plugins>
     </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <version>1.21</version>
         <executions>
           <execution>
             <goals>
@@ -281,7 +269,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.3.0</version>
         <executions>
           <execution>
             <id>copy-test-deps</id>
@@ -365,7 +352,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
-            <version>3.3.0</version>
             <configuration>
               <addTestClassPath>true</addTestClassPath>
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
@@ -375,11 +361,10 @@
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
               <settingsFile>src/it/mrm/settings.xml</settingsFile>
+              <parallelThreads>1C</parallelThreads>
               <properties>
                 <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
                 <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
-				<!-- e.g. ensure that Java7 picks up TLSv1.2 when connecting with Central -->
-                <https.protocols>${https.protocols}</https.protocols>
               </properties>
               <filterProperties>
                 <mrm.repository.url>${mrm.repository.url}</mrm.repository.url>
@@ -389,7 +374,8 @@
               <execution>
                 <goals>
                   <goal>install</goal>
-                  <goal>run</goal>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
                 </goals>
               </execution>
             </executions>
@@ -397,7 +383,6 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>mrm-maven-plugin</artifactId>
-            <version>1.4.1</version>
             <executions>
               <execution>
                 <goals>
@@ -411,6 +396,9 @@
                 <mockRepo>
                   <source>src/it/mrm/repository</source>
                 </mockRepo>
+                <localRepo>
+                  <source>${project.build.directory}/local-repo</source>
+                </localRepo>
                 <proxyRepo />
               </repositories>
             </configuration>
