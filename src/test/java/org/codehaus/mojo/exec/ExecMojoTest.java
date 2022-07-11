@@ -35,13 +35,11 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.StringOutputStream;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonatype.aether.impl.internal.SimpleLocalRepositoryManager;
 
 /**
  * @author Jerome Lacoste
@@ -250,10 +248,7 @@ public class ExecMojoTest
         
         ProjectBuildingRequest buildingRequest = mock( ProjectBuildingRequest.class );
         when( session.getProjectBuildingRequest() ).thenReturn( buildingRequest );
-        MavenRepositorySystemSession repositorySession = new MavenRepositorySystemSession();
-        repositorySession.setLocalRepositoryManager( new SimpleLocalRepositoryManager( LOCAL_REPO ) );
-        when( buildingRequest.getRepositorySession() ).thenReturn( repositorySession );
-        
+
         ProjectBuilder builder = lookup( ProjectBuilder.class );
 
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
