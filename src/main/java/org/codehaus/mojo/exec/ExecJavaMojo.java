@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -21,19 +20,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ResolutionErrorHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.artifact.filter.resolve.AndFilter;
-import org.apache.maven.shared.artifact.filter.resolve.TransformableFilter;
-import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
-import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
+import org.apache.maven.repository.RepositorySystem;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -46,7 +44,10 @@ public class ExecJavaMojo
     extends AbstractExecMojo
 {
     @Component
-    private DependencyResolver dependencyResolver;
+    private RepositorySystem repositorySystem;
+
+    @Component
+    private ResolutionErrorHandler resolutionErrorHandler;
 
 
     /**
@@ -702,29 +703,26 @@ public class ExecJavaMojo
     private Set<Artifact> resolveExecutableDependencies( Artifact executablePomArtifact )
         throws MojoExecutionException
     {
-
-        Set<Artifact> executableDependencies = new LinkedHashSet<>();
         try
         {
-            ProjectBuildingRequest buildingRequest = getSession().getProjectBuildingRequest();
-            
-            MavenProject executableProject =
-                this.projectBuilder.build( executablePomArtifact, buildingRequest ).getProject();
+            ArtifactResolutionRequest request = new ArtifactResolutionRequest()
+                .setArtifact( executablePomArtifact )
+                .setLocalRepository( getSession().getLocalRepository() )
+                .setRemoteRepositories( getSession().getRequest().getRemoteRepositories() )
+                .setForceUpdate( getSession().getRequest().isUpdateSnapshots() )
+                .setOffline( getSession().isOffline() )
+                .setResolveTransitively( true );
 
-            for ( ArtifactResult artifactResult : dependencyResolver.resolveDependencies( buildingRequest,
-                                                                                          executableProject.getModel(),
-                                                                                          new AndFilter( Collections.<TransformableFilter>emptyList() ) ) )
-            {
-                executableDependencies.add( artifactResult.getArtifact() );
-            }
+            ArtifactResolutionResult result = repositorySystem.resolve( request );
+            resolutionErrorHandler.throwErrors( request, result );
+
+            return result.getArtifacts();
         }
-        catch ( Exception ex )
+        catch ( ArtifactResolutionException ex )
         {
             throw new MojoExecutionException( "Encountered problems resolving dependencies of the executable "
                 + "in preparation for its execution.", ex );
         }
-
-        return executableDependencies;
     }
 
     /**
