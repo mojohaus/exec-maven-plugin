@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
-  <version>3.1.0</version>
+  <version>3.1.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Exec Maven Plugin</name>
@@ -102,7 +102,7 @@
     <connection>scm:git:https://github.com/mojohaus/exec-maven-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/mojohaus/exec-maven-plugin.git</developerConnection>
     <url>https://github.com/mojohaus/exec-maven-plugin/tree/master</url>
-    <tag>exec-maven-plugin-3.1.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <dependencies>
@@ -202,7 +202,7 @@
   <properties>
     <mavenVersion>3.2.5</mavenVersion>
     <slf4j.version>1.7.36</slf4j.version>
-    <project.build.outputTimestamp>2022-07-15T02:43:08Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2022-07-15T02:43:45Z</project.build.outputTimestamp>
   </properties>
 
   <build>
