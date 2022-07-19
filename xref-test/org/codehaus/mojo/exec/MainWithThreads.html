@@ -14,7 +14,7 @@
 <a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_javadoccomment">/**</em>
 <a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_javadoccomment"> * @author &lt;a href="<a href="mailto:dsmiley@mitre.org" target="alexandria_uri">mailto:dsmiley@mitre.org</a>"&gt;David Smiley&lt;/a&gt;</em>
 <a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_javadoccomment"> */</em>
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/codehaus/mojo/exec/MainWithThreads.html">MainWithThreads</a>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="MainWithThreads" href="../../../../org/codehaus/mojo/exec/MainWithThreads.html#MainWithThreads">MainWithThreads</a>
 <a class="jxr_linenumber" name="L10" href="#L10">10</a>      <strong class="jxr_keyword">extends</strong> Thread
 <a class="jxr_linenumber" name="L11" href="#L11">11</a>  {
 <a class="jxr_linenumber" name="L12" href="#L12">12</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String ALL_EXITED = <span class="jxr_string">"t1(interrupted td)(cancelled timer)"</span>;
@@ -32,11 +32,11 @@
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main( String... args )
 <a class="jxr_linenumber" name="L25" href="#L25">25</a>      {
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>          <em class="jxr_comment">// long run so that we interrupt it before it ends itself</em>
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>          Thread responsiveDaemonThread = <strong class="jxr_keyword">new</strong> <a href="../../../../org/codehaus/mojo/exec/MainWithThreads.html">MainWithThreads</a>( 60000, <span class="jxr_string">"td"</span> );
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>          Thread responsiveDaemonThread = <strong class="jxr_keyword">new</strong> <a name="MainWithThreads" href="../../../../org/codehaus/mojo/exec/MainWithThreads.html#MainWithThreads">MainWithThreads</a>( 60000, <span class="jxr_string">"td"</span> );
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>          responsiveDaemonThread.setDaemon( <strong class="jxr_keyword">true</strong> );
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>          responsiveDaemonThread.start();
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>  
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>          <strong class="jxr_keyword">new</strong> <a href="../../../../org/codehaus/mojo/exec/MainWithThreads.html">MainWithThreads</a>( 200, <span class="jxr_string">"t1"</span> ).start();
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          <strong class="jxr_keyword">new</strong> <a name="MainWithThreads" href="../../../../org/codehaus/mojo/exec/MainWithThreads.html#MainWithThreads">MainWithThreads</a>( 200, <span class="jxr_string">"t1"</span> ).start();
 <a class="jxr_linenumber" name="L32" href="#L32">32</a>  
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>          <em class="jxr_comment">// Timer in Java &lt;= 6 aren't interruptible</em>
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">final</strong> Timer t = <strong class="jxr_keyword">new</strong> Timer( <strong class="jxr_keyword">true</strong> );
@@ -70,7 +70,7 @@
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>  
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>      <strong class="jxr_keyword">private</strong> String message;
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>  
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../org/codehaus/mojo/exec/MainWithThreads.html">MainWithThreads</a>( <strong class="jxr_keyword">int</strong> millisecsToSleep, String message )
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">public</strong> <a name="MainWithThreads" href="../../../../org/codehaus/mojo/exec/MainWithThreads.html#MainWithThreads">MainWithThreads</a>( <strong class="jxr_keyword">int</strong> millisecsToSleep, String message )
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>      {
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>          <strong class="jxr_keyword">this</strong>.millisecsToSleep = millisecsToSleep;
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>          <strong class="jxr_keyword">this</strong>.message = message;
@@ -92,6 +92,6 @@
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2005&#x2013;2020 <a href="http://www.mojohaus.org">MojoHaus</a>. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2005&#x2013;2022 <a href="https://www.mojohaus.org">MojoHaus</a>. All rights reserved.</div>
 </body>
 </html>
