@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteException;
@@ -83,6 +84,12 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 public class ExecMojo
     extends AbstractExecMojo
 {
+
+    /**
+     * Trying to recognize whether the given {@link #executable} might be a {@code java} binary.
+     */
+    private static final Pattern ENDS_WITH_JAVA = Pattern.compile( "^.*java(\\.exe|\\.bin)?$", Pattern.CASE_INSENSITIVE );
+
     /**
      * <p>
      * The executable. Can be a full path or the name of the executable. In the latter case, the executable must be in
@@ -312,6 +319,18 @@ public class ExecMojo
      */
     @Parameter( property = "exec.longModulepath", defaultValue = "true" )
     private boolean longModulepath;
+
+    /**
+     * Forces the plugin to recognize the given executable as java executable. This helps with {@link #longClasspath}
+     * and {@link #longModulepath} parameters.
+     *
+     * <p>You shouldn't normally be needing this unless you renamed your java binary or are executing tools
+     * other than {@code java} which need modulepath or classpath parameters in a separate file.</p>
+     *
+     * @since 3.1.1
+     */
+    @Parameter (property = "exec.forceJava", defaultValue = "false" )
+    private boolean forceJava;
 
     /**
      * If set to true the child process executes asynchronously and build execution continues in parallel.
@@ -727,12 +746,35 @@ public class ExecMojo
 
     private boolean isLongClassPathArgument( String arg )
     {
-        return longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
+        return isJavaExec() && longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
     }
 
     private boolean isLongModulePathArgument( String arg )
     {
-        return longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+        return isJavaExec() && longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+    }
+
+    /**
+     * Returns {@code true} when a java binary is being executed.
+     *
+     * @return {@code true} when a java binary is being executed.
+     */
+    private boolean isJavaExec()
+    {
+        if ( forceJava )
+        {
+            return true;
+        }
+
+        if ( this.executable.contains( "%JAVA_HOME" )
+                || this.executable.contains( "${JAVA_HOME}" )
+                || this.executable.contains( "$JAVA_HOME" ) )
+        {
+            // also applies to *most* other tools.
+            return true;
+        }
+
+        return ENDS_WITH_JAVA.matcher( this.executable ).matches();
     }
 
     /**
