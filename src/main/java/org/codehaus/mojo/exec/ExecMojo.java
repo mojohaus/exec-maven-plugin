@@ -530,17 +530,10 @@ public class ExecMojo
     {
 
         Map<String, String> enviro = new HashMap<String, String>();
-        try
+        Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
+        for ( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
         {
-            Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
-            for ( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
-            {
-                enviro.put( (String) entry.getKey(), (String) entry.getValue() );
-            }
-        }
-        catch ( IOException x )
-        {
-            getLog().error( "Could not assign default system enviroment variables.", x );
+            enviro.put( (String) entry.getKey(), (String) entry.getValue() );
         }
 
         if ( environmentVariables != null )
