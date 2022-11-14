@@ -26,9 +26,9 @@
 
 You can ensure the maven properties are available to your main forcing `<projectProperties />` property type.
 
-TIP: you can still override potentially conflicting properties if you set them *after*.
+  Tip: you can still override potentially conflicting properties if you set them *after*.
 
-** pom.xml
+* pom.xml
 
 -------------------
 <project>
