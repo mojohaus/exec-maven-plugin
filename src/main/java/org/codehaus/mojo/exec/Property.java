@@ -24,7 +24,7 @@ package org.codehaus.mojo.exec;
  * 
  * @author Kaare Nilsen (kaare.nilsen@gmail.com)
  */
-public class Property
+public class Property extends AbstractProperty
 {
     private String key;
 
@@ -76,12 +76,5 @@ public class Property
     public void setValue( String value )
     {
         this.value = value;
-    }
-
-    /**
-     * Represents that all project properties must be forwarded to the exec:java execution.
-     */
-    public static class Project extends Property
-    {
     }
 }

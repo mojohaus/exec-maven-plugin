@@ -24,7 +24,7 @@
  ~~ http://maven.apache.org/doxia/references/apt-format.html
 
 
-You can ensure the maven properties are available to your main forcing `org.codehaus.mojo.exec.Property$Project` property type.
+You can ensure the maven properties are available to your main forcing `<projectProperties />` property type.
 
 TIP: you can still override potentially conflicting properties if you set them *after*.
 
@@ -54,7 +54,7 @@ TIP: you can still override potentially conflicting properties if you set them *
             ...
           </arguments>
           <systemProperties>
-            <systemProperty implementation="org.codehaus.mojo.exec.Property$Project" /> <!-- forward maven project properties -->
+            <projectProperties />
             <systemProperty>
               <key>myproperty</key>
               <value>myvalue</value>
