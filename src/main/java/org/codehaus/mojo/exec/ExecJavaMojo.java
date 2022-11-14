@@ -95,7 +95,7 @@ public class ExecJavaMojo
      * @since 1.0
      */
     @Parameter
-    private Property[] systemProperties;
+    private AbstractProperty[] systemProperties;
 
     /**
      * Indicates if mojo should be kept running after the mainclass terminates. Use full for server like apps with
@@ -551,16 +551,21 @@ public class ExecJavaMojo
         originalSystemProperties = new Properties();
         originalSystemProperties.putAll(System.getProperties());
 
-        if ( Stream.of( systemProperties ).anyMatch( it -> it instanceof Property.Project) )
+        if ( Stream.of( systemProperties ).anyMatch( it -> it instanceof ProjectProperties ) )
         {
             System.getProperties().putAll( project.getProperties() );
-            return;
         }
 
-        for ( Property systemProperty : systemProperties )
+        for ( AbstractProperty systemProperty : systemProperties )
         {
-            String value = systemProperty.getValue();
-            System.setProperty( systemProperty.getKey(), value == null ? "" : value );
+            if ( ! ( systemProperty instanceof  Property ) )
+            {
+                continue;
+            }
+
+            Property prop = (Property) systemProperty;
+            String value = prop.getValue();
+            System.setProperty( prop.getKey(), value == null ? "" : value );
         }
     }
 

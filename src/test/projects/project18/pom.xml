@@ -38,7 +38,7 @@
             <additionalClasspathElements>../../../../target/test-classes</additionalClasspathElements> <!-- test setup requires it -->
           </additionalClasspathElements>
           <systemProperties>
-            <property implementation="org.codehaus.mojo.exec.Property$Project" />
+            <projectProperties />
           </systemProperties>
         </configuration>
       </plugin>
