@@ -87,7 +87,7 @@ public class ExecJavaMojoTest
 
         assertNull( "System property not yet created", System.getProperty( "test.name" ) );
 
-        assertEquals( "Hello \n", execute( pom, "java" ) );
+        assertEquals( "Hello " + System.lineSeparator(), execute( pom, "java" ) );
 
         // ensure we get back in the original state and didn't leak the execution config
         assertNull( "System property not yet created", System.getProperty( "test.name" ) );
@@ -288,7 +288,7 @@ public class ExecJavaMojoTest
 
         String output = execute( pom, "java" );
 
-        assertEquals( "Hello project18 project\n", output );
+        assertEquals( "Hello project18 project" + System.lineSeparator(), output );
     }
 
     /**
