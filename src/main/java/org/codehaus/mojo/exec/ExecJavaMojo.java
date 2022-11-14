@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Stream;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
@@ -542,14 +543,24 @@ public class ExecJavaMojo
      */
     private void setSystemProperties()
     {
-        if ( systemProperties != null )
+        if ( systemProperties == null )
         {
-            originalSystemProperties = System.getProperties();
-            for ( Property systemProperty : systemProperties )
-            {
-                String value = systemProperty.getValue();
-                System.setProperty( systemProperty.getKey(), value == null ? "" : value );
-            }
+            return;
+        }
+        // copy otherwise the restore phase does nothing
+        originalSystemProperties = new Properties();
+        originalSystemProperties.putAll(System.getProperties());
+
+        if ( Stream.of( systemProperties ).anyMatch( it -> it instanceof Property.Project) )
+        {
+            System.getProperties().putAll( project.getProperties() );
+            return;
+        }
+
+        for ( Property systemProperty : systemProperties )
+        {
+            String value = systemProperty.getValue();
+            System.setProperty( systemProperty.getKey(), value == null ? "" : value );
         }
     }
 

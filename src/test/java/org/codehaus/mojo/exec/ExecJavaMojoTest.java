@@ -85,11 +85,12 @@ public class ExecJavaMojoTest
     {
         File pom = new File( getBasedir(), "src/test/projects/project5/pom.xml" );
 
-        assertNull( "System property not yet created", System.getProperty( "project5.property.with.no.value" ) );
+        assertNull( "System property not yet created", System.getProperty( "test.name" ) );
 
-        execute( pom, "java" );
+        assertEquals( "Hello \n", execute( pom, "java" ) );
 
-        assertEquals( "System property now empty", "", System.getProperty( "project5.property.with.no.value" ) );
+        // ensure we get back in the original state and didn't leak the execution config
+        assertNull( "System property not yet created", System.getProperty( "test.name" ) );
     }
 
     /**
@@ -273,6 +274,21 @@ public class ExecJavaMojoTest
             assertTrue( stderrString.contains( " org.codehaus.mojo.exec.Slf4jMain main" ) );
             assertTrue( stderrString.contains( ": hello[]" ) );
         }
+    }
+
+    /**
+     * Ensure all project properties can be forwarded to the execution as system properties.
+     *
+     * @throws Exception if any exception occurs
+     */
+    public void testProjectProperties()
+            throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project18/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        assertEquals( "Hello project18 project\n", output );
     }
 
     /**
