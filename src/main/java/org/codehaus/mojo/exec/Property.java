@@ -77,4 +77,11 @@ public class Property
     {
         this.value = value;
     }
+
+    /**
+     * Represents that all project properties must be forwarded to the exec:java execution.
+     */
+    public static class Project extends Property
+    {
+    }
 }

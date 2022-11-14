@@ -1,11 +1,12 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.cb.maven.plugins.exec</groupId>
-  <artifactId>project4</artifactId>
+  <artifactId>project18</artifactId>
   <version>0.1</version>
   <packaging>jar</packaging>
   <name>Maven Exec Plugin</name>
   <inceptionYear>2005</inceptionYear>
+
   <licenses>
     <license>
       <name>Apache License 2</name>
@@ -13,6 +14,10 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <properties>
+    <test.name>${project.artifactId} project</test.name>
+  </properties>
 
   <build>
     <plugins>
@@ -29,15 +34,11 @@
         </executions>
         <configuration>
           <mainClass>org.codehaus.mojo.exec.HelloSystemProperty</mainClass>
+          <additionalClasspathElements>
+            <additionalClasspathElements>../../../../target/test-classes</additionalClasspathElements> <!-- test setup requires it -->
+          </additionalClasspathElements>
           <systemProperties>
-            <property>
-              <key>test.name</key>
-              <value></value>
-            </property>
-            <property>
-              <key>boum</key>
-              <value>boum</value>
-            </property>
+            <property implementation="org.codehaus.mojo.exec.Property$Project" />
           </systemProperties>
         </configuration>
       </plugin>
