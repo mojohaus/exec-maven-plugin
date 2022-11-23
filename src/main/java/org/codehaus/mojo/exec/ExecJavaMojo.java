@@ -18,13 +18,11 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ResolutionErrorHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -32,7 +30,15 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.repository.RepositorySystem;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -46,10 +52,6 @@ public class ExecJavaMojo
 {
     @Component
     private RepositorySystem repositorySystem;
-
-    @Component
-    private ResolutionErrorHandler resolutionErrorHandler;
-
 
     /**
      * @since 1.0
@@ -642,10 +644,8 @@ public class ExecJavaMojo
      * Add any relevant project dependencies to the classpath. Takes includeProjectDependencies into consideration.
      * 
      * @param path classpath of {@link java.net.URL} objects
-     * @throws MojoExecutionException if a problem happens
      */
     private void addRelevantProjectDependenciesToClasspath( List<Path> path )
-        throws MojoExecutionException
     {
         if ( this.includeProjectDependencies )
         {
@@ -692,7 +692,7 @@ public class ExecJavaMojo
             if ( this.executableDependency == null )
             {
                 getLog().debug( "All Plugin Dependencies will be included." );
-                relevantDependencies = new HashSet<Artifact>( this.getPluginDependencies() );
+                relevantDependencies = new HashSet<>( this.getPluginDependencies() );
             }
             else
             {
@@ -712,32 +712,36 @@ public class ExecJavaMojo
     /**
      * Resolve the executable dependencies for the specified project
      * 
-     * @param executablePomArtifact the project's POM
+     * @param executableArtifact the executable plugin dependency
      * @return a set of Artifacts
      * @throws MojoExecutionException if a failure happens
      */
-    private Set<Artifact> resolveExecutableDependencies( Artifact executablePomArtifact )
+    private Set<Artifact> resolveExecutableDependencies( Artifact executableArtifact )
         throws MojoExecutionException
     {
         try
         {
-            ArtifactResolutionRequest request = new ArtifactResolutionRequest()
-                .setArtifact( executablePomArtifact )
-                .setLocalRepository( getSession().getLocalRepository() )
-                .setRemoteRepositories( getSession().getRequest().getRemoteRepositories() )
-                .setForceUpdate( getSession().getRequest().isUpdateSnapshots() )
-                .setOffline( getSession().isOffline() )
-                .setResolveTransitively( true );
+            CollectRequest collectRequest = new CollectRequest();
+            collectRequest.setRoot(
+                new Dependency( RepositoryUtils.toArtifact( executableArtifact ), classpathScope ) );
+            collectRequest.setRepositories( project.getRemotePluginRepositories() );
 
-            ArtifactResolutionResult result = repositorySystem.resolve( request );
-            resolutionErrorHandler.throwErrors( request, result );
+            DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter( classpathScope );
 
-            return result.getArtifacts();
+            DependencyRequest dependencyRequest = new DependencyRequest( collectRequest, classpathFilter );
+
+            DependencyResult dependencyResult =
+                repositorySystem.resolveDependencies( getSession().getRepositorySession(), dependencyRequest );
+
+            return dependencyResult.getArtifactResults().stream()
+                .map( ArtifactResult::getArtifact )
+                .map( RepositoryUtils::toArtifact )
+                .collect( Collectors.toSet() );
         }
-        catch ( ArtifactResolutionException ex )
+        catch ( DependencyResolutionException ex )
         {
             throw new MojoExecutionException( "Encountered problems resolving dependencies of the executable "
-                + "in preparation for its execution.", ex );
+                                                  + "in preparation for its execution.", ex );
         }
     }
 
