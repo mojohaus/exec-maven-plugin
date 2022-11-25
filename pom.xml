@@ -215,7 +215,7 @@
 
   <properties>
     <mavenVersion>3.2.5</mavenVersion>
-    <slf4j.version>1.7.36</slf4j.version>
+    <slf4j.version>2.0.5</slf4j.version>
     <project.build.outputTimestamp>2022-07-15T02:43:45Z</project.build.outputTimestamp>
   </properties>
 
