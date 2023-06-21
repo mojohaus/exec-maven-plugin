@@ -19,7 +19,12 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -32,8 +37,8 @@ import java.util.function.Consumer;
  */
 class LineRedirectOutputStream extends OutputStream {
 
-    private StringBuilder currentLine = new StringBuilder();
     private final Consumer<String> linePrinter;
+    private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     public LineRedirectOutputStream(Consumer<String> linePrinter) {
         this.linePrinter = linePrinter;
@@ -45,18 +50,23 @@ class LineRedirectOutputStream extends OutputStream {
             printAndReset();
             return;
         }
-        currentLine.append((char) b);
+        buffer.write(b);
     }
 
     @Override
     public void flush() {
-        if (currentLine.length() > 0) {
+        if (buffer.size() > 0) {
             printAndReset();
         }
     }
 
+    @Override
+    public void close() {
+        flush();
+    }
+
     private void printAndReset() {
-        linePrinter.accept(currentLine.toString());
-        currentLine = new StringBuilder();
+        linePrinter.accept(new String(buffer.toByteArray(), Charset.defaultCharset()));
+        buffer = new ByteArrayOutputStream();
     }
 }
