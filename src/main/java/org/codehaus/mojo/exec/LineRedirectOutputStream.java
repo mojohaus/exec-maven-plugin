@@ -22,6 +22,7 @@ package org.codehaus.mojo.exec;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -35,10 +36,16 @@ import java.util.function.Consumer;
 class LineRedirectOutputStream extends OutputStream {
 
     private final Consumer<String> linePrinter;
+    private final Charset charset;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     public LineRedirectOutputStream(Consumer<String> linePrinter) {
-        this.linePrinter = linePrinter;
+        this(linePrinter, Charset.defaultCharset());
+    }
+
+    public LineRedirectOutputStream(Consumer<String> linePrinter, Charset charset) {
+        this.linePrinter = Objects.requireNonNull(linePrinter);
+        this.charset = Objects.requireNonNull(charset);
     }
 
     @Override
@@ -63,7 +70,7 @@ class LineRedirectOutputStream extends OutputStream {
     }
 
     private void printAndReset() {
-        linePrinter.accept(new String(buffer.toByteArray(), Charset.defaultCharset()));
+        linePrinter.accept(new String(buffer.toByteArray(), charset));
         buffer = new ByteArrayOutputStream();
     }
 }
