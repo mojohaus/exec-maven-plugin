@@ -17,13 +17,6 @@
  * under the License.
  */
 
-import java.io.*
-import java.util.*
+def buildLog = new File( basedir, "build.log" ).text
 
-t = new IntegrationBase()
-
-def buildLog = new File( basedir, "build.log" )
-
-t.checkExistenceAndContentOfAFile(buildLog, [
-  "[ERROR] Timeout. Process runs longer than 1000 ms."
-])
+assert buildLog.contains("[ERROR] Timeout. Process runs longer than 1000 ms.")

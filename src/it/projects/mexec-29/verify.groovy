@@ -17,14 +17,8 @@
  * under the License.
  */
 
-import java.io.*
-import java.util.*
 
-t = new IntegrationBase()
+def buildLog = new File( basedir, "build.log" ).text
 
-def buildLog = new File( basedir, "build.log" )
-
-t.checkExistenceAndContentOfAFile(buildLog, [
-  "java.lang.ClassNotFoundException: org.codehaus.mojo.exec.NoMain",
-])
+assert buildLog.contains('java.lang.ClassNotFoundException: org.codehaus.mojo.exec.NoMain')
 
