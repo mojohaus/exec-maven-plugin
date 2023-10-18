@@ -88,7 +88,7 @@ In case of the modules as supported since Java9 the configuration looks like
           <executable>java</executable>
           <arguments>
             <argument>--module-path</argument> <!-- or -p  -->
-            <!-- automatically creates the classpath using all project dependencies,
+            <!-- automatically creates the modulepath using all project dependencies,
                  also adding the project build directory -->
             <modulepath/>
             <argument>--module</argument> <!-- or -m -->

@@ -18,6 +18,8 @@ public class MainWithThreads
      * will be interrupted right away. - if the timer is cancelled (using 'cancelTimer' as argument), the timer will die
      * on itself after all the other threads - if not, one must use a time out to stop joining on that unresponsive
      * daemon thread
+     * 
+     * @param args the arguments
      **/
     public static void main( String... args )
     {

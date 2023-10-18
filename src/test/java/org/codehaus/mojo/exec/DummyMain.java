@@ -3,7 +3,7 @@ package org.codehaus.mojo.exec;
 /**
  * Simple class with a main method to call from unit tests
  * 
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste
  * @version $Id$
  */
 public class DummyMain
@@ -11,7 +11,7 @@ public class DummyMain
     /**
      * Prints Hello followed by each argument, then a new line. Use a space character as separator.
      * 
-     * @param args
+     * @param args the arguments
      */
     public static void main( String... args )
     {

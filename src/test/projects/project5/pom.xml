@@ -28,10 +28,10 @@
            </execution>
         </executions>
         <configuration>
-          <mainClass>org.codehaus.mojo.exec.DummyMain</mainClass>
+          <mainClass>org.codehaus.mojo.exec.HelloSystemProperty</mainClass>
           <systemProperties>
             <property>
-              <key>project5.property.with.no.value</key>
+              <key>test.name</key>
               <value></value>
             </property>
             <property>

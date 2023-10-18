@@ -20,20 +20,17 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
@@ -51,36 +48,23 @@ public abstract class AbstractExecMojo
      */
     @Parameter( defaultValue = "${project}", readonly = true )
     protected MavenProject project;
-
-    @Component
-    private ArtifactResolver artifactResolver;
-
-    @Component
-    private ArtifactFactory artifactFactory;
-
-    @Component
-    private MavenProjectBuilder projectBuilder;
-
-    @Component
-    private ArtifactMetadataSource metadataSource;
-
-    @Parameter( readonly = true, required = true, defaultValue = "${localRepository}" )
-    private ArtifactRepository localRepository;
-
-    @Parameter( readonly = true, required = true, defaultValue = "${project.remoteArtifactRepositories}" )
-    private List<ArtifactRepository> remoteRepositories;
+    
+    @Parameter( defaultValue = "${session}", readonly = true, required = true )
+    private MavenSession session;
 
     @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
     private List<Artifact> pluginDependencies;
 
     /**
      * If provided the ExecutableDependency identifies which of the plugin dependencies contains the executable class.
-     * This will have the affect of only including plugin dependencies required by the identified ExecutableDependency.
-     * <p/>
+     * This will have the effect of only including plugin dependencies required by the identified ExecutableDependency.
+     *
+     * <p>
      * If includeProjectDependencies is set to <code>true</code>, all of the project dependencies will be included on
      * the executable's classpath. Whether a particular project dependency is a dependency of the identified
      * ExecutableDependency will be irrelevant to its inclusion in the classpath.
-     * 
+     * </p>
+     *
      * @since 1.1-beta-1
      */
     @Parameter
@@ -154,14 +138,13 @@ public abstract class AbstractExecMojo
      * @param artifacts the list where to collect the scope specific artifacts
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
-    @SuppressWarnings( "unchecked" )
-    protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<File> theClasspathFiles )
+    protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<Path> theClasspathFiles )
     {
         if ( addResourcesToClasspath )
         {
             for ( Resource r : project.getBuild().getResources() )
             {
-                theClasspathFiles.add( new File( r.getDirectory() ) );
+                theClasspathFiles.add( Paths.get( r.getDirectory() ) );
             }
         }
 
@@ -170,7 +153,7 @@ public abstract class AbstractExecMojo
             artifacts.addAll( project.getCompileArtifacts() );
             if ( addOutputToClasspath )
             {
-                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
             }
         }
         else if ( "test".equals( classpathScope ) )
@@ -178,8 +161,8 @@ public abstract class AbstractExecMojo
             artifacts.addAll( project.getTestArtifacts() );
             if ( addOutputToClasspath )
             {
-                theClasspathFiles.add( new File( project.getBuild().getTestOutputDirectory() ) );
-                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getTestOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
             }
         }
         else if ( "runtime".equals( classpathScope ) )
@@ -187,7 +170,7 @@ public abstract class AbstractExecMojo
             artifacts.addAll( project.getRuntimeArtifacts() );
             if ( addOutputToClasspath )
             {
-                theClasspathFiles.add( new File( project.getBuild().getOutputDirectory() ) );
+                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
             }
         }
         else if ( "system".equals( classpathScope ) )
@@ -301,6 +284,16 @@ public abstract class AbstractExecMojo
     protected boolean isSkip()
     {
         return skip;
+    }
+
+    protected final MavenSession getSession()
+    {
+        return session;
+    }
+
+    protected final List<Artifact> getPluginDependencies()
+    {
+        return pluginDependencies;
     }
 
     /**

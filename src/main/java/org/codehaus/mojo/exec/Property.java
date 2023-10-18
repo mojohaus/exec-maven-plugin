@@ -20,11 +20,11 @@ package org.codehaus.mojo.exec;
  */
 
 /**
- * Wrapper class for the systemPropery argument type.
+ * Wrapper class for the systemProperty argument type.
  * 
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>
+ * @author Kaare Nilsen (kaare.nilsen@gmail.com)
  */
-public class Property
+public class Property extends AbstractProperty
 {
     private String key;
 

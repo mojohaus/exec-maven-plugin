@@ -1,30 +1,13 @@
 package org.codehaus.mojo.exec;
 
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-import java.io.File;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,28 +16,35 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.project.artifact.MavenMetadataSource;
+import org.apache.maven.project.ProjectBuilder;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
  * 
- * @author <a href="mailto:kaare.nilsen@gmail.com">Kaare Nilsen</a>, <a href="mailto:dsmiley@mitre.org">David Smiley</a>
+ * @author Kaare Nilsen (kaare.nilsen@gmail.com), David Smiley (dsmiley@mitre.org)
  * @since 1.0
  */
 @Mojo( name = "java", threadSafe = true, requiresDependencyResolution = ResolutionScope.TEST )
@@ -62,45 +52,35 @@ public class ExecJavaMojo
     extends AbstractExecMojo
 {
     @Component
-    private ArtifactResolver artifactResolver;
-
-    @Component
-    private ArtifactFactory artifactFactory;
-
-    @Component
-    private ArtifactMetadataSource metadataSource;
-
-    /**
-     * @since 1.0
-     */
-    @Parameter( readonly = true, required = true, defaultValue = "${localRepository}" )
-    private ArtifactRepository localRepository;
-
-    /**
-     * @since 1.1-beta-1
-     */
-    @Parameter( readonly = true, required = true, defaultValue = "${project.remoteArtifactRepositories}" )
-    private List<ArtifactRepository> remoteRepositories;
+    private RepositorySystem repositorySystem;
 
     /**
      * @since 1.0
      */
     @Component
-    private MavenProjectBuilder projectBuilder;
+    private ProjectBuilder projectBuilder;
 
     /**
-     * @since 1.1-beta-1
-     */
-    @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
-    private List<Artifact> pluginDependencies;
-
-    /**
-     * The main class to execute.
+     * The main class to execute.<br>
+     * With Java 9 and above you can prefix it with the modulename, e.g. <code>com.greetings/com.greetings.Main</code>
+     * Without modulename the classpath will be used, with modulename a new modulelayer will be created.
      * 
      * @since 1.0
      */
     @Parameter( required = true, property = "exec.mainClass" )
     private String mainClass;
+
+
+    /**
+     * Forces the creation of fork join common pool to avoids the threads to be owned by the isolated thread group
+     * and prevent a proper shutdown.
+     * If set to zero the default parallelism is used to precreate all threads,
+     * if negative it is ignored else the value is the one used to create the fork join threads.
+     *
+     * @since 3.0.1
+     */
+    @Parameter( property = "exec.preloadCommonPool", defaultValue = "0" )
+    private int preloadCommonPool;
 
     /**
      * The class arguments.
@@ -118,7 +98,7 @@ public class ExecJavaMojo
      * @since 1.0
      */
     @Parameter
-    private Property[] systemProperties;
+    private AbstractProperty[] systemProperties;
 
     /**
      * Indicates if mojo should be kept running after the mainclass terminates. Use full for server like apps with
@@ -219,6 +199,15 @@ public class ExecJavaMojo
     private List<String> additionalClasspathElements;
 
     /**
+     * List of file to exclude from the classpath.
+     * It matches the jar name, for example {@code slf4j-simple-1.7.30.jar}.
+     *
+     * @since 3.0.1
+     */
+    @Parameter
+    private List<String> classpathFilenameExclusions;
+
+    /**
      * Execute goal.
      * 
      * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
@@ -264,41 +253,59 @@ public class ExecJavaMojo
             getLog().debug( msg );
         }
 
+        if ( preloadCommonPool >= 0 )
+        {
+            preloadCommonPool();
+        }
+
         IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
         Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
             public void run()
             {
+                int sepIndex = mainClass.indexOf( '/' );
+
+                final String bootClassName;
+                if ( sepIndex >= 0 )
+                {
+                    bootClassName = mainClass.substring( sepIndex + 1 );
+                }
+                else 
+                {
+                    bootClassName = mainClass;
+                }
+                
                 try
                 {
-                    Method main =
-                        Thread.currentThread().getContextClassLoader().loadClass( mainClass ).getMethod( "main",
-                                                                                                         new Class[] {
-                                                                                                             String[].class } );
-                    if ( !main.isAccessible() )
-                    {
-                        getLog().debug( "Setting accessibility to true in order to invoke main()." );
-                        main.setAccessible( true );
-                    }
-                    if ( !Modifier.isStatic( main.getModifiers() ) )
-                    {
-                        throw new MojoExecutionException( "Can't call main(String[])-method because it is not static." );
-                    }
-                    main.invoke( null, new Object[] { arguments } );
+                    Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass( bootClassName );
+                    
+                    MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+                    MethodHandle mainHandle =
+                        lookup.findStatic( bootClass, "main",
+                                                 MethodType.methodType( void.class, String[].class ) );
+                    
+                    mainHandle.invoke( arguments );
                 }
-                catch ( NoSuchMethodException e )
+                catch ( IllegalAccessException | NoSuchMethodException | NoSuchMethodError e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(),
                                                                                new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.",
                                                                                               e ) );
                 }
-                catch ( Exception e )
+                catch ( InvocationTargetException e )
+                { // use the cause if available to improve the plugin execution output
+                   Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
+                   Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), exceptionToReport );
+                }
+                catch ( Throwable e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
                 }
             }
         }, mainClass + ".main()" );
-        bootstrapThread.setContextClassLoader( getClassLoader() );
+        URLClassLoader classLoader = getClassLoader();
+        bootstrapThread.setContextClassLoader( classLoader );
         setSystemProperties();
 
         bootstrapThread.start();
@@ -326,6 +333,18 @@ public class ExecJavaMojo
             }
         }
 
+        if ( classLoader != null )
+        {
+            try
+            {
+                classLoader.close();
+            }
+            catch ( IOException e )
+            {
+                getLog().error(e.getMessage(), e);
+            }
+        }
+
         if ( originalSystemProperties != null )
         {
             System.setProperties( originalSystemProperties );
@@ -335,7 +354,7 @@ public class ExecJavaMojo
         {
             if ( threadGroup.uncaughtException != null )
             {
-                throw new MojoExecutionException( "An exception occured while executing the Java class. "
+                throw new MojoExecutionException( "An exception occurred while executing the Java class. "
                     + threadGroup.uncaughtException.getMessage(), threadGroup.uncaughtException );
             }
         }
@@ -357,6 +376,42 @@ public class ExecJavaMojo
             combinedArray[i + arguments.length] = additionalArgArray[i];
         }
         return combinedArray;
+    }
+
+    /**
+     * To avoid the exec:java to consider common pool threads leaked, let's pre-create them.
+     */
+    private void preloadCommonPool()
+    {
+        try
+        {
+            // ensure common pool exists in the jvm
+            final ExecutorService es = ForkJoinPool.commonPool();
+            final int max = preloadCommonPool > 0
+                    ? preloadCommonPool :
+                    ForkJoinPool.getCommonPoolParallelism();
+            final CountDownLatch preLoad = new CountDownLatch( 1 );
+            for ( int i = 0;
+                  i < max;
+                  i++ )
+            {
+                es.submit(() -> {
+                    try
+                    {
+                        preLoad.await();
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
+            preLoad.countDown();
+        }
+        catch (final Exception e)
+        {
+            getLog().debug(e.getMessage() + ", skipping commonpool earger init");
+        }
     }
 
     /**
@@ -477,7 +532,7 @@ public class ExecJavaMojo
         }
         if ( !uncooperativeThreads.isEmpty() )
         {
-            getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to "
+            getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to"
                 + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
                 + " Although not serious, it should be remedied." );
         }
@@ -512,14 +567,29 @@ public class ExecJavaMojo
      */
     private void setSystemProperties()
     {
-        if ( systemProperties != null )
+        if ( systemProperties == null )
         {
-            originalSystemProperties = System.getProperties();
-            for ( Property systemProperty : systemProperties )
+            return;
+        }
+        // copy otherwise the restore phase does nothing
+        originalSystemProperties = new Properties();
+        originalSystemProperties.putAll(System.getProperties());
+
+        if ( Stream.of( systemProperties ).anyMatch( it -> it instanceof ProjectProperties ) )
+        {
+            System.getProperties().putAll( project.getProperties() );
+        }
+
+        for ( AbstractProperty systemProperty : systemProperties )
+        {
+            if ( ! ( systemProperty instanceof  Property ) )
             {
-                String value = systemProperty.getValue();
-                System.setProperty( systemProperty.getKey(), value == null ? "" : value );
+                continue;
             }
+
+            Property prop = (Property) systemProperty;
+            String value = prop.getValue();
+            System.setProperty( prop.getKey(), value == null ? "" : value );
         }
     }
 
@@ -529,37 +599,42 @@ public class ExecJavaMojo
      * @return the classloader
      * @throws MojoExecutionException if a problem happens
      */
-    private ClassLoader getClassLoader()
+    private URLClassLoader getClassLoader()
         throws MojoExecutionException
     {
-        List<URL> classpathURLs = new ArrayList<URL>();
+        List<Path> classpathURLs = new ArrayList<>();
         this.addRelevantPluginDependenciesToClasspath( classpathURLs );
         this.addRelevantProjectDependenciesToClasspath( classpathURLs );
         this.addAdditionalClasspathElements( classpathURLs );
-        return new URLClassLoader( classpathURLs.toArray( new URL[classpathURLs.size()] ) );
+        
+        try
+        {
+            return URLClassLoaderBuilder.builder()
+                    .setLogger( getLog() )
+                    .setPaths( classpathURLs )
+                    .setExclusions( classpathFilenameExclusions )
+                    .build();
+        }
+        catch ( NullPointerException | IOException e )
+        {
+            throw new MojoExecutionException( e.getMessage(), e );
+        }
+
     }
 
-    private void addAdditionalClasspathElements( List<URL> path )
+    private void addAdditionalClasspathElements( List<Path> path )
     {
         if ( additionalClasspathElements != null )
         {
             for ( String classPathElement : additionalClasspathElements )
             {
-                try
+                Path file = Paths.get( classPathElement );
+                if ( !file.isAbsolute() )
                 {
-                    File file = new File( classPathElement );
-                    if ( !file.isAbsolute() )
-                    {
-                        file = new File( project.getBasedir(), classPathElement );
-                    }
-                    URL url = file.toURI().toURL();
-                    getLog().debug( "Adding additional classpath element: " + url + " to classpath" );
-                    path.add( url );
+                    file = project.getBasedir().toPath().resolve( file );
                 }
-                catch ( MalformedURLException e )
-                {
-                    getLog().warn( "Skipping additional classpath element: " + classPathElement, e );
-                }
+                getLog().debug( "Adding additional classpath element: " + file + " to classpath" );
+                path.add( file );
             }
         }
     }
@@ -571,7 +646,7 @@ public class ExecJavaMojo
      * @param path classpath of {@link java.net.URL} objects
      * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantPluginDependenciesToClasspath( List<URL> path )
+    private void addRelevantPluginDependenciesToClasspath( List<Path> path )
         throws MojoExecutionException
     {
         if ( hasCommandlineArgs() )
@@ -579,60 +654,41 @@ public class ExecJavaMojo
             arguments = parseCommandlineArgs();
         }
 
-        try
+        for ( Artifact classPathElement : this.determineRelevantPluginDependencies() )
         {
-            for ( Artifact classPathElement : this.determineRelevantPluginDependencies() )
-            {
-                getLog().debug( "Adding plugin dependency artifact: " + classPathElement.getArtifactId()
-                    + " to classpath" );
-                path.add( classPathElement.getFile().toURI().toURL() );
-            }
+            getLog().debug( "Adding plugin dependency artifact: " + classPathElement.getArtifactId()
+                + " to classpath" );
+            path.add( classPathElement.getFile().toPath() );
         }
-        catch ( MalformedURLException e )
-        {
-            throw new MojoExecutionException( "Error during setting up classpath", e );
-        }
-
     }
 
     /**
      * Add any relevant project dependencies to the classpath. Takes includeProjectDependencies into consideration.
      * 
      * @param path classpath of {@link java.net.URL} objects
-     * @throws MojoExecutionException if a problem happens
      */
-    private void addRelevantProjectDependenciesToClasspath( List<URL> path )
-        throws MojoExecutionException
+    private void addRelevantProjectDependenciesToClasspath( List<Path> path )
     {
         if ( this.includeProjectDependencies )
         {
-            try
+            getLog().debug( "Project Dependencies will be included." );
+
+            List<Artifact> artifacts = new ArrayList<>();
+            List<Path> theClasspathFiles = new ArrayList<>();
+
+            collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
+
+            for ( Path classpathFile : theClasspathFiles )
             {
-                getLog().debug( "Project Dependencies will be included." );
-
-                List<Artifact> artifacts = new ArrayList<Artifact>();
-                List<File> theClasspathFiles = new ArrayList<File>();
-
-                collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
-
-                for ( File classpathFile : theClasspathFiles )
-                {
-                    URL url = classpathFile.toURI().toURL();
-                    getLog().debug( "Adding to classpath : " + url );
-                    path.add( url );
-                }
-
-                for ( Artifact classPathElement : artifacts )
-                {
-                    getLog().debug( "Adding project dependency artifact: " + classPathElement.getArtifactId()
-                        + " to classpath" );
-                    path.add( classPathElement.getFile().toURI().toURL() );
-                }
-
+                getLog().debug( "Adding to classpath : " + classpathFile );
+                path.add( classpathFile );
             }
-            catch ( MalformedURLException e )
+
+            for ( Artifact classPathElement : artifacts )
             {
-                throw new MojoExecutionException( "Error during setting up classpath", e );
+                getLog().debug( "Adding project dependency artifact: " + classPathElement.getArtifactId()
+                    + " to classpath" );
+                path.add( classPathElement.getFile().toPath() );
             }
         }
         else
@@ -658,14 +714,13 @@ public class ExecJavaMojo
             if ( this.executableDependency == null )
             {
                 getLog().debug( "All Plugin Dependencies will be included." );
-                relevantDependencies = new HashSet<Artifact>( this.pluginDependencies );
+                relevantDependencies = new HashSet<>( this.getPluginDependencies() );
             }
             else
             {
                 getLog().debug( "Selected plugin Dependencies will be included." );
                 Artifact executableArtifact = this.findExecutableArtifact();
-                Artifact executablePomArtifact = this.getExecutablePomArtifact( executableArtifact );
-                relevantDependencies = this.resolveExecutableDependencies( executablePomArtifact );
+                relevantDependencies = this.resolveExecutableDependencies( executableArtifact );
             }
         }
         else
@@ -677,61 +732,39 @@ public class ExecJavaMojo
     }
 
     /**
-     * Get the artifact which refers to the POM of the executable artifact.
-     * 
-     * @param executableArtifact this artifact refers to the actual assembly.
-     * @return an artifact which refers to the POM of the executable artifact.
-     */
-    private Artifact getExecutablePomArtifact( Artifact executableArtifact )
-    {
-        return this.artifactFactory.createBuildArtifact( executableArtifact.getGroupId(),
-                                                         executableArtifact.getArtifactId(),
-                                                         executableArtifact.getVersion(), "pom" );
-    }
-
-    /**
      * Resolve the executable dependencies for the specified project
      * 
-     * @param executablePomArtifact the project's POM
+     * @param executableArtifact the executable plugin dependency
      * @return a set of Artifacts
      * @throws MojoExecutionException if a failure happens
      */
-    private Set<Artifact> resolveExecutableDependencies( Artifact executablePomArtifact )
+    private Set<Artifact> resolveExecutableDependencies( Artifact executableArtifact )
         throws MojoExecutionException
     {
-
-        Set<Artifact> executableDependencies;
         try
         {
-            MavenProject executableProject =
-                this.projectBuilder.buildFromRepository( executablePomArtifact, this.remoteRepositories,
-                                                         this.localRepository );
+            CollectRequest collectRequest = new CollectRequest();
+            collectRequest.setRoot(
+                new Dependency( RepositoryUtils.toArtifact( executableArtifact ), classpathScope ) );
+            collectRequest.setRepositories( project.getRemotePluginRepositories() );
 
-            // get all of the dependencies for the executable project
-            List<Dependency> dependencies = executableProject.getDependencies();
+            DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter( classpathScope );
 
-            // make Artifacts of all the dependencies
-            Set<Artifact> dependencyArtifacts =
-                MavenMetadataSource.createArtifacts( this.artifactFactory, dependencies, null, null, null );
+            DependencyRequest dependencyRequest = new DependencyRequest( collectRequest, classpathFilter );
 
-            // not forgetting the Artifact of the project itself
-            dependencyArtifacts.add( executableProject.getArtifact() );
+            DependencyResult dependencyResult =
+                repositorySystem.resolveDependencies( getSession().getRepositorySession(), dependencyRequest );
 
-            // resolve all dependencies transitively to obtain a comprehensive list of assemblies
-            ArtifactResolutionResult result =
-                artifactResolver.resolveTransitively( dependencyArtifacts, executablePomArtifact,
-                                                      Collections.emptyMap(), this.localRepository,
-                                                      this.remoteRepositories, metadataSource, null,
-                                                      Collections.emptyList() );
-            executableDependencies = result.getArtifacts();
+            return dependencyResult.getArtifactResults().stream()
+                .map( ArtifactResult::getArtifact )
+                .map( RepositoryUtils::toArtifact )
+                .collect( Collectors.toSet() );
         }
-        catch ( Exception ex )
+        catch ( DependencyResolutionException ex )
         {
             throw new MojoExecutionException( "Encountered problems resolving dependencies of the executable "
-                + "in preparation for its execution.", ex );
+                                                  + "in preparation for its execution.", ex );
         }
-
-        return executableDependencies;
     }
 
     /**

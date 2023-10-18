@@ -1,5 +1,7 @@
 package org.codehaus.mojo.exec;
 
+import static java.util.Collections.emptyMap;
+
 /*
  * Copyright 2005 The Codehaus. Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at
@@ -12,7 +14,7 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,30 +26,23 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.OS;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.DefaultArtifactRepository;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.apache.maven.monitor.logging.DefaultLog;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.logging.console.ConsoleLogger;
-import org.codehaus.plexus.util.IOUtil;
-import org.codehaus.plexus.util.StringOutputStream;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.mockito.Mock;
 
 /**
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste
  * @version $Id$
  */
 public class ExecMojoTest
     extends AbstractMojoTestCase
 {
+    @Mock
+    private MavenSession session;
+    
+    private static final File LOCAL_REPO = new File( "src/test/repository" );
+    
     /*
      * Finding a file actually on disk of the test system makes some of the tests fail.
      * Hence a purely random UUID is used to prevent this situation. 
@@ -108,8 +103,6 @@ public class ExecMojoTest
         mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
     }
 
-    /**
-     */
     public void testRunOK()
         throws MojoExecutionException
     {
@@ -126,143 +119,11 @@ public class ExecMojoTest
      * output ); }
      */
 
-    /**
+    /*
      * integration test... - compile the Test class using mvn clean compile - run the test file using java, use it to
      * generate a file whose contains are compared to expected output
      */
 
-    // public void testRunOKWithAutoComputedClasspath()
-    // throws MojoExecutionException, Exception
-    // {
-    // String projectName = "project1";
-    //
-    // ExecMojo mojo = new ExecMojo();
-    //
-    // setUpProject( projectName, mojo );
-    //
-    // // compile project
-    // mojo.setExecutable( SOME_EXECUTABLE );
-    // mojo.setWorkingDirectory( new File( "src/test/projects/" + projectName + "/" ) );
-    // mojo.setArguments( Arrays.asList( new String[]{"clean", "compile"} ) );
-    //
-    // mojo.execute();
-    //
-    // mojo.getLog().info( "executed mvn clean compile" );
-    //
-    // // the command executes the test class
-    // mojo.setExecutable( "java" );
-    // mojo.setWorkingDirectory( (File) null );
-    // Classpath classpath = new Classpath();
-    // mojo.setArguments( Arrays.asList( new Object[]{"-Dproject.env1=value1", "-classpath", classpath,
-    // "org.codehaus.mojo.exec.test.Test",
-    // new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), "arg1",
-    // "arg2"} ) );
-    //
-    // mojo.execute();
-    //
-    // // checking the command line would involve resolving the repository
-    // // checkMojo( "java -cp" );
-    //
-    // assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
-    // getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
-    //
-    // // the command executes the test class, this time specifying the dependencies
-    // mojo.setExecutable( "java" );
-    // mojo.setWorkingDirectory( (File) null );
-    // classpath = new Classpath();
-    // List dependencies = new ArrayList();
-    // dependencies.add( "commons-io:commons-io" );
-    // classpath.setDependencies( dependencies );
-    // mojo.setArguments( Arrays.asList( new Object[]{"-Dproject.env1=value1", "-classpath", classpath,
-    // "org.codehaus.mojo.exec.test.Test",
-    // new File( "src/test/projects/" + projectName + "/target/exec/output.txt" ).getAbsolutePath(), "arg1",
-    // "arg2"} ) );
-    //
-    // mojo.execute();
-    //
-    // // checking the command line would involve resolving the repository
-    // // checkMojo( "java -cp" );
-    //
-    // assertFileEquals( null, getTestFile( "src/test/projects/" + projectName + "/output.txt" ),
-    // getTestFile( "src/test/projects/" + projectName + "/target/exec/output.txt" ) );
-    // }
-
-    /**
-     * @return output from System.out during mojo execution
-     */
-    private String execute( File pom, String goal )
-        throws Exception
-    {
-
-        ExecMojo mojo;
-        mojo = (ExecMojo) lookupMojo( goal, pom );
-
-        setUpProject( pom, mojo );
-
-        MavenProject project = (MavenProject) getVariableValueFromObject( mojo, "project" );
-
-        // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
-        // setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
-        // setVariableValueToObject( mojo, "killAfter", new Long( -1 ) );
-
-        assertNotNull( mojo );
-        assertNotNull( project );
-
-        // trap System.out
-        PrintStream out = System.out;
-        StringOutputStream stringOutputStream = new StringOutputStream();
-        System.setOut( new PrintStream( stringOutputStream ) );
-        // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
-        mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_ERROR, "exec:exec" ) ) );
-
-        try
-        {
-            mojo.execute();
-        }
-        catch ( Throwable e )
-        {
-            e.printStackTrace( System.err );
-            fail( e.getMessage() );
-        }
-        finally
-        {
-            System.setOut( out );
-        }
-
-        return stringOutputStream.toString();
-    }
-
-    private void setUpProject( File pomFile, ExecMojo mojo )
-        throws Exception
-    {
-        MavenProjectBuilder builder = (MavenProjectBuilder) lookup( MavenProjectBuilder.ROLE );
-
-        ArtifactRepositoryLayout localRepositoryLayout =
-            (ArtifactRepositoryLayout) lookup( ArtifactRepositoryLayout.ROLE, "default" );
-
-        String path = "src/test/repository";
-
-        ArtifactRepository localRepository =
-            new DefaultArtifactRepository( "local", "file://" + new File( path ).getAbsolutePath(),
-                                           localRepositoryLayout );
-
-        mojo.setBasedir( File.createTempFile( "mvn-temp", "txt" ).getParentFile() );
-
-        MavenProject project = builder.buildWithDependencies( pomFile, localRepository, null );
-
-        // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
-        project.getBuild().setOutputDirectory( new File( "target/test-classes" ).getAbsolutePath() );
-
-        mojo.setProject( project );
-
-        mojo.setLog( new SystemStreamLog()
-        {
-            public boolean isDebugEnabled()
-            {
-                return true;
-            }
-        } );
-    }
 
     // MEXEC-12, MEXEC-72
     public void testGetExecutablePath()
@@ -435,6 +296,24 @@ public class ExecMojoTest
         setVariableValueToObject( execMojo, "commandlineArgs", javaHome );
         String[] args = execMojo.parseCommandlineArgs();
         assertEquals( javaHome, args[0] );
+    }
+
+
+    public void test_exec_receives_all_parameters() throws MojoExecutionException
+    {
+        // given
+        ExecMojo execMojo = new ExecMojo();
+        execMojo.setExecutable( "mkdir" );
+        execMojo.setArguments( Arrays.asList( "-p", "dist/mails" ) );
+        execMojo.setBasedir( new File("target") );
+
+        // when
+        final CommandLine commandLine = execMojo.getExecutablePath( emptyMap(), new File( "target" ) );
+        execMojo.execute();
+
+        // then
+        assertTrue( "dir should have been created",
+                Paths.get( "target", "dist", "mails" ).toFile().exists() );
     }
 
     private void checkMojo( String expectedCommandLine )

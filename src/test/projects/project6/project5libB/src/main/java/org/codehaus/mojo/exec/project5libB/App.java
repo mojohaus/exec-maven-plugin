@@ -1,6 +1,6 @@
 package org.codehaus.mojo.exec.project5libB;
 
-import org.apache.log4j.Logger;
+import java.util.logging.Logger;
 
 /**
  * Used for manual integrationtest of the java goal.
@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
  */
 public class App 
 {
-    static Logger log = Logger.getLogger(App.class);
+    static Logger log = Logger.getLogger(App.class.getName());
     public static void main( String[] args )
     {
         System.out.println("I was started. So obviously I found the main class");

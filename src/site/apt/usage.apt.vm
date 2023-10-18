@@ -68,6 +68,9 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
             <argument>myproject:dist</argument>
             ...
           </arguments>
+          <environmentVariables>
+            <LANG>en_US</LANG>
+          </environmentVariables>
         </configuration>
       </plugin>
     </plugins>
@@ -82,7 +85,7 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
 
 ** Differences compared to plain command line
 
-  The goal goes to great length to try to mimic the way the VM works, but there are some small subttle differences.
+  The goal goes to great length to try to mimic the way the VM works, but there are some subtle differences.
   Today all differences come from the way the goal deals with <<thread management>>.
 
 *--------------------------------------+------------------------------------------+
@@ -90,9 +93,9 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
 *--------------------------------------+------------------------------------------+
 | The VM exits as soon as the only     |  By default daemon threads are joined    |
 | remaining threads are daemon threads | and interrupted once all known non       |
-|                                      | daemon threads have quitted. The join    |
+|                                      | daemon threads have quit. The join    |
 |                                      | timeout is customisable                  |
-|                                      | The user might wish to further cleanup   |
+|                                      | The user might wish to further   |
 |                                      | cleanup by stopping the unresponsive     |
 |                                      | threads.                                 |
 |                                      | The user can disable the full extra      |

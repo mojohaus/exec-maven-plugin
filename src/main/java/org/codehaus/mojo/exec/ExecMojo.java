@@ -27,24 +27,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.OS;
 import org.apache.commons.exec.ProcessDestroyer;
@@ -73,7 +76,7 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 /**
  * A Plugin for executing external programs.
  *
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste (jerome@coffeebreaks.org)
  * @version $Id$
  * @since 1.0
  */
@@ -81,6 +84,12 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 public class ExecMojo
     extends AbstractExecMojo
 {
+
+    /**
+     * Trying to recognize whether the given {@link #executable} might be a {@code java} binary.
+     */
+    private static final Pattern ENDS_WITH_JAVA = Pattern.compile( "^.*java(\\.exe|\\.bin)?$", Pattern.CASE_INSENSITIVE );
+
     /**
      * <p>
      * The executable. Can be a full path or the name of the executable. In the latter case, the executable must be in
@@ -101,6 +110,21 @@ public class ExecMojo
      */
     @Parameter( property = "exec.executable" )
     private String executable;
+
+    /**
+     * <p>
+     * Timeout in full milliseconds, default is {@code 0}.
+     * <p>
+     * <p>
+     * When set to a value larger than zero, the executable is forcefully
+     * terminated if it did not finish within this time, and the build will
+     * fail.
+     * </p>
+     *
+     * @since 3.0.0
+     */
+    @Parameter( property = "exec.timeout", defaultValue = "0" )
+    private int timeout;
 
     /**
      * <p>
@@ -132,6 +156,92 @@ public class ExecMojo
     private File outputFile;
 
     /**
+     * Program standard input, output and error streams will be inherited from the maven process.
+     * This allow tighter control of the streams and the console.
+     *
+     * @since 3.0.1
+     * @see ProcessBuilder#inheritIO()
+     */
+    @Parameter( property = "exec.inheritIo" )
+    private boolean inheritIo;
+
+    /**
+     * When enabled, program standard and error output will be redirected to the
+     * Maven logger as <i>Info</i> and <i>Error</i> level logs, respectively. If not enabled the
+     * traditional behavior of program output being directed to standard System.out
+     * and System.err is used.<br>
+     * <br>
+     * NOTE: When enabled, to log the program standard out as Maven <i>Debug</i> level instead of
+     * <i>Info</i> level use {@code exec.quietLogs=true}. <br>
+     * <br>
+     * This option can be extremely helpful when combined with multithreaded builds
+     * for two reasons:<br>
+     * <ul>
+     * <li>Program output is suffixed with the owning thread name, making it easier
+     * to trace execution of a specific projects build thread.</li>
+     * <li>Program output will not get jumbled with other maven log messages.</li>
+     * </ul>
+     *
+     * For Example, if using {@code exec:exec} to run a script to echo a count from
+     * 1 to 100 as:
+     *
+     * <pre>
+     * for i in {1..100}
+     * do
+     *   echo "${project.artifactId} - $i"
+     * done
+     * </pre>
+     *
+     * When this script is run multi-threaded on two modules, {@code module1} and
+     * {@code module2}, you might get output such as:
+     *
+     * <pre>
+     * [BuilderThread 1] [INFO] --- exec-maven-plugin:1.6.0:exec (test) @ module1 ---
+     * [BuilderThread 2] [INFO] --- exec-maven-plugin:1.6.0:exec (test) @ module2 ---
+     * ...
+     * module2 - 98
+     * modu
+     * module1 - 97
+     * module1 -
+     * le2 - 9899
+     * ...
+     * </pre>
+     *
+     * With this flag enabled, the output will instead come something similar to:
+     *
+     * <pre>
+     * ...
+     * [Exec Stream Pumper] [INFO] [BuilderThread 2] module2 - 98
+     * [Exec Stream Pumper] [INFO] [BuilderThread 1] module1 - 97
+     * [Exec Stream Pumper] [INFO] [BuilderThread 1] module1 - 98
+     * [Exec Stream Pumper] [INFO] [BuilderThread 2] module2 - 99
+     * ...
+     * </pre>
+     *
+     * NOTE 1: To show the thread in the Maven log, configure the Maven
+     * installations <i>conf/logging/simplelogger.properties</i> option:
+     * {@code org.slf4j.simpleLogger.showThreadName=true}<br>
+     *
+     * NOTE 2: This option is ignored when {@code exec.outputFile} is specified.
+     *
+     * @since 3.0.0
+     * @see java.lang.System#err
+     * @see java.lang.System#in
+     */
+    @Parameter( property = "exec.useMavenLogger", defaultValue = "false" )
+    private boolean useMavenLogger;
+
+    /**
+     * When combined with {@code exec.useMavenLogger=true}, prints all executed
+     * program output at debug level instead of the default info level to the Maven
+     * logger.
+     *
+     * @since 3.0.0
+     */
+    @Parameter( property = "exec.quietLogs", defaultValue = "false" )
+    private boolean quietLogs;
+
+    /**
      * <p>
      * A list of arguments passed to the {@code executable}, which should be of type <code>&lt;argument&gt;</code> or
      * <code>&lt;classpath&gt;</code>. Can be overridden by using the <code>exec.args</code> environment variable.
@@ -149,7 +259,18 @@ public class ExecMojo
     private File basedir;
 
     /**
-     * Environment variables to pass to the executed program.
+     * @since 3.0.0
+     */
+    @Parameter( readonly = true, required = true, defaultValue = "${project.build.directory}" )
+    private File buildDirectory;
+
+    /**
+     * <p>Environment variables to pass to the executed program. For example if you want to set the LANG var:
+     * <code>&lt;environmentVariables&gt;
+     *     &lt;LANG&gt;en_US&lt;/LANG&gt;
+     * &lt;/environmentVariables&gt;
+     * </code>
+     * </p>
      *
      * @since 1.1-beta-2
      */
@@ -200,6 +321,18 @@ public class ExecMojo
     private boolean longModulepath;
 
     /**
+     * Forces the plugin to recognize the given executable as java executable. This helps with {@link #longClasspath}
+     * and {@link #longModulepath} parameters.
+     *
+     * <p>You shouldn't normally be needing this unless you renamed your java binary or are executing tools
+     * other than {@code java} which need modulepath or classpath parameters in a separate file.</p>
+     *
+     * @since 3.1.1
+     */
+    @Parameter (property = "exec.forceJava", defaultValue = "false" )
+    private boolean forceJava;
+
+    /**
      * If set to true the child process executes asynchronously and build execution continues in parallel.
      */
     @Parameter( property = "exec.async", defaultValue = "false" )
@@ -214,7 +347,7 @@ public class ExecMojo
     private boolean asyncDestroyOnShutdown = true;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
-    
+
     public static final String MODULEPATH_TOKEN = "%modulepath";
 
     /**
@@ -285,10 +418,18 @@ public class ExecMojo
 
             commandLine.addArguments( args, false );
 
-            Executor exec = new DefaultExecutor();
+            Executor exec = new ExtendedExecutor( inheritIo );
+            if ( this.timeout > 0 )
+            {
+                exec.setWatchdog( new ExecuteWatchdog( this.timeout ) );
+            }
             exec.setWorkingDirectory( workingDirectory );
             fillSuccessCodes( exec );
 
+            if ( OS.isFamilyOpenVms() && inheritIo )
+            {
+                getLog().warn("The inheritIo flag is not supported on OpenVMS, execution will proceed without stream inheritance.");
+            }
             getLog().debug( "Executing command line: " + commandLine );
 
             try
@@ -313,6 +454,42 @@ public class ExecMojo
                         IOUtil.close( outputStream );
                     }
                 }
+                else if (useMavenLogger)
+                {
+                    getLog().debug("Will redirect program output to Maven logger");
+                    final String parentThreadName = Thread.currentThread().getName();
+                    final String logSuffix = "[" + parentThreadName + "] ";
+                    Consumer<String> mavenOutRedirect = new Consumer<String>()
+                    {
+
+                        @Override
+                        public void accept(String logMessage)
+                        {
+                            if (quietLogs)
+                            {
+                                getLog().debug(logSuffix + logMessage);
+                            }
+                            else
+                            {
+                                getLog().info(logSuffix + logMessage);
+                            }
+                        }
+                    };
+                    Consumer<String> mavenErrRedirect = new Consumer<String>()
+                    {
+
+                        @Override
+                        public void accept(String logMessage)
+                        {
+                            getLog().error(logSuffix + logMessage);
+                        }
+                    };
+
+                    try (OutputStream out = new LineRedirectOutputStream(mavenOutRedirect);
+                            OutputStream err = new LineRedirectOutputStream(mavenErrRedirect)) {
+                        resultCode = executeCommandLine(exec, commandLine, enviro, out, err);
+                    }
+                }
                 else
                 {
                     resultCode = executeCommandLine( exec, commandLine, enviro, System.out, System.err );
@@ -327,8 +504,17 @@ public class ExecMojo
             }
             catch ( ExecuteException e )
             {
-                getLog().error( "Command execution failed.", e );
-                throw new MojoExecutionException( "Command execution failed.", e );
+                if ( exec.getWatchdog() != null && exec.getWatchdog().killedProcess() )
+                {
+                    final String message = "Timeout. Process runs longer than " + this.timeout + " ms.";
+                    getLog().error( message );
+                    throw new MojoExecutionException( message, e );
+                }
+                else
+                {
+                    getLog().error( "Command execution failed.", e );
+                    throw new MojoExecutionException( "Command execution failed.", e );
+                }
             }
             catch ( IOException e )
             {
@@ -349,17 +535,10 @@ public class ExecMojo
     {
 
         Map<String, String> enviro = new HashMap<String, String>();
-        try
+        Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
+        for ( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
         {
-            Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
-            for ( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
-            {
-                enviro.put( (String) entry.getKey(), (String) entry.getValue() );
-            }
-        }
-        catch ( IOException x )
-        {
-            getLog().error( "Could not assign default system enviroment variables.", x );
+            enviro.put( (String) entry.getKey(), (String) entry.getValue() );
         }
 
         if ( environmentVariables != null )
@@ -472,45 +651,74 @@ public class ExecMojo
     private void handleArguments( List<String> commandArguments )
         throws MojoExecutionException, IOException
     {
+        String specialArg = null;
+
         for ( int i = 0; i < arguments.size(); i++ )
         {
             Object argument = arguments.get( i );
-            String arg;
-            if ( argument instanceof String && isLongClassPathArgument( (String) argument ) )
+
+            if ( specialArg != null )
             {
-                // it is assumed that starting from -cp or -classpath the arguments
-                // are: -classpath/-cp %classpath mainClass
-                // the arguments are replaced with: -jar $TMP/maven-exec.jar
-                // NOTE: the jar will contain the classpath and the main class
-                commandArguments.add( "-jar" );
-                File tmpFile = createJar( computePath( (Classpath) arguments.get( i + 1 ) ),
-                                          (String) arguments.get( i + 2 ) );
-                commandArguments.add( tmpFile.getAbsolutePath() );
-                i += 2;
+                if ( isLongClassPathArgument( specialArg ) && argument instanceof Classpath )
+                {
+                    // it is assumed that starting from -cp or -classpath the arguments
+                    // are: -classpath/-cp %classpath mainClass
+                    // the arguments are replaced with: -jar $TMP/maven-exec.jar
+                    // NOTE: the jar will contain the classpath and the main class
+                    commandArguments.add( "-jar" );
+
+                    File tmpFile = createJar( computePath( (Classpath) argument ),
+                                              (String) arguments.get( ++i ) );
+                    commandArguments.add( tmpFile.getAbsolutePath() );
+                }
+                else if ( isLongModulePathArgument( specialArg ) && argument instanceof Modulepath )
+                {
+                    String filePath = new File( buildDirectory, "modulepath" ).getAbsolutePath();
+
+                    StringBuilder modulePath = new StringBuilder();
+                    modulePath.append( '"' );
+
+                    for ( Iterator<String> it = computePath( (Modulepath) argument ).iterator(); it.hasNext(); )
+                    {
+                        modulePath.append( it.next().replace( "\\", "\\\\" ) );
+                        if ( it.hasNext() )
+                        {
+                            modulePath.append( File.pathSeparatorChar );
+                        }
+                    }
+
+                    modulePath.append( '"' );
+
+                    createArgFile( filePath, Arrays.asList( "-p", modulePath.toString() ) );
+                    commandArguments.add( '@' + filePath );
+                }
+                else
+                {
+                    commandArguments.add( specialArg );
+                }
+
+                specialArg = null;
+
+                continue;
             }
-            if ( argument instanceof String && isLongModulePathArgument( (String) argument ) )
-            {
-                String filePath = "target/modulepath";
-                
-                commandArguments.add( '@' + filePath );
-                
-                String modulePath = StringUtils.join( computePath( (Modulepath) arguments.get( ++i ) ).iterator(), File.pathSeparator );
-                
-                createArgFile( filePath, Arrays.asList( "-p", modulePath ) );
-            }
-            else if ( argument instanceof Classpath )
+
+            if ( argument instanceof Classpath )
             {
                 Classpath specifiedClasspath = (Classpath) argument;
-
-                arg = computeClasspathString( specifiedClasspath );
-                commandArguments.add( arg );
+                commandArguments.add( computeClasspathString( specifiedClasspath ) );
             }
             else if ( argument instanceof Modulepath )
             {
                 Modulepath specifiedModulepath = (Modulepath) argument;
-                
-                arg = computeClasspathString( specifiedModulepath );
-                commandArguments.add( arg );
+                commandArguments.add( computeClasspathString( specifiedModulepath ) );
+            }
+            else if ( (argument instanceof String) && (isLongModulePathArgument( (String) argument ) || isLongClassPathArgument( (String) argument )) )
+            {
+                specialArg = (String) argument;
+            }
+            else if (argument == null)
+            {
+                commandArguments.add( "" );
             }
             else
             {
@@ -545,12 +753,35 @@ public class ExecMojo
 
     private boolean isLongClassPathArgument( String arg )
     {
-        return longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
+        return isJavaExec() && longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
     }
 
     private boolean isLongModulePathArgument( String arg )
     {
-        return longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+        return isJavaExec() && longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+    }
+
+    /**
+     * Returns {@code true} when a java binary is being executed.
+     *
+     * @return {@code true} when a java binary is being executed.
+     */
+    private boolean isJavaExec()
+    {
+        if ( forceJava )
+        {
+            return true;
+        }
+
+        if ( this.executable.contains( "%JAVA_HOME" )
+                || this.executable.contains( "${JAVA_HOME}" )
+                || this.executable.contains( "$JAVA_HOME" ) )
+        {
+            // also applies to *most* other tools.
+            return true;
+        }
+
+        return ENDS_WITH_JAVA.matcher( this.executable ).matches();
     }
 
     /**
@@ -586,9 +817,9 @@ public class ExecMojo
      */
     private List<String> computePath( AbstractPath specifiedClasspath )
     {
-        List<Artifact> artifacts = new ArrayList<Artifact>();
-        List<File> theClasspathFiles = new ArrayList<File>();
-        List<String> resultList = new ArrayList<String>();
+        List<Artifact> artifacts = new ArrayList<>();
+        List<Path> theClasspathFiles = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
 
         collectProjectArtifactsAndClasspath( artifacts, theClasspathFiles );
 
@@ -597,9 +828,9 @@ public class ExecMojo
             artifacts = filterArtifacts( artifacts, specifiedClasspath.getDependencies() );
         }
 
-        for ( File f : theClasspathFiles )
+        for ( Path f : theClasspathFiles )
         {
-            resultList.add( f.getAbsolutePath() );
+            resultList.add( f.toAbsolutePath().toString() );
         }
 
         for ( Artifact artifact : artifacts )
@@ -949,12 +1180,12 @@ public class ExecMojo
 
         return file;
     }
-    
+
     private void createArgFile( String filePath, List<String> lines )
         throws IOException
     {
         final String EOL = System.getProperty( "line.separator", "\\n" );
-        
+
         FileWriter writer = null;
         try
         {
@@ -1002,6 +1233,15 @@ public class ExecMojo
             StreamConsumer stderr = new DefaultConsumer();
 
             CommandLineUtils.executeCommandLine( cl, stdout, stderr );
+
+            if(!stdout.getUnparsedLines().isEmpty())
+            {
+                getLog().warn( "The following lines could not be parsed into environment variables :" );
+                for ( String line : stdout.getUnparsedLines() )
+                {
+                    getLog().warn( line );
+                }
+            }
 
             results = stdout.getParsedEnv();
         }

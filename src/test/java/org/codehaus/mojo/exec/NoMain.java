@@ -17,7 +17,7 @@ package org.codehaus.mojo.exec;
  */
 
 /**
- * @author Jerome Lacoste <jerome@coffeebreaks.org>
+ * @author Jerome Lacoste
  * @version $Id$
  */
 public class NoMain
