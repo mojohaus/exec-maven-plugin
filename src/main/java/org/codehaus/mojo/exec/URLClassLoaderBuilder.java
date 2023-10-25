@@ -44,6 +44,8 @@ import static java.util.Arrays.asList;
  */
 class URLClassLoaderBuilder
 {
+    private List<String> forcedJvmPackages;
+    private List<String> excludedJvmPackages;
     private Log logger;
     private Collection<Path> paths;
     private Collection<String> exclusions;
@@ -55,6 +57,18 @@ class URLClassLoaderBuilder
     static URLClassLoaderBuilder builder()
     {
         return new URLClassLoaderBuilder();
+    }
+
+    URLClassLoaderBuilder setExcludedJvmPackages(List<String> excludedJvmPackages )
+    {
+        this.excludedJvmPackages = excludedJvmPackages;
+        return this;
+    }
+
+    URLClassLoaderBuilder setForcedJvmPackages(List<String> forcedJvmPackages )
+    {
+        this.forcedJvmPackages = forcedJvmPackages;
+        return this;
     }
 
     URLClassLoaderBuilder setLogger(Log logger )
@@ -99,7 +113,7 @@ class URLClassLoaderBuilder
             }
         }
 
-        return new ExecJavaClassLoader( urls.toArray( new URL[0] ) );
+        return new ExecJavaClassLoader( urls.toArray( new URL[0] ), forcedJvmPackages, excludedJvmPackages );
     }
 
     // child first strategy
@@ -118,11 +132,15 @@ class URLClassLoaderBuilder
         }
 
         private final String jre;
+        private final List<String> forcedJvmPackages;
+        private final List<String> excludedJvmPackages;
 
-        public ExecJavaClassLoader(URL[] urls )
+        public ExecJavaClassLoader(URL[] urls, List<String> forcedJvmPackages, List<String> excludedJvmPackages )
         {
             super(urls);
-            jre = getJre();
+            this.jre = getJre();
+            this.forcedJvmPackages = forcedJvmPackages;
+            this.excludedJvmPackages = excludedJvmPackages;
         }
 
         @Override
@@ -334,64 +352,77 @@ class URLClassLoaderBuilder
             return false;
         }
 
-        // not all jvm classes, for ex "javax" can be overriden so don't list it here
+        // not all jvm classes, for ex "javax" can be overridden so don't list it them all here (javax.resource for ex)
         private boolean isDirectJvmClass(final String name) {
+            if (excludedJvmPackages != null && excludedJvmPackages.stream().anyMatch( name::startsWith ))
+            {
+                return false;
+            }
+
             if (name.startsWith( "java." ) )
             {
                 return true;
             }
-            if ( name.startsWith( "sun." ) )
+            else if (name.startsWith( "javax." ) )
+            {
+                final String sub = name.substring( "javax.".length() );
+                if ( sub.startsWith( "xml." ) )
+                {
+                    return true;
+                }
+            }
+            else if ( name.startsWith( "sun." ) )
             {
                 return true;
             }
-            if ( name.startsWith( "jdk." ) )
+            else if ( name.startsWith( "jdk." ) )
             {
                 return true;
             }
-            if ( name.startsWith( "oracle." ) )
+            else if ( name.startsWith( "oracle." ) )
             {
                 return true;
             }
-            if ( name.startsWith( "javafx." ) )
+            else if ( name.startsWith( "javafx." ) )
             {
                 return true;
             }
-            if ( name.startsWith( "netscape." ) )
+            else if ( name.startsWith( "netscape." ) )
             {
                 return true;
             }
-            if ( name.startsWith( "org." ) )
+            else if ( name.startsWith( "org." ) )
             {
                 final String sub = name.substring( "org.".length() );
                 if ( sub.startsWith( "w3c.dom." ) )
                 {
                     return true;
                 }
-                if ( sub.startsWith( "omg." ) )
+                else if ( sub.startsWith( "omg." ) )
                 {
                     return true;
                 }
-                if ( sub.startsWith( "xml.sax." ) )
+                else if ( sub.startsWith( "xml.sax." ) )
                 {
                     return true;
                 }
-                if ( sub.startsWith( "ietf.jgss." ) )
+                else if ( sub.startsWith( "ietf.jgss." ) )
                 {
                     return true;
                 }
-                if ( sub.startsWith( "jcp.xml.dsig.internal." ) )
+                else if ( sub.startsWith( "jcp.xml.dsig.internal." ) )
                 {
                     return true;
                 }
             }
-            if ( name.startsWith( "com." ) )
+            else if ( name.startsWith( "com." ) )
             {
                 final String sub = name.substring( "com.".length() );
                 if ( sub.startsWith( "oracle." ) )
                 {
                     return true;
                 }
-                if ( sub.startsWith( "sun." ) )
+                else if ( sub.startsWith( "sun." ) )
                 {
                     final String subSun = sub.substring( "sun.".length() );
                     if ( subSun.startsWith( "accessibility." ) )
@@ -494,10 +525,9 @@ class URLClassLoaderBuilder
                     {
                         return true;
                     }
-                    return false;
                 }
             }
-            return false;
+            return forcedJvmPackages != null && forcedJvmPackages.stream().anyMatch( name::startsWith );
         }
 
         private class FilteringUrlEnum implements Enumeration<URL>
