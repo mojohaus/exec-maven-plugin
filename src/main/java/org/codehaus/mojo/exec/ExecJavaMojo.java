@@ -207,6 +207,25 @@ public class ExecJavaMojo
     private List<String> classpathFilenameExclusions;
 
     /**
+     * Whether to try and prohibit the called Java program from terminating the JVM (and with it the whole Maven build)
+     * by calling {@link System#exit(int)}. When active, a special security manager will intercept those calls. In case
+     * of an exit code 0 (OK), it will simply log the fact that {@link System#exit(int)} was called. Otherwise, it will
+     * throw a {@link SystemExitException}, failing the Maven goal as if the called Java code itself had exited with an
+     * exception. This way, the error is propagated without terminating the whole Maven JVM. In previous versions, users
+     * had to use the {@code exec} instead of the {@code java} goal in such cases, which now with this option is no
+     * longer necessary.
+     * <p>
+     * <b>Caveat:</b> Since JDK 17, you need to explicitly allow security manager usage when using this option, e.g. by
+     * setting {@code -Djava.security.manager=allow} in {@code MAVEN_OPTS}. Otherwise, the JVM will throw an
+     * {@link UnsupportedOperationException} with a message like "The Security Manager is deprecated and will be removed
+     * in a future release".
+     *
+     * @since 3.2.0
+     */
+    @Parameter( property = "exec.blockSystemExit", defaultValue = "false" )
+    private boolean blockSystemExit;
+
+    /**
      * Execute goal.
      * 
      * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
@@ -255,6 +274,12 @@ public class ExecJavaMojo
         IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
         Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
+            // TODO:
+            //   Adjust implementation for future JDKs after removal of SecurityManager.
+            //   See https://openjdk.org/jeps/411 for basic information.
+            //   See https://bugs.openjdk.org/browse/JDK-8199704 for details about how users might be able to block
+            //   System::exit in post-removal JDKs (still undecided at the time of writing this comment).
+            @SuppressWarnings( "removal" )
             public void run()
             {
                 int sepIndex = mainClass.indexOf( '/' );
@@ -268,6 +293,8 @@ public class ExecJavaMojo
                 {
                     bootClassName = mainClass;
                 }
+
+                SecurityManager originalSecurityManager = System.getSecurityManager();
                 
                 try
                 {
@@ -279,6 +306,10 @@ public class ExecJavaMojo
                         lookup.findStatic( bootClass, "main",
                                                  MethodType.methodType( void.class, String[].class ) );
                     
+                    if ( blockSystemExit )
+                    {
+                        System.setSecurityManager( new SystemExitManager( originalSecurityManager ) );
+                    }
                     mainHandle.invoke( arguments );
                 }
                 catch ( IllegalAccessException | NoSuchMethodException | NoSuchMethodError e )
@@ -292,9 +323,24 @@ public class ExecJavaMojo
                    Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), exceptionToReport );
                 }
+                catch ( SystemExitException systemExitException )
+                {
+                    getLog().info( systemExitException.getMessage() );
+                    if ( systemExitException.getExitCode() != 0 )
+                    {
+                        throw systemExitException;
+                    }
+                }
                 catch ( Throwable e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
+                }
+                finally
+                {
+                    if ( blockSystemExit )
+                    {
+                        System.setSecurityManager( originalSecurityManager );
+                    }
                 }
             }
         }, mainClass + ".main()" );

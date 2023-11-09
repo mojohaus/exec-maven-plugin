@@ -94,6 +94,15 @@
       </roles>
       <timezone>Europe/Berlin</timezone>
     </contributor>
+    <contributor>
+      <name>Alexander Kriegisch</name>
+      <email>protected</email>
+      <organization>Scrum-Master.de - Agiles Projektmanagement</organization>
+      <organizationUrl>https://scrum-master.de</organizationUrl>
+      <roles>
+        <role>Feature Contributor</role>
+      </roles>
+    </contributor>
   </contributors>
 
   <licenses>
@@ -336,6 +345,15 @@
       </properties>
     </profile>
     <profile>
+      <id>java17+</id>
+      <activation>
+        <jdk>[17,)</jdk>
+      </activation>
+      <properties>
+        <invoker.security.manager>-Djava.security.manager=allow</invoker.security.manager>
+      </properties>
+    </profile>
+    <profile>
       <id>run-its</id>
       <build>
         <plugins>
@@ -360,6 +378,11 @@
               <scriptVariables>
                 <projectVersion>${project.version}</projectVersion>
               </scriptVariables>
+              <!--
+                Necessary on JDK 17+ for ITs "mexec-gh-389-block-exit-*" to avoid "UnsupportedOperationException:
+                The Security Manager is deprecated and will be removed in a future release". See profile 'java17+'.
+              -->
+              <mavenOpts>${invoker.security.manager}</mavenOpts>
             </configuration>
             <executions>
               <execution>
