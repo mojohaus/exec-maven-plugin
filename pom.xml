@@ -221,6 +221,7 @@
   <properties>
     <mavenVersion>3.6.3</mavenVersion>
     <slf4j.version>1.7.36</slf4j.version>
+    <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2022-07-15T02:43:45Z</project.build.outputTimestamp>
   </properties>
 
@@ -322,6 +323,19 @@
 
   <profiles>
     <profile>
+      <!-- workaround for concurrent access to local repository on Windows -->
+      <!-- https://issues.apache.org/jira/browse/MRESOLVER-372 -->
+      <id>windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <invoker.parallelThreads>1</invoker.parallelThreads>
+      </properties>
+    </profile>
+    <profile>
       <id>run-its</id>
       <build>
         <plugins>
@@ -336,7 +350,6 @@
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
               <settingsFile>src/it/mrm/settings.xml</settingsFile>
-              <parallelThreads>1C</parallelThreads>
               <properties>
                 <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
                 <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
