@@ -38,13 +38,6 @@
 // Otherwise this test will fail.
 
 import org.codehaus.plexus.util.FileUtils
-import org.codehaus.plexus.util.IOUtil
-
-import java.io.*
-import java.util.*
-
-import static junit.framework.Assert.assertEquals
-import static junit.framework.Assert.assertTrue
 
 private int countTheNumberOfLines(String expectedHexString, String line) {
     int numberOfLine = 0;
@@ -99,11 +92,11 @@ def expectedLines = [
 
 for (int i = 0; i < expectedLines.size(); i++) {
     def expectedLine = convertStringToHex(expectedLines[i]);
-    assertTrue(expectedHexString.contains((expectedLine)));
+    assert expectedHexString.contains(expectedLine);
 }
 
 def LINE = System.getProperty("line.separator");
 def LineInHex = convertStringToHex(LINE);
 
 def numberOfLine = countTheNumberOfLines(expectedHexString, LineInHex);
-assertEquals(5, numberOfLine);
+assert 5 == numberOfLine;

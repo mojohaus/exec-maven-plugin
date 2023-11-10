@@ -5,31 +5,40 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResult;
-import org.apache.maven.shared.transfer.dependencies.DefaultDependableCoordinate;
-import org.apache.maven.shared.transfer.dependencies.resolve.DependencyResolver;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -42,20 +51,13 @@ public class ExecJavaMojo
     extends AbstractExecMojo
 {
     @Component
-    private DependencyResolver dependencyResolver;
-
+    private RepositorySystem repositorySystem;
 
     /**
      * @since 1.0
      */
     @Component
     private ProjectBuilder projectBuilder;
-
-    /**
-     * @since 1.1-beta-1
-     */
-    @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
-    private List<Artifact> pluginDependencies;
 
     /**
      * The main class to execute.<br>
@@ -66,6 +68,18 @@ public class ExecJavaMojo
      */
     @Parameter( required = true, property = "exec.mainClass" )
     private String mainClass;
+
+
+    /**
+     * Forces the creation of fork join common pool to avoids the threads to be owned by the isolated thread group
+     * and prevent a proper shutdown.
+     * If set to zero the default parallelism is used to precreate all threads,
+     * if negative it is ignored else the value is the one used to create the fork join threads.
+     *
+     * @since 3.0.1
+     */
+    @Parameter( property = "exec.preloadCommonPool", defaultValue = "0" )
+    private int preloadCommonPool;
 
     /**
      * The class arguments.
@@ -83,7 +97,7 @@ public class ExecJavaMojo
      * @since 1.0
      */
     @Parameter
-    private Property[] systemProperties;
+    private AbstractProperty[] systemProperties;
 
     /**
      * Indicates if mojo should be kept running after the mainclass terminates. Use full for server like apps with
@@ -184,6 +198,34 @@ public class ExecJavaMojo
     private List<String> additionalClasspathElements;
 
     /**
+     * List of file to exclude from the classpath.
+     * It matches the jar name, for example {@code slf4j-simple-1.7.30.jar}.
+     *
+     * @since 3.0.1
+     */
+    @Parameter
+    private List<String> classpathFilenameExclusions;
+
+    /**
+     * Whether to try and prohibit the called Java program from terminating the JVM (and with it the whole Maven build)
+     * by calling {@link System#exit(int)}. When active, a special security manager will intercept those calls. In case
+     * of an exit code 0 (OK), it will simply log the fact that {@link System#exit(int)} was called. Otherwise, it will
+     * throw a {@link SystemExitException}, failing the Maven goal as if the called Java code itself had exited with an
+     * exception. This way, the error is propagated without terminating the whole Maven JVM. In previous versions, users
+     * had to use the {@code exec} instead of the {@code java} goal in such cases, which now with this option is no
+     * longer necessary.
+     * <p>
+     * <b>Caveat:</b> Since JDK 17, you need to explicitly allow security manager usage when using this option, e.g. by
+     * setting {@code -Djava.security.manager=allow} in {@code MAVEN_OPTS}. Otherwise, the JVM will throw an
+     * {@link UnsupportedOperationException} with a message like "The Security Manager is deprecated and will be removed
+     * in a future release".
+     *
+     * @since 3.2.0
+     */
+    @Parameter( property = "exec.blockSystemExit", defaultValue = "false" )
+    private boolean blockSystemExit;
+
+    /**
      * Execute goal.
      * 
      * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
@@ -224,9 +266,20 @@ public class ExecJavaMojo
             getLog().debug( msg );
         }
 
+        if ( preloadCommonPool >= 0 )
+        {
+            preloadCommonPool();
+        }
+
         IsolatedThreadGroup threadGroup = new IsolatedThreadGroup( mainClass /* name */ );
         Thread bootstrapThread = new Thread( threadGroup, new Runnable()
         {
+            // TODO:
+            //   Adjust implementation for future JDKs after removal of SecurityManager.
+            //   See https://openjdk.org/jeps/411 for basic information.
+            //   See https://bugs.openjdk.org/browse/JDK-8199704 for details about how users might be able to block
+            //   System::exit in post-removal JDKs (still undecided at the time of writing this comment).
+            @SuppressWarnings( "removal" )
             public void run()
             {
                 int sepIndex = mainClass.indexOf( '/' );
@@ -240,6 +293,8 @@ public class ExecJavaMojo
                 {
                     bootClassName = mainClass;
                 }
+
+                SecurityManager originalSecurityManager = System.getSecurityManager();
                 
                 try
                 {
@@ -251,9 +306,13 @@ public class ExecJavaMojo
                         lookup.findStatic( bootClass, "main",
                                                  MethodType.methodType( void.class, String[].class ) );
                     
+                    if ( blockSystemExit )
+                    {
+                        System.setSecurityManager( new SystemExitManager( originalSecurityManager ) );
+                    }
                     mainHandle.invoke( arguments );
                 }
-                catch ( IllegalAccessException e )
+                catch ( IllegalAccessException | NoSuchMethodException | NoSuchMethodError e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(),
                                                                                new Exception( "The specified mainClass doesn't contain a main method with appropriate signature.",
@@ -264,13 +323,29 @@ public class ExecJavaMojo
                    Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
                    Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), exceptionToReport );
                 }
+                catch ( SystemExitException systemExitException )
+                {
+                    getLog().info( systemExitException.getMessage() );
+                    if ( systemExitException.getExitCode() != 0 )
+                    {
+                        throw systemExitException;
+                    }
+                }
                 catch ( Throwable e )
                 { // just pass it on
                     Thread.currentThread().getThreadGroup().uncaughtException( Thread.currentThread(), e );
                 }
+                finally
+                {
+                    if ( blockSystemExit )
+                    {
+                        System.setSecurityManager( originalSecurityManager );
+                    }
+                }
             }
         }, mainClass + ".main()" );
-        bootstrapThread.setContextClassLoader( getClassLoader() );
+        URLClassLoader classLoader = getClassLoader();
+        bootstrapThread.setContextClassLoader( classLoader );
         setSystemProperties();
 
         bootstrapThread.start();
@@ -298,6 +373,18 @@ public class ExecJavaMojo
             }
         }
 
+        if ( classLoader != null )
+        {
+            try
+            {
+                classLoader.close();
+            }
+            catch ( IOException e )
+            {
+                getLog().error(e.getMessage(), e);
+            }
+        }
+
         if ( originalSystemProperties != null )
         {
             System.setProperties( originalSystemProperties );
@@ -307,12 +394,48 @@ public class ExecJavaMojo
         {
             if ( threadGroup.uncaughtException != null )
             {
-                throw new MojoExecutionException( "An exception occured while executing the Java class. "
+                throw new MojoExecutionException( "An exception occurred while executing the Java class. "
                     + threadGroup.uncaughtException.getMessage(), threadGroup.uncaughtException );
             }
         }
 
         registerSourceRoots();
+    }
+
+    /**
+     * To avoid the exec:java to consider common pool threads leaked, let's pre-create them.
+     */
+    private void preloadCommonPool()
+    {
+        try
+        {
+            // ensure common pool exists in the jvm
+            final ExecutorService es = ForkJoinPool.commonPool();
+            final int max = preloadCommonPool > 0
+                    ? preloadCommonPool :
+                    ForkJoinPool.getCommonPoolParallelism();
+            final CountDownLatch preLoad = new CountDownLatch( 1 );
+            for ( int i = 0;
+                  i < max;
+                  i++ )
+            {
+                es.submit(() -> {
+                    try
+                    {
+                        preLoad.await();
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
+            preLoad.countDown();
+        }
+        catch (final Exception e)
+        {
+            getLog().debug(e.getMessage() + ", skipping commonpool earger init");
+        }
     }
 
     /**
@@ -433,7 +556,7 @@ public class ExecJavaMojo
         }
         if ( !uncooperativeThreads.isEmpty() )
         {
-            getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to "
+            getLog().warn( "NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to"
                 + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
                 + " Although not serious, it should be remedied." );
         }
@@ -468,14 +591,29 @@ public class ExecJavaMojo
      */
     private void setSystemProperties()
     {
-        if ( systemProperties != null )
+        if ( systemProperties == null )
         {
-            originalSystemProperties = System.getProperties();
-            for ( Property systemProperty : systemProperties )
+            return;
+        }
+        // copy otherwise the restore phase does nothing
+        originalSystemProperties = new Properties();
+        originalSystemProperties.putAll(System.getProperties());
+
+        if ( Stream.of( systemProperties ).anyMatch( it -> it instanceof ProjectProperties ) )
+        {
+            System.getProperties().putAll( project.getProperties() );
+        }
+
+        for ( AbstractProperty systemProperty : systemProperties )
+        {
+            if ( ! ( systemProperty instanceof  Property ) )
             {
-                String value = systemProperty.getValue();
-                System.setProperty( systemProperty.getKey(), value == null ? "" : value );
+                continue;
             }
+
+            Property prop = (Property) systemProperty;
+            String value = prop.getValue();
+            System.setProperty( prop.getKey(), value == null ? "" : value );
         }
     }
 
@@ -485,7 +623,7 @@ public class ExecJavaMojo
      * @return the classloader
      * @throws MojoExecutionException if a problem happens
      */
-    private ClassLoader getClassLoader()
+    private URLClassLoader getClassLoader()
         throws MojoExecutionException
     {
         List<Path> classpathURLs = new ArrayList<>();
@@ -495,7 +633,11 @@ public class ExecJavaMojo
         
         try
         {
-            return LoaderFinder.find( classpathURLs, mainClass );
+            return URLClassLoaderBuilder.builder()
+                    .setLogger( getLog() )
+                    .setPaths( classpathURLs )
+                    .setExclusions( classpathFilenameExclusions )
+                    .build();
         }
         catch ( NullPointerException | IOException e )
         {
@@ -548,10 +690,8 @@ public class ExecJavaMojo
      * Add any relevant project dependencies to the classpath. Takes includeProjectDependencies into consideration.
      * 
      * @param path classpath of {@link java.net.URL} objects
-     * @throws MojoExecutionException if a problem happens
      */
     private void addRelevantProjectDependenciesToClasspath( List<Path> path )
-        throws MojoExecutionException
     {
         if ( this.includeProjectDependencies )
         {
@@ -598,7 +738,7 @@ public class ExecJavaMojo
             if ( this.executableDependency == null )
             {
                 getLog().debug( "All Plugin Dependencies will be included." );
-                relevantDependencies = new HashSet<Artifact>( this.pluginDependencies );
+                relevantDependencies = new HashSet<>( this.getPluginDependencies() );
             }
             else
             {
@@ -618,34 +758,37 @@ public class ExecJavaMojo
     /**
      * Resolve the executable dependencies for the specified project
      * 
-     * @param executablePomArtifact the project's POM
+     * @param executableArtifact the executable plugin dependency
      * @return a set of Artifacts
      * @throws MojoExecutionException if a failure happens
      */
-    private Set<Artifact> resolveExecutableDependencies( Artifact executablePomArtifact )
+    private Set<Artifact> resolveExecutableDependencies( Artifact executableArtifact )
         throws MojoExecutionException
     {
-
-        Set<Artifact> executableDependencies = new LinkedHashSet<>();
         try
         {
-            ProjectBuildingRequest buildingRequest = getSession().getProjectBuildingRequest();
-            
-            MavenProject executableProject =
-                this.projectBuilder.build( executablePomArtifact, buildingRequest ).getProject();
+            CollectRequest collectRequest = new CollectRequest();
+            collectRequest.setRoot(
+                new Dependency( RepositoryUtils.toArtifact( executableArtifact ), classpathScope ) );
+            collectRequest.setRepositories( project.getRemotePluginRepositories() );
 
-            for ( ArtifactResult artifactResult : dependencyResolver.resolveDependencies( buildingRequest, executableProject.getModel(), null ) )
-            {
-                executableDependencies.add( artifactResult.getArtifact() );
-            }
+            DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter( classpathScope );
+
+            DependencyRequest dependencyRequest = new DependencyRequest( collectRequest, classpathFilter );
+
+            DependencyResult dependencyResult =
+                repositorySystem.resolveDependencies( getSession().getRepositorySession(), dependencyRequest );
+
+            return dependencyResult.getArtifactResults().stream()
+                .map( ArtifactResult::getArtifact )
+                .map( RepositoryUtils::toArtifact )
+                .collect( Collectors.toSet() );
         }
-        catch ( Exception ex )
+        catch ( DependencyResolutionException ex )
         {
             throw new MojoExecutionException( "Encountered problems resolving dependencies of the executable "
-                + "in preparation for its execution.", ex );
+                                                  + "in preparation for its execution.", ex );
         }
-
-        return executableDependencies;
     }
 
     /**

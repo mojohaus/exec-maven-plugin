@@ -18,8 +18,10 @@ package org.codehaus.mojo.exec;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 
 import org.apache.maven.execution.MavenSession;
@@ -30,13 +32,12 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
-import org.codehaus.plexus.util.StringOutputStream;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystemSession;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonatype.aether.impl.internal.SimpleLocalRepositoryManager;
 
 /**
  * @author Jerome Lacoste
@@ -84,11 +85,12 @@ public class ExecJavaMojoTest
     {
         File pom = new File( getBasedir(), "src/test/projects/project5/pom.xml" );
 
-        assertNull( "System property not yet created", System.getProperty( "project5.property.with.no.value" ) );
+        assertNull( "System property not yet created", System.getProperty( "test.name" ) );
 
-        execute( pom, "java" );
+        assertEquals( "Hello " + System.lineSeparator(), execute( pom, "java" ) );
 
-        assertEquals( "System property now empty", "", System.getProperty( "project5.property.with.no.value" ) );
+        // ensure we get back in the original state and didn't leak the execution config
+        assertNull( "System property not yet created", System.getProperty( "test.name" ) );
     }
 
     /**
@@ -240,9 +242,68 @@ public class ExecJavaMojoTest
     }
 
     /**
+     * Ensures that classpath can be filtered (exclude from plugin deps or project deps) to resolve conflicts.
+     * @throws Exception if something unexpected occurs.
+     */
+    public void testExcludedClasspathElement() throws Exception
+    {
+        String LS = System.getProperty( "line.separator" );
+
+        // slf4j-simple
+        {
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            execute(
+                    new File( getBasedir(), "src/test/projects/project16/pom.xml" ), "java",
+                    stdout, stderr);
+            assertEquals( "org.slf4j.impl.SimpleLogger", stdout.toString().trim() );
+            assertEquals(
+                    "[org.codehaus.mojo.exec.Slf4jMain.main()] INFO org.codehaus.mojo.exec.Slf4jMain - hello[]" + LS,
+                    stderr.toString() );
+        }
+
+        // slf4j-jdk14
+        {
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            execute(
+                    new File( getBasedir(), "src/test/projects/project17/pom.xml" ), "java",
+                    stdout, stderr);
+            assertEquals( "org.slf4j.impl.JDK14LoggerAdapter", stdout.toString().trim() );
+            final String stderrString = stderr.toString(); // simpler check, just validate it is not simple output
+            assertTrue( stderrString.contains( " org.codehaus.mojo.exec.Slf4jMain main" ) );
+            assertTrue( stderrString.contains( ": hello[]" ) );
+        }
+    }
+
+    /**
+     * Ensure all project properties can be forwarded to the execution as system properties.
+     *
+     * @throws Exception if any exception occurs
+     */
+    public void testProjectProperties()
+            throws Exception
+    {
+        File pom = new File( getBasedir(), "src/test/projects/project18/pom.xml" );
+
+        String output = execute( pom, "java" );
+
+        assertEquals( "Hello project18 project" + System.lineSeparator(), output );
+    }
+
+    /**
      * @return output from System.out during mojo execution
      */
     private String execute( File pom, String goal )
+        throws Exception
+    {
+        return execute( pom, goal, new ByteArrayOutputStream(), new ByteArrayOutputStream() );
+    }
+
+    /**
+     * @return output from System.out during mojo execution
+     */
+    private String execute( File pom, String goal, ByteArrayOutputStream stringOutputStream, OutputStream stderr )
         throws Exception
     {
 
@@ -264,8 +325,9 @@ public class ExecJavaMojoTest
 
         // trap System.out
         PrintStream out = System.out;
-        StringOutputStream stringOutputStream = new StringOutputStream();
+        PrintStream err = System.err;
         System.setOut( new PrintStream( stringOutputStream ) );
+        System.setErr( new PrintStream( stderr ) );
         // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
         mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_ERROR, "exec:java" ) ) );
 
@@ -278,6 +340,7 @@ public class ExecJavaMojoTest
             // see testUncooperativeThread() for explaination
             Thread.sleep( 300 ); // time seems about right
             System.setOut( out );
+            System.setErr( err );
         }
 
         return stringOutputStream.toString();
@@ -292,8 +355,7 @@ public class ExecJavaMojoTest
         
         ProjectBuildingRequest buildingRequest = mock( ProjectBuildingRequest.class );
         when( session.getProjectBuildingRequest() ).thenReturn( buildingRequest );
-        MavenRepositorySystemSession repositorySession = new MavenRepositorySystemSession();
-        repositorySession.setLocalRepositoryManager( new SimpleLocalRepositoryManager( LOCAL_REPO ) );
+        RepositorySystemSession repositorySession = new DefaultRepositorySystemSession();
         when( buildingRequest.getRepositorySession() ).thenReturn( repositorySession );
         
         ProjectBuilder builder = lookup( ProjectBuilder.class );

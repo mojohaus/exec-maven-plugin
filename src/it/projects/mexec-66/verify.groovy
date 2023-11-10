@@ -16,12 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import java.io.*
-import java.util.*
 
-
-t = new IntegrationBase()
- 
 def buildLog = new File(basedir, 'build.log')
 def expectedClasspath = new File(basedir, 'target/classes').getAbsolutePath()
 

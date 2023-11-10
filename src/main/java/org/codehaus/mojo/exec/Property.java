@@ -24,7 +24,7 @@ package org.codehaus.mojo.exec;
  * 
  * @author Kaare Nilsen (kaare.nilsen@gmail.com)
  */
-public class Property
+public class Property extends AbstractProperty
 {
     private String key;
 

@@ -18,4 +18,5 @@
  */
 
 def buildLog = new File( basedir, 'build.log' )
-assert buildLog.text.contains('java.lang.NoSuchMethodException: no such method: org.codehaus.mojo.exec.Main.main(String[])void')
+assert buildLog.text.contains(
+        'java.lang.Exception: The specified mainClass doesn\'t contain a main method with appropriate signature.')

@@ -38,12 +38,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
 import org.apache.commons.exec.ExecuteWatchdog;
@@ -83,6 +84,12 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 public class ExecMojo
     extends AbstractExecMojo
 {
+
+    /**
+     * Trying to recognize whether the given {@link #executable} might be a {@code java} binary.
+     */
+    private static final Pattern ENDS_WITH_JAVA = Pattern.compile( "^.*java(\\.exe|\\.bin)?$", Pattern.CASE_INSENSITIVE );
+
     /**
      * <p>
      * The executable. Can be a full path or the name of the executable. In the latter case, the executable must be in
@@ -147,6 +154,16 @@ public class ExecMojo
      */
     @Parameter( property = "exec.outputFile" )
     private File outputFile;
+
+    /**
+     * Program standard input, output and error streams will be inherited from the maven process.
+     * This allow tighter control of the streams and the console.
+     *
+     * @since 3.0.1
+     * @see ProcessBuilder#inheritIO()
+     */
+    @Parameter( property = "exec.inheritIo" )
+    private boolean inheritIo;
 
     /**
      * When enabled, program standard and error output will be redirected to the
@@ -304,6 +321,18 @@ public class ExecMojo
     private boolean longModulepath;
 
     /**
+     * Forces the plugin to recognize the given executable as java executable. This helps with {@link #longClasspath}
+     * and {@link #longModulepath} parameters.
+     *
+     * <p>You shouldn't normally be needing this unless you renamed your java binary or are executing tools
+     * other than {@code java} which need modulepath or classpath parameters in a separate file.</p>
+     *
+     * @since 3.1.1
+     */
+    @Parameter (property = "exec.forceJava", defaultValue = "false" )
+    private boolean forceJava;
+
+    /**
      * If set to true the child process executes asynchronously and build execution continues in parallel.
      */
     @Parameter( property = "exec.async", defaultValue = "false" )
@@ -384,7 +413,7 @@ public class ExecMojo
 
             commandLine.addArguments( args, false );
 
-            Executor exec = new DefaultExecutor();
+            Executor exec = new ExtendedExecutor( inheritIo );
             if ( this.timeout > 0 )
             {
                 exec.setWatchdog( new ExecuteWatchdog( this.timeout ) );
@@ -392,6 +421,10 @@ public class ExecMojo
             exec.setWorkingDirectory( workingDirectory );
             fillSuccessCodes( exec );
 
+            if ( OS.isFamilyOpenVms() && inheritIo )
+            {
+                getLog().warn("The inheritIo flag is not supported on OpenVMS, execution will proceed without stream inheritance.");
+            }
             getLog().debug( "Executing command line: " + commandLine );
 
             try
@@ -424,7 +457,7 @@ public class ExecMojo
                     // Maven log output. NOTE: The accept(..) methods are running in PumpStreamHandler thread,
                     // which is why we capture the thread name prefix here.
                     final String logPrefix = session.isParallel() ? "[" + Thread.currentThread().getName() + "] " : "";
-                    Invokable<String> mavenOutRedirect = new Invokable<String>()
+                    Consumer<String> mavenOutRedirect = new Consumer<String>()
                     {
 
                         @Override
@@ -440,7 +473,7 @@ public class ExecMojo
                             }
                         }
                     };
-                    Invokable<String> mavenErrRedirect = new Invokable<String>()
+                    Consumer<String> mavenErrRedirect = new Consumer<String>()
                     {
 
                         @Override
@@ -500,17 +533,10 @@ public class ExecMojo
     {
 
         Map<String, String> enviro = new HashMap<String, String>();
-        try
+        Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
+        for ( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
         {
-            Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
-            for ( Map.Entry<?, ?> entry : systemEnvVars.entrySet() )
-            {
-                enviro.put( (String) entry.getKey(), (String) entry.getValue() );
-            }
-        }
-        catch ( IOException x )
-        {
-            getLog().error( "Could not assign default system enviroment variables.", x );
+            enviro.put( (String) entry.getKey(), (String) entry.getValue() );
         }
 
         if ( environmentVariables != null )
@@ -675,9 +701,13 @@ public class ExecMojo
                 Modulepath specifiedModulepath = (Modulepath) argument;
                 commandArguments.add( computeClasspathString( specifiedModulepath ) );
             }
-            else if ( isLongModulePathArgument( specialArg ) || isLongClassPathArgument( specialArg ) )
+            else if ( (argument instanceof String) && (isLongModulePathArgument( (String) argument ) || isLongClassPathArgument( (String) argument )) )
             {
                 specialArg = (String) argument;
+            }
+            else if (argument == null)
+            {
+                commandArguments.add( "" );
             }
             else
             {
@@ -712,12 +742,35 @@ public class ExecMojo
 
     private boolean isLongClassPathArgument( String arg )
     {
-        return longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
+        return isJavaExec() && longClasspath && ( "-classpath".equals( arg ) || "-cp".equals( arg ) );
     }
 
     private boolean isLongModulePathArgument( String arg )
     {
-        return longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+        return isJavaExec() && longModulepath && ( "--module-path".equals( arg ) || "-p".equals( arg ) );
+    }
+
+    /**
+     * Returns {@code true} when a java binary is being executed.
+     *
+     * @return {@code true} when a java binary is being executed.
+     */
+    private boolean isJavaExec()
+    {
+        if ( forceJava )
+        {
+            return true;
+        }
+
+        if ( this.executable.contains( "%JAVA_HOME" )
+                || this.executable.contains( "${JAVA_HOME}" )
+                || this.executable.contains( "$JAVA_HOME" ) )
+        {
+            // also applies to *most* other tools.
+            return true;
+        }
+
+        return ENDS_WITH_JAVA.matcher( this.executable ).matches();
     }
 
     /**
@@ -1169,6 +1222,15 @@ public class ExecMojo
             StreamConsumer stderr = new DefaultConsumer();
 
             CommandLineUtils.executeCommandLine( cl, stdout, stderr );
+
+            if(!stdout.getUnparsedLines().isEmpty())
+            {
+                getLog().warn( "The following lines could not be parsed into environment variables :" );
+                for ( String line : stdout.getUnparsedLines() )
+                {
+                    getLog().warn( line );
+                }
+            }
 
             results = stdout.getParsedEnv();
         }
