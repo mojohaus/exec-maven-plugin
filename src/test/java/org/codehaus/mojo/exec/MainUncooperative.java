@@ -9,6 +9,9 @@ public class MainUncooperative
 {
     public static final String SUCCESS = "1(interrupted)(f)2(f)";
 
+    // In JDK 20+, Thread::stop has been removed and just throws an UnsupportedOperationException
+    public static final String INTERRUPTED_BUT_NOT_STOPPED = "1(interrupted)(f)2";
+
     public static void main( String... args )
         throws InterruptedException
     {

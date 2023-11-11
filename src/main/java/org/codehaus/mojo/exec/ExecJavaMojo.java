@@ -50,6 +50,10 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
 public class ExecJavaMojo
     extends AbstractExecMojo
 {
+    // Implementation note: Constants can be included in javadocs by {@value #MY_CONST}
+    private static final String THREAD_STOP_UNAVAILABLE =
+        "Thread.stop() is unavailable in this JRE version, cannot force-stop any threads";
+    
     @Component
     private RepositorySystem repositorySystem;
 
@@ -171,6 +175,10 @@ public class ExecJavaMojo
      * this to <code>true</code> if you are invoking problematic code that you can't fix. An example is
      * {@link java.util.Timer} which doesn't respond to interruption. To have <code>Timer</code> fixed, vote for
      * <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
+     * <p>
+     * <b>Note:</b> In JDK 20+, the long deprecated {@link Thread#stop()} (since JDK 1.2) has been removed and will
+     * throw an {@link UnsupportedOperationException}. This will be handled gracefully, yielding a log warning
+     * {@value #THREAD_STOP_UNAVAILABLE} once and not trying to stop any further threads during the same execution.
      * 
      * @since 1.1-beta-1
      */
@@ -522,6 +530,7 @@ public class ExecJavaMojo
                 thread.interrupt();
             }
             // Now join with a timeout and call stop() (assuming flags are set right)
+            boolean threadStopIsAvailable = true;
             for ( Thread thread : threads )
             {
                 if ( !thread.isAlive() )
@@ -543,10 +552,18 @@ public class ExecJavaMojo
                     continue;
                 }
                 uncooperativeThreads.add( thread ); // ensure we don't process again
-                if ( stopUnresponsiveDaemonThreads )
+                if ( stopUnresponsiveDaemonThreads && threadStopIsAvailable )
                 {
                     getLog().warn( "thread " + thread + " will be Thread.stop()'ed" );
-                    thread.stop();
+                    try
+                    {
+                        thread.stop();
+                    }
+                    catch ( UnsupportedOperationException unsupportedOperationException )
+                    {
+                        threadStopIsAvailable = false;
+                        getLog().warn( THREAD_STOP_UNAVAILABLE );
+                    }
                 }
                 else
                 {
