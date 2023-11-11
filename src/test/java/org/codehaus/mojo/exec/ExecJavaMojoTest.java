@@ -51,6 +51,9 @@ public class ExecJavaMojoTest
     
     private static final File LOCAL_REPO = new File( "src/test/repository" );
 
+    private static final int JAVA_VERSION_MAJOR =
+        Integer.parseInt( System.getProperty( "java.version" ).replaceFirst( "[.].*", "" ) ); 
+
     /*
      * This one won't work yet public void xxtestSimpleRunPropertiesAndArguments() throws MojoExecutionException,
      * Exception { File pom = new File( getBasedir(), "src/test/projects/project2/pom.xml" ); String output = execute(
@@ -198,19 +201,36 @@ public class ExecJavaMojoTest
     }
 
     /**
-     * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>. FIXME: this sometimes fail with
-     * unit.framework.ComparisonFailure: expected:&lt;...&gt; but was:&lt;...3(f)&gt;
+     * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>,
+     * <a href="https://github.com/mojohaus/exec-maven-plugin/issues/391">GitHub-391</a>.
+     * <p>
+     * FIXME: This sometimes fails with {@code unit.framework.ComparisonFailure: expected:<...>; but was:<...3(f)>}.
      * 
      * @throws Exception if any exception occurs
      */
     public void testUncooperativeThread()
         throws Exception
     {
+        // FIXME:
+        //   This will fail the test, because Assume is a JUnit 4 thing, but we are running in JUnit 3 mode, because
+        //   AbstractMojoTestCase extends PlexusTestCase extends TestCase. The latter is a JUnit 3 compatibility class.
+        //   If we would simply use JUnit 4 annotations, conditional ignores via Assume would just work correctly in
+        //   Surefire and IDEs. We could than have two dedicated test cases, one for each JDK 20+ and one for older
+        //   versions. In JUnit 5, we could even conveniently use @EnabledOnJre.
+        // Assume.assumeTrue( JAVA_VERSION_MAJOR < 20 );
+
         File pom = new File( getBasedir(), "src/test/projects/project10/pom.xml" );
         String output = execute( pom, "java" );
         // note: execute() will wait a little bit before returning the output,
         // thereby allowing the stop()'ed thread to output the final "(f)".
-        assertEquals( MainUncooperative.SUCCESS, output.trim() );
+        if ( JAVA_VERSION_MAJOR < 20 )
+        {
+            assertEquals( MainUncooperative.SUCCESS, output.trim() );
+        }
+        else
+        {
+            assertEquals( MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim() );
+        }
     }
 
     /**
