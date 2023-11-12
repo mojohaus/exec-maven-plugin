@@ -229,6 +229,7 @@
 
   <properties>
     <mavenVersion>3.6.3</mavenVersion>
+    <recommendedJavaBuildVersion>11</recommendedJavaBuildVersion>
     <slf4j.version>1.7.36</slf4j.version>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2022-07-15T02:43:45Z</project.build.outputTimestamp>
@@ -343,6 +344,20 @@
       <properties>
         <invoker.parallelThreads>1</invoker.parallelThreads>
       </properties>
+    </profile>
+    <profile>
+      <id>java11+</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>java17+</id>
