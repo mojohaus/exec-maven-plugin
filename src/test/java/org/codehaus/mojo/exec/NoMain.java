@@ -20,12 +20,7 @@ package org.codehaus.mojo.exec;
  * @author Jerome Lacoste
  * @version $Id$
  */
-public class NoMain
-{
+public class NoMain {
     // MEXEC-29 wrong interface for main method causes NPE
-    public static void main()
-        throws Exception
-    {
-
-    }
+    public static void main() throws Exception {}
 }

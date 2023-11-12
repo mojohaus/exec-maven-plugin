@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.mojo.exec;
 
 import java.io.IOException;
@@ -23,12 +22,8 @@ import java.io.IOException;
  *
  * @author Lukasz Cwik
  */
-public class ThrowingMain
-{
-    public static void main( String... args )
-        throws Exception
-    {
-        throw new IOException( "expected IOException thrown by test" );
+public class ThrowingMain {
+    public static void main(String... args) throws Exception {
+        throw new IOException("expected IOException thrown by test");
     }
 }
-

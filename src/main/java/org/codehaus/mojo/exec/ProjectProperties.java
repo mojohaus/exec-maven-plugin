@@ -22,6 +22,4 @@ package org.codehaus.mojo.exec;
 /**
  * Represents all project properties (to set as system properties).
  */
-public class ProjectProperties extends AbstractProperty
-{
-}
+public class ProjectProperties extends AbstractProperty {}

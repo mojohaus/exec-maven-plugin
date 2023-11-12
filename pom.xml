@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -16,9 +17,13 @@
   <url>https://www.mojohaus.org/exec-maven-plugin</url>
   <inceptionYear>2005</inceptionYear>
 
-  <prerequisites>
-    <maven>${mavenVersion}</maven>
-  </prerequisites>
+  <licenses>
+    <license>
+      <name>Apache License 2</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <developers>
     <developer>
@@ -105,20 +110,24 @@
     </contributor>
   </contributors>
 
-  <licenses>
-    <license>
-      <name>Apache License 2</name>
-      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+  <prerequisites>
+    <maven>${mavenVersion}</maven>
+  </prerequisites>
 
   <scm>
     <connection>scm:git:https://github.com/mojohaus/exec-maven-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/mojohaus/exec-maven-plugin.git</developerConnection>
-    <url>https://github.com/mojohaus/exec-maven-plugin/tree/master</url>
     <tag>HEAD</tag>
+    <url>https://github.com/mojohaus/exec-maven-plugin/tree/master</url>
   </scm>
+
+  <properties>
+    <mavenVersion>3.6.3</mavenVersion>
+    <recommendedJavaBuildVersion>11</recommendedJavaBuildVersion>
+    <slf4j.version>1.7.36</slf4j.version>
+    <invoker.parallelThreads>1C</invoker.parallelThreads>
+    <project.build.outputTimestamp>2022-07-15T02:43:45Z</project.build.outputTimestamp>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -176,7 +185,7 @@
       <artifactId>plexus-component-annotations</artifactId>
       <version>2.1.1</version>
       <optional>true</optional>
-	  </dependency>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -227,14 +236,6 @@
     </dependency>
   </dependencies>
 
-  <properties>
-    <mavenVersion>3.6.3</mavenVersion>
-    <recommendedJavaBuildVersion>11</recommendedJavaBuildVersion>
-    <slf4j.version>1.7.36</slf4j.version>
-    <invoker.parallelThreads>1C</invoker.parallelThreads>
-    <project.build.outputTimestamp>2022-07-15T02:43:45Z</project.build.outputTimestamp>
-  </properties>
-
   <build>
     <pluginManagement>
       <plugins>
@@ -254,13 +255,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
         <configuration>
           <signature>
             <groupId>org.codehaus.mojo.signature</groupId>
@@ -271,6 +265,13 @@
             <ignore>java.lang.invoke.MethodHandle</ignore>
           </ignores>
         </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.plexus</groupId>
@@ -290,10 +291,10 @@
         <executions>
           <execution>
             <id>copy-test-deps</id>
-            <phase>generate-test-resources</phase>
             <goals>
               <goal>copy</goal>
             </goals>
+            <phase>generate-test-resources</phase>
             <configuration>
               <artifactItems>
                 <artifactItem>
@@ -412,14 +413,6 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>mrm-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>start</goal>
-                  <goal>stop</goal>
-                </goals>
-              </execution>
-            </executions>
             <configuration>
               <repositories>
                 <mockRepo>
@@ -431,6 +424,14 @@
                 <proxyRepo />
               </repositories>
             </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>start</goal>
+                  <goal>stop</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
           <plugin>
             <artifactId>maven-enforcer-plugin</artifactId>

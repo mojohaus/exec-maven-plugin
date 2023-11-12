@@ -22,6 +22,4 @@ package org.codehaus.mojo.exec;
 /**
  * @author Jerome Lacoste (jerome@coffeebreaks.org)
  */
-public class Modulepath extends AbstractPath
-{
-}
+public class Modulepath extends AbstractPath {}

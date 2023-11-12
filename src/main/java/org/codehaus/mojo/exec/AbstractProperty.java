@@ -22,6 +22,4 @@ package org.codehaus.mojo.exec;
 /**
  * Base type for system properties.
  */
-public class AbstractProperty
-{
-}
+public class AbstractProperty {}

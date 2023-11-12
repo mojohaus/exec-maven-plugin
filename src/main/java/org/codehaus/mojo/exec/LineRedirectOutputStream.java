@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  * redirects that line to some {@link Consumer} to act upon as it pleases. This
  * class is not thread safe and expects to have only one active writer consuming
  * it at any given time.
- * 
+ *
  * @since 3.0.0
  */
 class LineRedirectOutputStream extends OutputStream {
