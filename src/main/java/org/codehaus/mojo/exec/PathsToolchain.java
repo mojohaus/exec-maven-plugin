@@ -30,34 +30,27 @@ import org.codehaus.plexus.logging.Logger;
  *
  * @author Markus KARG (markus@headcrashing.eu)
  */
-class PathsToolchain
-    extends DefaultToolchain
-{
+class PathsToolchain extends DefaultToolchain {
     private List<String> paths;
 
-    public PathsToolchain( final ToolchainModel model, final Logger logger )
-    {
-        super( model, "paths", logger ); // NOI18N
+    public PathsToolchain(final ToolchainModel model, final Logger logger) {
+        super(model, "paths", logger); // NOI18N
     }
 
-    public List<String> getPaths()
-    {
+    public List<String> getPaths() {
         return this.paths;
     }
 
-    public void setPaths( final List<String> paths )
-    {
+    public void setPaths(final List<String> paths) {
         this.paths = paths;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Paths" + this.getPaths(); // NOI18N
     }
 
-    public String findTool( final String toolName )
-    {
-        return ExecMojo.findExecutable( toolName, this.paths );
+    public String findTool(final String toolName) {
+        return ExecMojo.findExecutable(toolName, this.paths);
     }
 }

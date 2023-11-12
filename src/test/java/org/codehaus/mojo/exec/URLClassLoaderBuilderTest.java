@@ -19,13 +19,13 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
-import org.junit.Test;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+
+import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -33,35 +33,29 @@ import static org.junit.Assert.assertEquals;
 /**
  * Basic tests about the custom classloader we set to execute the project.
  */
-public class URLClassLoaderBuilderTest
-{
+public class URLClassLoaderBuilderTest {
     @Test
-    public void childFirst() throws Exception
-    {
+    public void childFirst() throws Exception {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         PrintStream originalStderr = System.err;
         Thread thread = Thread.currentThread();
         ClassLoader testLoader = thread.getContextClassLoader();
-        try ( URLClassLoader loader = URLClassLoaderBuilder.builder()
-                .setPaths( asList(
-                        Paths.get( "target/test-dependencies/slf4j-api.jar" ),
-                        Paths.get( "target/test-dependencies/slf4j-jdk14.jar" )
-                ) )
-                .build();
-            PrintStream tmpStderr = new PrintStream( stderr ) )
-        {
-            System.setErr( tmpStderr );
-            assertEquals( tmpStderr, System.err );
-            thread.setContextClassLoader( loader );
-            Class<?> lf = loader.loadClass( "org.slf4j.LoggerFactory" );
-            Object logger = lf.getMethod( "getLogger", Class.class ).invoke( null, String.class );
-            assertEquals( "org.slf4j.impl.JDK14LoggerAdapter", logger.getClass().getName() );
+        try (URLClassLoader loader = URLClassLoaderBuilder.builder()
+                        .setPaths(asList(
+                                Paths.get("target/test-dependencies/slf4j-api.jar"),
+                                Paths.get("target/test-dependencies/slf4j-jdk14.jar")))
+                        .build();
+                PrintStream tmpStderr = new PrintStream(stderr)) {
+            System.setErr(tmpStderr);
+            assertEquals(tmpStderr, System.err);
+            thread.setContextClassLoader(loader);
+            Class<?> lf = loader.loadClass("org.slf4j.LoggerFactory");
+            Object logger = lf.getMethod("getLogger", Class.class).invoke(null, String.class);
+            assertEquals("org.slf4j.impl.JDK14LoggerAdapter", logger.getClass().getName());
+        } finally {
+            thread.setContextClassLoader(testLoader);
         }
-        finally
-        {
-            thread.setContextClassLoader( testLoader );
-        }
-        assertEquals("", new String( stderr.toByteArray(), StandardCharsets.UTF_8 ) );
-        System.setErr( originalStderr );
+        assertEquals("", new String(stderr.toByteArray(), StandardCharsets.UTF_8));
+        System.setErr(originalStderr);
     }
 }

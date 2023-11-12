@@ -19,57 +19,47 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.OS;
 import org.apache.commons.exec.launcher.VmsCommandLauncher;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * An executor which has the ability to use the {@link ProcessBuilder#inheritIO()} flag.
  *
  * @author Guillaume Nodet (gnodet@gmail.com)
  */
-public class ExtendedExecutor extends DefaultExecutor
-{
+public class ExtendedExecutor extends DefaultExecutor {
 
     private final boolean inheritIo;
 
-    public ExtendedExecutor( boolean inheritIo )
-    {
+    public ExtendedExecutor(boolean inheritIo) {
         this.inheritIo = inheritIo;
     }
 
     @Override
-    protected Process launch( CommandLine command, Map<String, String> env, File dir ) throws IOException
-    {
-        if ( dir != null && !dir.exists() )
-        {
-            throw new IOException( dir + " doesn't exist." );
+    protected Process launch(CommandLine command, Map<String, String> env, File dir) throws IOException {
+        if (dir != null && !dir.exists()) {
+            throw new IOException(dir + " doesn't exist.");
         }
-        if ( OS.isFamilyOpenVms() )
-        {
-            return new VmsCommandLauncher().exec( command, env, dir );
-        }
-        else
-        {
-            ProcessBuilder pb = new ProcessBuilder( command.toStrings() );
-            for ( Map.Entry<String, String> entry : env.entrySet() )
-            {
+        if (OS.isFamilyOpenVms()) {
+            return new VmsCommandLauncher().exec(command, env, dir);
+        } else {
+            ProcessBuilder pb = new ProcessBuilder(command.toStrings());
+            for (Map.Entry<String, String> entry : env.entrySet()) {
                 String key = entry.getKey() != null ? entry.getKey() : "";
                 String val = entry.getValue() != null ? entry.getValue() : "";
-                pb.environment().put( key, val );
+                pb.environment().put(key, val);
             }
-            pb.directory( dir );
-            if ( inheritIo )
-            {
+            pb.directory(dir);
+            if (inheritIo) {
                 pb.inheritIO();
             }
             return pb.start();
         }
     }
-
 }

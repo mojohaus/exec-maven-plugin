@@ -15,9 +15,6 @@ package org.codehaus.mojo.exec;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -39,20 +36,21 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * @author Jerome Lacoste
  * @version $Id$
  */
-public class ExecJavaMojoTest
-    extends AbstractMojoTestCase
-{
+public class ExecJavaMojoTest extends AbstractMojoTestCase {
     @Mock
     private MavenSession session;
-    
-    private static final File LOCAL_REPO = new File( "src/test/repository" );
+
+    private static final File LOCAL_REPO = new File("src/test/repository");
 
     private static final int JAVA_VERSION_MAJOR =
-        Integer.parseInt( System.getProperty( "java.version" ).replaceFirst( "[.].*", "" ) ); 
+            Integer.parseInt(System.getProperty("java.version").replaceFirst("[.].*", ""));
 
     /*
      * This one won't work yet public void xxtestSimpleRunPropertiesAndArguments() throws MojoExecutionException,
@@ -63,37 +61,33 @@ public class ExecJavaMojoTest
     /**
      * Check that a simple execution with no arguments and no system properties produces the expected result.<br>
      * We load the config from a pom file and fill up the MavenProject property ourselves
-     * 
+     *
      * @throws Exception if any exception occurs
      */
-    public void testSimpleRun()
-        throws Exception
-    {
-        File pom = new File( getBasedir(), "src/test/projects/project4/pom.xml" );
+    public void testSimpleRun() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project4/pom.xml");
 
-        String output = execute( pom, "java" );
+        String output = execute(pom, "java");
 
-        assertEquals( "Hello" + System.getProperty( "line.separator" ), output );
+        assertEquals("Hello" + System.getProperty("line.separator"), output);
     }
 
     /**
      * MEXEC-10 Check that an execution with no arguments and an system property with no value produces the expected
      * result<br>
      * We load the config from a pom file and fill up the MavenProject property ourselves
-     * 
+     *
      * @throws Exception if any exception occurs
      */
-    public void testEmptySystemProperty()
-        throws Exception
-    {
-        File pom = new File( getBasedir(), "src/test/projects/project5/pom.xml" );
+    public void testEmptySystemProperty() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project5/pom.xml");
 
-        assertNull( "System property not yet created", System.getProperty( "test.name" ) );
+        assertNull("System property not yet created", System.getProperty("test.name"));
 
-        assertEquals( "Hello " + System.lineSeparator(), execute( pom, "java" ) );
+        assertEquals("Hello " + System.lineSeparator(), execute(pom, "java"));
 
         // ensure we get back in the original state and didn't leak the execution config
-        assertNull( "System property not yet created", System.getProperty( "test.name" ) );
+        assertNull("System property not yet created", System.getProperty("test.name"));
     }
 
     /**
@@ -103,25 +97,20 @@ public class ExecJavaMojoTest
      * @author Lukasz Cwik
      * @throws Exception if any exception occurs
      */
-    public void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException()
-        throws Exception
-    {
-      File pom = new File( getBasedir(), "src/test/projects/project15/pom.xml" );
+    public void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project15/pom.xml");
 
-      try
-      {
-          execute( pom, "java" );
+        try {
+            execute(pom, "java");
 
-          fail( "Expected Exception to be thrown but none was thrown" );
-      }
-      catch ( Throwable e )
-      {
-          assertTrue( e instanceof MojoExecutionException );
+            fail("Expected Exception to be thrown but none was thrown");
+        } catch (Throwable e) {
+            assertTrue(e instanceof MojoExecutionException);
 
-          assertTrue( e.getCause() instanceof IOException );
+            assertTrue(e.getCause() instanceof IOException);
 
-          assertEquals( "expected IOException thrown by test", e.getCause().getMessage() );
-      }
+            assertEquals("expected IOException thrown by test", e.getCause().getMessage());
+        }
     }
 
     /**
@@ -170,34 +159,30 @@ public class ExecJavaMojoTest
     /**
      * For cases where the Java code spawns Threads and main returns soon. See
      * <a href="http://jira.codehaus.org/browse/MEXEC-6">MEXEC-6</a>.
-     * 
+     *
      * @throws Exception if any exception occurs
      */
-    public void testWaitNoDaemonThreads()
-        throws Exception
-    {
-        File pom = new File( getBasedir(), "src/test/projects/project7/pom.xml" );
+    public void testWaitNoDaemonThreads() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project7/pom.xml");
 
-        String output = execute( pom, "java" );
+        String output = execute(pom, "java");
 
-        assertEquals( MainWithThreads.ALL_EXITED, output.trim() );
+        assertEquals(MainWithThreads.ALL_EXITED, output.trim());
     }
 
     /**
      * For cases where the Java code spawns Threads and main returns soon, but code contains non interruptible threads.
      * User is required to timeout the execution, otherwise it will hang. See
      * <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>.
-     * 
+     *
      * @throws Exception if any exception occurs
      */
-    public void testWaitNonInterruptibleDaemonThreads()
-        throws Exception
-    {
-        File pom = new File( getBasedir(), "src/test/projects/project9/pom.xml" );
+    public void testWaitNonInterruptibleDaemonThreads() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project9/pom.xml");
 
-        String output = execute( pom, "java" );
+        String output = execute(pom, "java");
 
-        assertEquals( MainWithThreads.TIMER_IGNORED, output.trim() );
+        assertEquals(MainWithThreads.TIMER_IGNORED, output.trim());
     }
 
     /**
@@ -205,12 +190,10 @@ public class ExecJavaMojoTest
      * <a href="https://github.com/mojohaus/exec-maven-plugin/issues/391">GitHub-391</a>.
      * <p>
      * FIXME: This sometimes fails with {@code unit.framework.ComparisonFailure: expected:<...>; but was:<...3(f)>}.
-     * 
+     *
      * @throws Exception if any exception occurs
      */
-    public void testUncooperativeThread()
-        throws Exception
-    {
+    public void testUncooperativeThread() throws Exception {
         // FIXME:
         //   This will fail the test, because Assume is a JUnit 4 thing, but we are running in JUnit 3 mode, because
         //   AbstractMojoTestCase extends PlexusTestCase extends TestCase. The latter is a JUnit 3 compatibility class.
@@ -219,17 +202,14 @@ public class ExecJavaMojoTest
         //   versions. In JUnit 5, we could even conveniently use @EnabledOnJre.
         // Assume.assumeTrue( JAVA_VERSION_MAJOR < 20 );
 
-        File pom = new File( getBasedir(), "src/test/projects/project10/pom.xml" );
-        String output = execute( pom, "java" );
+        File pom = new File(getBasedir(), "src/test/projects/project10/pom.xml");
+        String output = execute(pom, "java");
         // note: execute() will wait a little bit before returning the output,
         // thereby allowing the stop()'ed thread to output the final "(f)".
-        if ( JAVA_VERSION_MAJOR < 20 )
-        {
-            assertEquals( MainUncooperative.SUCCESS, output.trim() );
-        }
-        else
-        {
-            assertEquals( MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim() );
+        if (JAVA_VERSION_MAJOR < 20) {
+            assertEquals(MainUncooperative.SUCCESS, output.trim());
+        } else {
+            assertEquals(MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim());
         }
     }
 
@@ -250,49 +230,42 @@ public class ExecJavaMojoTest
      * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
      * @throws Exception if any exception occurs
      */
-    public void testRunWithArgs()
-        throws Exception
-    {
+    public void testRunWithArgs() throws Exception {
 
-        String resultString = execute( new File( getBasedir(), "src/test/projects/project8/pom.xml" ), "java" );
+        String resultString = execute(new File(getBasedir(), "src/test/projects/project8/pom.xml"), "java");
 
-        String LS = System.getProperty( "line.separator" );
+        String LS = System.getProperty("line.separator");
         String expectedResult = "Hello" + LS + "Arg1" + LS + "Arg2a Arg2b" + LS;
-        assertEquals( expectedResult, resultString );
+        assertEquals(expectedResult, resultString);
     }
 
     /**
      * Ensures that classpath can be filtered (exclude from plugin deps or project deps) to resolve conflicts.
      * @throws Exception if something unexpected occurs.
      */
-    public void testExcludedClasspathElement() throws Exception
-    {
-        String LS = System.getProperty( "line.separator" );
+    public void testExcludedClasspathElement() throws Exception {
+        String LS = System.getProperty("line.separator");
 
         // slf4j-simple
         {
             ByteArrayOutputStream stdout = new ByteArrayOutputStream();
             ByteArrayOutputStream stderr = new ByteArrayOutputStream();
-            execute(
-                    new File( getBasedir(), "src/test/projects/project16/pom.xml" ), "java",
-                    stdout, stderr);
-            assertEquals( "org.slf4j.impl.SimpleLogger", stdout.toString().trim() );
+            execute(new File(getBasedir(), "src/test/projects/project16/pom.xml"), "java", stdout, stderr);
+            assertEquals("org.slf4j.impl.SimpleLogger", stdout.toString().trim());
             assertEquals(
                     "[org.codehaus.mojo.exec.Slf4jMain.main()] INFO org.codehaus.mojo.exec.Slf4jMain - hello[]" + LS,
-                    stderr.toString() );
+                    stderr.toString());
         }
 
         // slf4j-jdk14
         {
             ByteArrayOutputStream stdout = new ByteArrayOutputStream();
             ByteArrayOutputStream stderr = new ByteArrayOutputStream();
-            execute(
-                    new File( getBasedir(), "src/test/projects/project17/pom.xml" ), "java",
-                    stdout, stderr);
-            assertEquals( "org.slf4j.impl.JDK14LoggerAdapter", stdout.toString().trim() );
+            execute(new File(getBasedir(), "src/test/projects/project17/pom.xml"), "java", stdout, stderr);
+            assertEquals("org.slf4j.impl.JDK14LoggerAdapter", stdout.toString().trim());
             final String stderrString = stderr.toString(); // simpler check, just validate it is not simple output
-            assertTrue( stderrString.contains( " org.codehaus.mojo.exec.Slf4jMain main" ) );
-            assertTrue( stderrString.contains( ": hello[]" ) );
+            assertTrue(stderrString.contains(" org.codehaus.mojo.exec.Slf4jMain main"));
+            assertTrue(stderrString.contains(": hello[]"));
         }
     }
 
@@ -301,87 +274,77 @@ public class ExecJavaMojoTest
      *
      * @throws Exception if any exception occurs
      */
-    public void testProjectProperties()
-            throws Exception
-    {
-        File pom = new File( getBasedir(), "src/test/projects/project18/pom.xml" );
+    public void testProjectProperties() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project18/pom.xml");
 
-        String output = execute( pom, "java" );
+        String output = execute(pom, "java");
 
-        assertEquals( "Hello project18 project" + System.lineSeparator(), output );
+        assertEquals("Hello project18 project" + System.lineSeparator(), output);
     }
 
     /**
      * @return output from System.out during mojo execution
      */
-    private String execute( File pom, String goal )
-        throws Exception
-    {
-        return execute( pom, goal, new ByteArrayOutputStream(), new ByteArrayOutputStream() );
+    private String execute(File pom, String goal) throws Exception {
+        return execute(pom, goal, new ByteArrayOutputStream(), new ByteArrayOutputStream());
     }
 
     /**
      * @return output from System.out during mojo execution
      */
-    private String execute( File pom, String goal, ByteArrayOutputStream stringOutputStream, OutputStream stderr )
-        throws Exception
-    {
+    private String execute(File pom, String goal, ByteArrayOutputStream stringOutputStream, OutputStream stderr)
+            throws Exception {
 
         ExecJavaMojo mojo;
-        mojo = (ExecJavaMojo) lookupMojo( goal, pom );
+        mojo = (ExecJavaMojo) lookupMojo(goal, pom);
 
-        setUpProject( pom, mojo );
+        setUpProject(pom, mojo);
 
-        MavenProject project = (MavenProject) getVariableValueFromObject( mojo, "project" );
+        MavenProject project = (MavenProject) getVariableValueFromObject(mojo, "project");
 
         // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
-        setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
-        setVariableValueToObject( mojo, "cleanupDaemonThreads", Boolean.TRUE );
-        setVariableValueToObject( mojo, "classpathScope", "compile" );
+        setVariableValueToObject(mojo, "includeProjectDependencies", Boolean.TRUE);
+        setVariableValueToObject(mojo, "cleanupDaemonThreads", Boolean.TRUE);
+        setVariableValueToObject(mojo, "classpathScope", "compile");
 
-        assertNotNull( mojo );
-        assertNotNull( project );
+        assertNotNull(mojo);
+        assertNotNull(project);
 
         // trap System.out
         PrintStream out = System.out;
         PrintStream err = System.err;
-        System.setOut( new PrintStream( stringOutputStream ) );
-        System.setErr( new PrintStream( stderr ) );
+        System.setOut(new PrintStream(stringOutputStream));
+        System.setErr(new PrintStream(stderr));
         // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
-        mojo.setLog( new DefaultLog( new ConsoleLogger( Logger.LEVEL_ERROR, "exec:java" ) ) );
+        mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR, "exec:java")));
 
-        try
-        {
+        try {
             mojo.execute();
-        }
-        finally
-        {
+        } finally {
             // see testUncooperativeThread() for explaination
-            Thread.sleep( 300 ); // time seems about right
-            System.setOut( out );
-            System.setErr( err );
+            Thread.sleep(300); // time seems about right
+            System.setOut(out);
+            System.setErr(err);
         }
 
         return stringOutputStream.toString();
     }
 
-    private void setUpProject( File pomFile, AbstractMojo mojo )
-        throws Exception
-    {
+    private void setUpProject(File pomFile, AbstractMojo mojo) throws Exception {
         super.setUp();
-        
-        MockitoAnnotations.initMocks( this );
-        
-        ProjectBuildingRequest buildingRequest = mock( ProjectBuildingRequest.class );
-        when( session.getProjectBuildingRequest() ).thenReturn( buildingRequest );
-        RepositorySystemSession repositorySession = new DefaultRepositorySystemSession();
-        when( buildingRequest.getRepositorySession() ).thenReturn( repositorySession );
-        
-        ProjectBuilder builder = lookup( ProjectBuilder.class );
 
-        MavenProject project = builder.build( pomFile, buildingRequest ).getProject();
+        MockitoAnnotations.initMocks(this);
+
+        ProjectBuildingRequest buildingRequest = mock(ProjectBuildingRequest.class);
+        when(session.getProjectBuildingRequest()).thenReturn(buildingRequest);
+        RepositorySystemSession repositorySession = new DefaultRepositorySystemSession();
+        when(buildingRequest.getRepositorySession()).thenReturn(repositorySession);
+
+        ProjectBuilder builder = lookup(ProjectBuilder.class);
+
+        MavenProject project = builder.build(pomFile, buildingRequest).getProject();
         // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
-        project.getBuild().setOutputDirectory( new File( "target/test-classes" ).getAbsolutePath() );
-        setVariableValueToObject( mojo, "project", project );
+        project.getBuild().setOutputDirectory(new File("target/test-classes").getAbsolutePath());
+        setVariableValueToObject(mojo, "project", project);
     }
 }

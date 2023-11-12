@@ -21,11 +21,10 @@ package org.codehaus.mojo.exec;
 
 /**
  * Wrapper class for the systemProperty argument type.
- * 
+ *
  * @author Kaare Nilsen (kaare.nilsen@gmail.com)
  */
-public class Property extends AbstractProperty
-{
+public class Property extends AbstractProperty {
     private String key;
 
     private String value;
@@ -34,11 +33,10 @@ public class Property extends AbstractProperty
      * <p>
      * Getter for the field <code>key</code>.
      * </p>
-     * 
+     *
      * @return a {@link java.lang.String} object.
      */
-    public String getKey()
-    {
+    public String getKey() {
         return key;
     }
 
@@ -46,11 +44,10 @@ public class Property extends AbstractProperty
      * <p>
      * Setter for the field <code>key</code>.
      * </p>
-     * 
+     *
      * @param key a {@link java.lang.String} object.
      */
-    public void setKey( String key )
-    {
+    public void setKey(String key) {
         this.key = key;
     }
 
@@ -58,11 +55,10 @@ public class Property extends AbstractProperty
      * <p>
      * Getter for the field <code>value</code>.
      * </p>
-     * 
+     *
      * @return a {@link java.lang.String} object.
      */
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 
@@ -70,11 +66,10 @@ public class Property extends AbstractProperty
      * <p>
      * Setter for the field <code>value</code>.
      * </p>
-     * 
+     *
      * @param value a {@link java.lang.String} object.
      */
-    public void setValue( String value )
-    {
+    public void setValue(String value) {
         this.value = value;
     }
 }

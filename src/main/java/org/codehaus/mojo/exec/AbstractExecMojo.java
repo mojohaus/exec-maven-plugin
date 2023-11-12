@@ -40,19 +40,17 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
  * @author Philippe Jacot (PJA)
  * @author Jerome Lacoste
  */
-public abstract class AbstractExecMojo
-    extends AbstractMojo
-{
+public abstract class AbstractExecMojo extends AbstractMojo {
     /**
      * The enclosing project.
      */
-    @Parameter( defaultValue = "${project}", readonly = true )
+    @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
-    
-    @Parameter( defaultValue = "${session}", readonly = true, required = true )
+
+    @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
 
-    @Parameter( readonly = true, defaultValue = "${plugin.artifacts}" )
+    @Parameter(readonly = true, defaultValue = "${plugin.artifacts}")
     private List<Artifact> pluginDependencies;
 
     /**
@@ -74,55 +72,55 @@ public abstract class AbstractExecMojo
      * This folder is added to the list of those folders containing source to be compiled. Use this if your plugin
      * generates source code.
      */
-    @Parameter( property = "sourceRoot" )
+    @Parameter(property = "sourceRoot")
     private File sourceRoot;
 
     /**
      * This folder is added to the list of those folders containing source to be compiled for testing. Use this if your
      * plugin generates test source code.
      */
-    @Parameter( property = "testSourceRoot" )
+    @Parameter(property = "testSourceRoot")
     private File testSourceRoot;
 
     /**
      * Arguments separated by space for the executed program. For example: "-j 20"
      */
-    @Parameter( property = "exec.args" )
+    @Parameter(property = "exec.args")
     private String commandlineArgs;
 
     /**
      * Defines the scope of the classpath passed to the plugin. Set to compile,test,runtime or system depending on your
      * needs. Since 1.1.2, the default value is 'runtime' instead of 'compile'.
      */
-    @Parameter( property = "exec.classpathScope", defaultValue = "runtime" )
+    @Parameter(property = "exec.classpathScope", defaultValue = "runtime")
     protected String classpathScope;
 
     /**
      * Skip the execution. Starting with version 1.4.0 the former name <code>skip</code> has been changed into
      * <code>exec.skip</code>.
-     * 
+     *
      * @since 1.0.1
      */
     // TODO: Remove the alias in version 1.5.0 of the plugin.
-    @Parameter( property = "exec.skip", defaultValue = "false", alias = "skip" )
+    @Parameter(property = "exec.skip", defaultValue = "false", alias = "skip")
     private boolean skip;
 
     /**
      * Add project resource directories to classpath. This is especially useful if the exec plugin is used for a code
      * generator that reads its settings from the classpath.
-     * 
+     *
      * @since 1.5.1
      */
-    @Parameter( property = "addResourcesToClasspath", defaultValue = "false" )
+    @Parameter(property = "addResourcesToClasspath", defaultValue = "false")
     private boolean addResourcesToClasspath;
 
     /**
      * Add project output directory to classpath. This might be undesirable when the exec plugin is run before the
      * compile step. Default is <code>true</code>.
-     * 
+     *
      * @since 1.5.1
      */
-    @Parameter( property = "addOutputToClasspath", defaultValue = "true" )
+    @Parameter(property = "addOutputToClasspath", defaultValue = "true")
     private boolean addOutputToClasspath;
 
     /**
@@ -132,52 +130,37 @@ public abstract class AbstractExecMojo
      * @param artifacts the list where to collect the scope specific artifacts
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
-    protected void collectProjectArtifactsAndClasspath( List<Artifact> artifacts, List<Path> theClasspathFiles )
-    {
-        if ( addResourcesToClasspath )
-        {
-            for ( Resource r : project.getBuild().getResources() )
-            {
-                theClasspathFiles.add( Paths.get( r.getDirectory() ) );
+    protected void collectProjectArtifactsAndClasspath(List<Artifact> artifacts, List<Path> theClasspathFiles) {
+        if (addResourcesToClasspath) {
+            for (Resource r : project.getBuild().getResources()) {
+                theClasspathFiles.add(Paths.get(r.getDirectory()));
             }
         }
 
-        if ( "compile".equals( classpathScope ) )
-        {
-            artifacts.addAll( project.getCompileArtifacts() );
-            if ( addOutputToClasspath )
-            {
-                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
+        if ("compile".equals(classpathScope)) {
+            artifacts.addAll(project.getCompileArtifacts());
+            if (addOutputToClasspath) {
+                theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
-        }
-        else if ( "test".equals( classpathScope ) )
-        {
-            artifacts.addAll( project.getTestArtifacts() );
-            if ( addOutputToClasspath )
-            {
-                theClasspathFiles.add( Paths.get( project.getBuild().getTestOutputDirectory() ) );
-                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
+        } else if ("test".equals(classpathScope)) {
+            artifacts.addAll(project.getTestArtifacts());
+            if (addOutputToClasspath) {
+                theClasspathFiles.add(Paths.get(project.getBuild().getTestOutputDirectory()));
+                theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
-        }
-        else if ( "runtime".equals( classpathScope ) )
-        {
-            artifacts.addAll( project.getRuntimeArtifacts() );
-            if ( addOutputToClasspath )
-            {
-                theClasspathFiles.add( Paths.get( project.getBuild().getOutputDirectory() ) );
+        } else if ("runtime".equals(classpathScope)) {
+            artifacts.addAll(project.getRuntimeArtifacts());
+            if (addOutputToClasspath) {
+                theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
-        }
-        else if ( "system".equals( classpathScope ) )
-        {
-            artifacts.addAll( project.getSystemArtifacts() );
-        }
-        else
-        {
-            throw new IllegalStateException( "Invalid classpath scope: " + classpathScope );
+        } else if ("system".equals(classpathScope)) {
+            artifacts.addAll(project.getSystemArtifacts());
+        } else {
+            throw new IllegalStateException("Invalid classpath scope: " + classpathScope);
         }
 
-        getLog().debug( "Collected project artifacts " + artifacts );
-        getLog().debug( "Collected project classpath " + theClasspathFiles );
+        getLog().debug("Collected project artifacts " + artifacts);
+        getLog().debug("Collected project classpath " + theClasspathFiles);
     }
 
     /**
@@ -188,22 +171,14 @@ public abstract class AbstractExecMojo
      * @return Array of String representing the arguments
      * @throws MojoExecutionException for wrong formatted arguments
      */
-    protected String[] parseCommandlineArgs()
-        throws MojoExecutionException
-    {
-        if ( commandlineArgs == null )
-        {
+    protected String[] parseCommandlineArgs() throws MojoExecutionException {
+        if (commandlineArgs == null) {
             return null;
-        }
-        else
-        {
-            try
-            {
-                return CommandLineUtils.translateCommandline( commandlineArgs );
-            }
-            catch ( Exception e )
-            {
-                throw new MojoExecutionException( e.getMessage() );
+        } else {
+            try {
+                return CommandLineUtils.translateCommandline(commandlineArgs);
+            } catch (Exception e) {
+                throw new MojoExecutionException(e.getMessage());
             }
         }
     }
@@ -211,26 +186,22 @@ public abstract class AbstractExecMojo
     /**
      * @return true of the mojo has command line arguments
      */
-    protected boolean hasCommandlineArgs()
-    {
-        return ( commandlineArgs != null );
+    protected boolean hasCommandlineArgs() {
+        return (commandlineArgs != null);
     }
 
     /**
      * Register compile and compile tests source roots if necessary
      */
-    protected void registerSourceRoots()
-    {
-        if ( sourceRoot != null )
-        {
-            getLog().info( "Registering compile source root " + sourceRoot );
-            project.addCompileSourceRoot( sourceRoot.toString() );
+    protected void registerSourceRoots() {
+        if (sourceRoot != null) {
+            getLog().info("Registering compile source root " + sourceRoot);
+            project.addCompileSourceRoot(sourceRoot.toString());
         }
 
-        if ( testSourceRoot != null )
-        {
-            getLog().info( "Registering compile test source root " + testSourceRoot );
-            project.addTestCompileSourceRoot( testSourceRoot.toString() );
+        if (testSourceRoot != null) {
+            getLog().info("Registering compile test source root " + testSourceRoot);
+            project.addTestCompileSourceRoot(testSourceRoot.toString());
         }
     }
 
@@ -239,46 +210,38 @@ public abstract class AbstractExecMojo
      *
      * @return true to skip
      */
-    protected boolean isSkip()
-    {
+    protected boolean isSkip() {
         return skip;
     }
 
-    protected final MavenSession getSession()
-    {
+    protected final MavenSession getSession() {
         return session;
     }
 
-    protected final List<Artifact> getPluginDependencies()
-    {
+    protected final List<Artifact> getPluginDependencies() {
         return pluginDependencies;
     }
 
     /**
      * Examine the plugin dependencies to find the executable artifact.
-     * 
+     *
      * @return an artifact which refers to the actual executable tool (not a POM)
      * @throws MojoExecutionException if no executable artifact was found
      */
-    protected Artifact findExecutableArtifact()
-        throws MojoExecutionException
-    {
+    protected Artifact findExecutableArtifact() throws MojoExecutionException {
         // ILimitedArtifactIdentifier execToolAssembly = this.getExecutableToolAssembly();
 
         Artifact executableTool = null;
-        for ( Artifact pluginDep : this.pluginDependencies )
-        {
-            if ( this.executableDependency.matches( pluginDep ) )
-            {
+        for (Artifact pluginDep : this.pluginDependencies) {
+            if (this.executableDependency.matches(pluginDep)) {
                 executableTool = pluginDep;
                 break;
             }
         }
 
-        if ( executableTool == null )
-        {
-            throw new MojoExecutionException( "No dependency of the plugin matches the specified executableDependency."
-                + "  Specified executableToolAssembly is: " + executableDependency.toString() );
+        if (executableTool == null) {
+            throw new MojoExecutionException("No dependency of the plugin matches the specified executableDependency."
+                    + "  Specified executableToolAssembly is: " + executableDependency.toString());
         }
 
         return executableTool;

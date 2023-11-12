@@ -21,49 +21,40 @@ package org.codehaus.mojo.exec;
 
 import java.util.Collection;
 
-abstract class AbstractPath
-{
+abstract class AbstractPath {
 
     /**
      * @parameter dependency
      */
     private Collection<String> dependencies;
 
-    public void setDependencies( Collection<String> deps )
-    {
+    public void setDependencies(Collection<String> deps) {
         this.dependencies = deps;
     }
 
-    public void setDependency( String dependency )
-    {
+    public void setDependency(String dependency) {
         // Is the the correct thing to do? See MOJO-348
-        if ( dependencies == null )
-        {
-            setDependencies( new java.util.ArrayList<String>() );
+        if (dependencies == null) {
+            setDependencies(new java.util.ArrayList<String>());
         }
-        dependencies.add( dependency );
+        dependencies.add(dependency);
     }
 
-    public Collection<String> getDependencies()
-    {
+    public Collection<String> getDependencies() {
         return dependencies;
     }
 
-    public String toString()
-    {
-        StringBuilder buffer = new StringBuilder( "Classpath {" );
+    public String toString() {
+        StringBuilder buffer = new StringBuilder("Classpath {");
 
-        if ( dependencies != null )
-        {
-            for ( String dep : dependencies )
-            {
-                buffer.append( " " ).append( dep );
+        if (dependencies != null) {
+            for (String dep : dependencies) {
+                buffer.append(" ").append(dep);
             }
         }
 
-        buffer.append( "}" );
+        buffer.append("}");
 
         return buffer.toString();
     }
-
 }

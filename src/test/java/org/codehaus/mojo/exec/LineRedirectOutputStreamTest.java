@@ -1,13 +1,13 @@
 package org.codehaus.mojo.exec;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
+
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 public class LineRedirectOutputStreamTest {
 
@@ -26,7 +26,9 @@ public class LineRedirectOutputStreamTest {
     @Test
     public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCp1252_thenShouldDecodeProperly()
             throws IOException {
-        Assume.assumeTrue("The JVM does not contain the cp-1252 charset", Charset.availableCharsets().containsKey("windows-1252"));
+        Assume.assumeTrue(
+                "The JVM does not contain the cp-1252 charset",
+                Charset.availableCharsets().containsKey("windows-1252"));
         internalTestForCharset(Charset.forName("windows-1252"));
     }
 
@@ -56,8 +58,9 @@ public class LineRedirectOutputStreamTest {
         internalTestForCharset(sb -> new LineRedirectOutputStream(sb::append, charset), charset);
     }
 
-    private void internalTestForCharset(Function<StringBuilder, LineRedirectOutputStream> lineRedirectOutputStream,
-                                        Charset charset) throws IOException {
+    private void internalTestForCharset(
+            Function<StringBuilder, LineRedirectOutputStream> lineRedirectOutputStream, Charset charset)
+            throws IOException {
         StringBuilder sb = new StringBuilder();
         String firstLine = "Hello, 你好, नमस्ते, مرحبا, γεια σας, שלום, こんにちは, 안녕하세요!";
         String secondLine = "🌍 Welcome to the world! 🌟✨🎉🔥";

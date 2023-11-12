@@ -22,6 +22,4 @@ package org.codehaus.mojo.exec;
 /**
  * Just to comply to maven configuration (object converter) and the legacy configuration.
  */
-public class SystemProperty extends Property
-{
-}
+public class SystemProperty extends Property {}

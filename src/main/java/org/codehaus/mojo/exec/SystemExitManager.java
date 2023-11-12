@@ -2,13 +2,13 @@ package org.codehaus.mojo.exec;
 
 /*
  * Copyright MojoHaus and Contributors
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,15 +21,13 @@ import java.security.Permission;
 /**
  * A special security manager (SM) passing on permission checks to the original SM it replaces, except for
  * {@link #checkExit(int)}
- * 
+ *
  * @author Alexander Kriegisch
  */
-public class SystemExitManager extends SecurityManager
-{
+public class SystemExitManager extends SecurityManager {
     private final SecurityManager originalSecurityManager;
 
-    public SystemExitManager( SecurityManager originalSecurityManager )
-    {
+    public SystemExitManager(SecurityManager originalSecurityManager) {
         this.originalSecurityManager = originalSecurityManager;
     }
 
@@ -51,22 +49,18 @@ public class SystemExitManager extends SecurityManager
      *         JVM with an error code.
      *     </li>
      * </ul>
-     * 
+     *
      * @param status the exit status
      */
     @Override
-    public void checkExit( int status )
-    {
-        throw new SystemExitException( "System::exit was called with return code " + status, status );
+    public void checkExit(int status) {
+        throw new SystemExitException("System::exit was called with return code " + status, status);
     }
 
     @Override
-    public void checkPermission( Permission perm )
-    {
-        if ( originalSecurityManager != null )
-        {
-            originalSecurityManager.checkPermission( perm );
+    public void checkPermission(Permission perm) {
+        if (originalSecurityManager != null) {
+            originalSecurityManager.checkPermission(perm);
         }
     }
-
 }
