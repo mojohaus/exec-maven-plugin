@@ -174,7 +174,7 @@ public class ExecJavaMojo
      * Maven will continue on while the affected threads (and related objects in memory) linger on. Consider setting
      * this to <code>true</code> if you are invoking problematic code that you can't fix. An example is
      * {@link java.util.Timer} which doesn't respond to interruption. To have <code>Timer</code> fixed, vote for
-     * <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6336543">this bug</a>.
+     * <a href="https://bugs.java.com/bugdatabase/view_bug?bug_id=6336543">this bug</a>.
      * <p>
      * <b>Note:</b> In JDK 20+, the long deprecated {@link Thread#stop()} (since JDK 1.2) has been removed and will
      * throw an {@link UnsupportedOperationException}. This will be handled gracefully, yielding a log warning
@@ -184,16 +184,6 @@ public class ExecJavaMojo
      */
     @Parameter( property = "exec.stopUnresponsiveDaemonThreads", defaultValue = "false" )
     private boolean stopUnresponsiveDaemonThreads;
-
-    /**
-     * Deprecated this is not needed anymore.
-     * 
-     * @deprecated since 1.1-alpha-1
-     * @since 1.0
-     */
-    @Parameter( property = "exec.killAfter", defaultValue = "-1" )
-    @Deprecated
-    private long killAfter;
 
     private Properties originalSystemProperties;
 
@@ -246,10 +236,6 @@ public class ExecJavaMojo
         {
             getLog().info( "skipping execute as per configuration" );
             return;
-        }
-        if ( killAfter != -1 )
-        {
-            getLog().warn( "Warning: killAfter is now deprecated. Do you need it ? Please comment on MEXEC-6." );
         }
 
         if ( null == arguments )

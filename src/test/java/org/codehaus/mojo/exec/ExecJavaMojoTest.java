@@ -336,7 +336,6 @@ public class ExecJavaMojoTest
 
         // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
         setVariableValueToObject( mojo, "includeProjectDependencies", Boolean.TRUE );
-        setVariableValueToObject( mojo, "killAfter", (long) -1 );
         setVariableValueToObject( mojo, "cleanupDaemonThreads", Boolean.TRUE );
         setVariableValueToObject( mojo, "classpathScope", "compile" );
 
