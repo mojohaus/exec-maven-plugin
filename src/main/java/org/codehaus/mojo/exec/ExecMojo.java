@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +66,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -273,7 +273,7 @@ public class ExecMojo extends AbstractExecMojo {
      * @since 1.1-beta-2
      */
     @Parameter
-    private Map<String, String> environmentVariables = new HashMap<String, String>();
+    private Map<String, String> environmentVariables = new HashMap<>();
 
     /**
      * Environment script to be merged with <i>environmentVariables</i> This script is platform specifics, on Unix its
@@ -378,7 +378,7 @@ public class ExecMojo extends AbstractExecMojo {
 
             String argsProp = getSystemProperty("exec.args");
 
-            List<String> commandArguments = new ArrayList<String>();
+            List<String> commandArguments = new ArrayList<>();
 
             if (hasCommandlineArgs()) {
                 handleCommandLineArgs(commandArguments);
@@ -419,13 +419,8 @@ public class ExecMojo extends AbstractExecMojo {
                         getLog().warn("Could not create non existing parent directories for log file: " + outputFile);
                     }
 
-                    FileOutputStream outputStream = null;
-                    try {
-                        outputStream = new FileOutputStream(outputFile);
-
+                    try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
                         resultCode = executeCommandLine(exec, commandLine, enviro, outputStream);
-                    } finally {
-                        IOUtil.close(outputStream);
                     }
                 } else if (useMavenLogger) {
                     getLog().debug("Will redirect program output to Maven logger");
@@ -435,24 +430,14 @@ public class ExecMojo extends AbstractExecMojo {
                     // which is why we capture the thread name prefix here.
                     final String logPrefix =
                             session.isParallel() ? "[" + Thread.currentThread().getName() + "] " : "";
-                    Consumer<String> mavenOutRedirect = new Consumer<String>() {
-
-                        @Override
-                        public void accept(String logMessage) {
-                            if (quietLogs) {
-                                getLog().debug(logPrefix + logMessage);
-                            } else {
-                                getLog().info(logPrefix + logMessage);
-                            }
+                    Consumer<String> mavenOutRedirect = logMessage -> {
+                        if (quietLogs) {
+                            getLog().debug(logPrefix + logMessage);
+                        } else {
+                            getLog().info(logPrefix + logMessage);
                         }
                     };
-                    Consumer<String> mavenErrRedirect = new Consumer<String>() {
-
-                        @Override
-                        public void accept(String logMessage) {
-                            getLog().error(logPrefix + logMessage);
-                        }
-                    };
+                    Consumer<String> mavenErrRedirect = logMessage -> getLog().error(logPrefix + logMessage);
 
                     try (OutputStream out = new LineRedirectOutputStream(mavenOutRedirect);
                             OutputStream err = new LineRedirectOutputStream(mavenErrRedirect)) {
@@ -489,7 +474,7 @@ public class ExecMojo extends AbstractExecMojo {
 
     private Map<String, String> handleSystemEnvVariables() throws MojoExecutionException {
 
-        Map<String, String> enviro = new HashMap<String, String>();
+        Map<String, String> enviro = new HashMap<>();
         Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
         for (Map.Entry<?, ?> entry : systemEnvVars.entrySet()) {
             enviro.put((String) entry.getKey(), (String) entry.getValue());
@@ -508,7 +493,7 @@ public class ExecMojo extends AbstractExecMojo {
         }
 
         if (this.getLog().isDebugEnabled()) {
-            Set<String> keys = new TreeSet<String>();
+            Set<String> keys = new TreeSet<>();
             keys.addAll(enviro.keySet());
             for (String key : keys) {
                 this.getLog().debug("env: " + key + "=" + enviro.get(key));
@@ -740,9 +725,9 @@ public class ExecMojo extends AbstractExecMojo {
     private List<Artifact> filterArtifacts(List<Artifact> artifacts, Collection<String> dependencies) {
         AndArtifactFilter filter = new AndArtifactFilter();
 
-        filter.add(new IncludesArtifactFilter(new ArrayList<String>(dependencies))); // gosh
+        filter.add(new IncludesArtifactFilter(new ArrayList<>(dependencies))); // gosh
 
-        List<Artifact> filteredArtifacts = new ArrayList<Artifact>();
+        List<Artifact> filteredArtifacts = new ArrayList<>();
         for (Artifact artifact : artifacts) {
             if (filter.include(artifact)) {
                 getLog().debug("filtering in " + artifact);
@@ -837,7 +822,7 @@ public class ExecMojo extends AbstractExecMojo {
     }
 
     private List<String> getExecutablePaths(Map<String, String> enviro) {
-        List<String> paths = new ArrayList<String>();
+        List<String> paths = new ArrayList<>();
         paths.add("");
 
         String path = enviro.get("PATH");
@@ -850,7 +835,7 @@ public class ExecMojo extends AbstractExecMojo {
 
     protected int executeCommandLine(
             Executor exec, CommandLine commandLine, Map<String, String> enviro, OutputStream out, OutputStream err)
-            throws ExecuteException, IOException {
+            throws IOException {
         // note: don't use BufferedOutputStream here since it delays the outputs MEXEC-138
         PumpStreamHandler psh = new PumpStreamHandler(out, err, System.in);
         return executeCommandLine(exec, commandLine, enviro, psh);
@@ -858,7 +843,7 @@ public class ExecMojo extends AbstractExecMojo {
 
     protected int executeCommandLine(
             Executor exec, CommandLine commandLine, Map<String, String> enviro, FileOutputStream outputFile)
-            throws ExecuteException, IOException {
+            throws IOException {
         BufferedOutputStream bos = new BufferedOutputStream(outputFile);
         PumpStreamHandler psh = new PumpStreamHandler(bos);
         return executeCommandLine(exec, commandLine, enviro, psh);
@@ -866,7 +851,7 @@ public class ExecMojo extends AbstractExecMojo {
 
     protected int executeCommandLine(
             Executor exec, final CommandLine commandLine, Map<String, String> enviro, final PumpStreamHandler psh)
-            throws ExecuteException, IOException {
+            throws IOException {
         exec.setStreamHandler(psh);
 
         int result;
@@ -978,30 +963,30 @@ public class ExecMojo extends AbstractExecMojo {
      * @throws IOException
      */
     private File createJar(List<String> classPath, String mainClass) throws IOException {
-        File file = File.createTempFile("maven-exec", ".jar");
+        File file = Files.createTempFile("maven-exec", ".jar").toFile();
         file.deleteOnExit();
-        FileOutputStream fos = new FileOutputStream(file);
-        JarOutputStream jos = new JarOutputStream(fos);
-        jos.setLevel(JarOutputStream.STORED);
-        JarEntry je = new JarEntry("META-INF/MANIFEST.MF");
-        jos.putNextEntry(je);
+        try (FileOutputStream fos = new FileOutputStream(file);
+                JarOutputStream jos = new JarOutputStream(fos)) {
+            jos.setLevel(JarOutputStream.STORED);
+            JarEntry je = new JarEntry("META-INF/MANIFEST.MF");
+            jos.putNextEntry(je);
 
-        Manifest man = new Manifest();
+            Manifest man = new Manifest();
 
-        // we can't use StringUtils.join here since we need to add a '/' to
-        // the end of directory entries - otherwise the jvm will ignore them.
-        StringBuilder cp = new StringBuilder();
-        for (String el : classPath) {
-            // NOTE: if File points to a directory, this entry MUST end in '/'.
-            cp.append(new URL(new File(el).toURI().toASCIIString()).toExternalForm() + " ");
+            // we can't use StringUtils.join here since we need to add a '/' to
+            // the end of directory entries - otherwise the jvm will ignore them.
+            StringBuilder cp = new StringBuilder();
+            for (String el : classPath) {
+                // NOTE: if File points to a directory, this entry MUST end in '/'.
+                cp.append(new URL(new File(el).toURI().toASCIIString()).toExternalForm() + " ");
+            }
+
+            man.getMainAttributes().putValue("Manifest-Version", "1.0");
+            man.getMainAttributes().putValue("Class-Path", cp.toString().trim());
+            man.getMainAttributes().putValue("Main-Class", mainClass);
+
+            man.write(jos);
         }
-
-        man.getMainAttributes().putValue("Manifest-Version", "1.0");
-        man.getMainAttributes().putValue("Class-Path", cp.toString().trim());
-        man.getMainAttributes().putValue("Main-Class", mainClass);
-
-        man.write(jos);
-        jos.close();
 
         return file;
     }
@@ -1009,15 +994,10 @@ public class ExecMojo extends AbstractExecMojo {
     private void createArgFile(String filePath, List<String> lines) throws IOException {
         final String EOL = System.getProperty("line.separator", "\\n");
 
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(filePath);
+        try (FileWriter writer = new FileWriter(filePath)) {
             for (String line : lines) {
                 writer.append(line).append(EOL);
             }
-
-        } finally {
-            IOUtil.close(writer);
         }
     }
 
@@ -1055,9 +1035,7 @@ public class ExecMojo extends AbstractExecMojo {
             }
 
             results = stdout.getParsedEnv();
-        } catch (CommandLineException e) {
-            throw new MojoExecutionException(e.getMessage());
-        } catch (IOException e) {
+        } catch (CommandLineException | IOException e) {
             throw new MojoExecutionException(e.getMessage());
         } finally {
             if (tmpEnvExecFile != null) {
@@ -1069,13 +1047,11 @@ public class ExecMojo extends AbstractExecMojo {
     }
 
     protected File createEnvWrapperFile(File envScript) throws IOException {
-        PrintWriter writer = null;
         File tmpFile = null;
-        try {
 
-            if (OS.isFamilyWindows()) {
-                tmpFile = File.createTempFile("env", ".bat");
-                writer = new PrintWriter(tmpFile);
+        if (OS.isFamilyWindows()) {
+            tmpFile = Files.createTempFile("env", ".bat").toFile();
+            try (PrintWriter writer = new PrintWriter(tmpFile)) {
                 writer.append("@echo off").println();
                 writer.append("call \"")
                         .append(envScript.getCanonicalPath())
@@ -1085,10 +1061,11 @@ public class ExecMojo extends AbstractExecMojo {
                         .println();
                 writer.append("set").println();
                 writer.flush();
-            } else {
-                tmpFile = File.createTempFile("env", ".sh");
-                // tmpFile.setExecutable( true );//java 6 only
-                writer = new PrintWriter(tmpFile);
+            }
+        } else {
+            tmpFile = Files.createTempFile("env", ".sh").toFile();
+            // tmpFile.setExecutable( true );//java 6 only
+            try (PrintWriter writer = new PrintWriter(tmpFile)) {
                 writer.append("#! /bin/sh").println();
                 writer.append(". ").append(envScript.getCanonicalPath()).println(); // works on all unix??
                 writer.append("echo " + EnvStreamConsumer.START_PARSING_INDICATOR)
@@ -1096,8 +1073,6 @@ public class ExecMojo extends AbstractExecMojo {
                 writer.append("env").println();
                 writer.flush();
             }
-        } finally {
-            IOUtil.close(writer);
         }
 
         return tmpFile;

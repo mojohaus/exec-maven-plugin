@@ -13,9 +13,9 @@ public class EnvStreamConsumer implements StreamConsumer {
     public static final String START_PARSING_INDICATOR =
             "================================This is the beginning of env parsing================================";
 
-    private Map<String, String> envs = new HashMap<String, String>();
+    private Map<String, String> envs = new HashMap<>();
 
-    private List<String> unparsed = new ArrayList<String>();
+    private List<String> unparsed = new ArrayList<>();
 
     private boolean startParsing = false;
 
