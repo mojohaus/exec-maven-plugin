@@ -12,6 +12,7 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,15 +53,15 @@ public class ExecMojoTest extends AbstractMojoTestCase {
     static class MockExecMojo extends ExecMojo {
         public int executeResult;
 
-        public List<CommandLine> commandLines = new ArrayList<CommandLine>();
+        public List<CommandLine> commandLines = new ArrayList<>();
 
         public String failureMsg;
 
-        public Map<String, String> systemProperties = new HashMap<String, String>();
+        public Map<String, String> systemProperties = new HashMap<>();
 
         protected int executeCommandLine(
                 Executor exec, CommandLine commandLine, Map enviro, OutputStream out, OutputStream err)
-                throws IOException, ExecuteException {
+                throws ExecuteException {
             commandLines.add(commandLine);
             if (failureMsg != null) {
                 throw new ExecuteException(failureMsg, executeResult);
@@ -89,7 +90,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         mojo.setExecutable(SOME_EXECUTABLE);
         mojo.setArguments(Arrays.asList(new String[] {"--version"}));
         mojo.executeResult = 0;
-        mojo.setBasedir(File.createTempFile("mvn-temp", "txt").getParentFile());
+        mojo.setBasedir(Files.createTempFile("mvn-temp", "txt").getParent().toFile());
     }
 
     public void testRunOK() throws MojoExecutionException {
@@ -117,7 +118,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         ExecMojo realMojo = new ExecMojo();
 
         File workdir = new File(System.getProperty("user.dir"));
-        Map<String, String> enviro = new HashMap<String, String>();
+        Map<String, String> enviro = new HashMap<>();
 
         String myJavaPath = "target" + File.separator + "javax";
         File f = new File(myJavaPath);
@@ -173,7 +174,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         final File workdir = new File(tmp, "testGetExecutablePathPreferExecutableExtensionsOnWindows");
         workdir.mkdirs();
 
-        final Map<String, String> enviro = new HashMap<String, String>();
+        final Map<String, String> enviro = new HashMap<>();
 
         final File f = new File(workdir, "mycmd");
         final File fCmd = new File(workdir, "mycmd.cmd");

@@ -35,7 +35,7 @@ abstract class AbstractPath {
     public void setDependency(String dependency) {
         // Is the the correct thing to do? See MOJO-348
         if (dependencies == null) {
-            setDependencies(new java.util.ArrayList<String>());
+            setDependencies(new java.util.ArrayList<>());
         }
         dependencies.add(dependency);
     }

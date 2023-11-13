@@ -75,7 +75,7 @@ class PathsToolchainFactory implements ToolchainFactory {
         final Xpp3Dom[] pathDoms = pathDom.getChildren("path");
         if (pathDoms == null || pathDoms.length == 0) return pathsToolchain;
 
-        final List<String> paths = new ArrayList<String>(pathDoms.length);
+        final List<String> paths = new ArrayList<>(pathDoms.length);
         for (final Xpp3Dom pathdom : pathDoms) {
             final String pathString = pathdom.getValue();
 
@@ -118,9 +118,7 @@ class PathsToolchainFactory implements ToolchainFactory {
             final Method method = new PropertyDescriptor(property, obj.getClass()).getReadMethod();
 
             return method.invoke(obj);
-        } catch (final IntrospectionException e) {
-            throw new RuntimeException("Incompatible toolchain API", e);
-        } catch (final IllegalAccessException e) {
+        } catch (final IntrospectionException | IllegalAccessException e) {
             throw new RuntimeException("Incompatible toolchain API", e);
         } catch (final InvocationTargetException e) {
             final Throwable cause = e.getCause();

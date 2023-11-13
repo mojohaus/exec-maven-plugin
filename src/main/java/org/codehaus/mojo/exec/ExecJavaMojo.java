@@ -29,7 +29,6 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.ProjectBuilder;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
@@ -54,12 +53,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
 
     @Component
     private RepositorySystem repositorySystem;
-
-    /**
-     * @since 1.0
-     */
-    @Component
-    private ProjectBuilder projectBuilder;
 
     /**
      * The main class to execute.<br>
@@ -255,70 +248,63 @@ public class ExecJavaMojo extends AbstractExecMojo {
         }
 
         IsolatedThreadGroup threadGroup = new IsolatedThreadGroup(mainClass /* name */);
+        // TODO:
+        //   Adjust implementation for future JDKs after removal of SecurityManager.
+        //   See https://openjdk.org/jeps/411 for basic information.
+        //   See https://bugs.openjdk.org/browse/JDK-8199704 for details about how users might be able to
+        // block
+        //   System::exit in post-removal JDKs (still undecided at the time of writing this comment).
         Thread bootstrapThread = new Thread(
                 threadGroup,
-                new Runnable() {
-                    // TODO:
-                    //   Adjust implementation for future JDKs after removal of SecurityManager.
-                    //   See https://openjdk.org/jeps/411 for basic information.
-                    //   See https://bugs.openjdk.org/browse/JDK-8199704 for details about how users might be able to
-                    // block
-                    //   System::exit in post-removal JDKs (still undecided at the time of writing this comment).
-                    @SuppressWarnings("removal")
-                    public void run() {
-                        int sepIndex = mainClass.indexOf('/');
+                () -> {
+                    int sepIndex = mainClass.indexOf('/');
 
-                        final String bootClassName;
-                        if (sepIndex >= 0) {
-                            bootClassName = mainClass.substring(sepIndex + 1);
-                        } else {
-                            bootClassName = mainClass;
+                    final String bootClassName;
+                    if (sepIndex >= 0) {
+                        bootClassName = mainClass.substring(sepIndex + 1);
+                    } else {
+                        bootClassName = mainClass;
+                    }
+
+                    SecurityManager originalSecurityManager = System.getSecurityManager();
+
+                    try {
+                        Class<?> bootClass =
+                                Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
+
+                        MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+                        MethodHandle mainHandle =
+                                lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
+
+                        if (blockSystemExit) {
+                            System.setSecurityManager(new SystemExitManager(originalSecurityManager));
                         }
-
-                        SecurityManager originalSecurityManager = System.getSecurityManager();
-
-                        try {
-                            Class<?> bootClass = Thread.currentThread()
-                                    .getContextClassLoader()
-                                    .loadClass(bootClassName);
-
-                            MethodHandles.Lookup lookup = MethodHandles.lookup();
-
-                            MethodHandle mainHandle = lookup.findStatic(
-                                    bootClass, "main", MethodType.methodType(void.class, String[].class));
-
-                            if (blockSystemExit) {
-                                System.setSecurityManager(new SystemExitManager(originalSecurityManager));
-                            }
-                            mainHandle.invoke(arguments);
-                        } catch (IllegalAccessException
-                                | NoSuchMethodException
-                                | NoSuchMethodError e) { // just pass it on
-                            Thread.currentThread()
-                                    .getThreadGroup()
-                                    .uncaughtException(
-                                            Thread.currentThread(),
-                                            new Exception(
-                                                    "The specified mainClass doesn't contain a main method with appropriate signature.",
-                                                    e));
-                        } catch (
-                                InvocationTargetException
-                                        e) { // use the cause if available to improve the plugin execution output
-                            Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
-                            Thread.currentThread()
-                                    .getThreadGroup()
-                                    .uncaughtException(Thread.currentThread(), exceptionToReport);
-                        } catch (SystemExitException systemExitException) {
-                            getLog().info(systemExitException.getMessage());
-                            if (systemExitException.getExitCode() != 0) {
-                                throw systemExitException;
-                            }
-                        } catch (Throwable e) { // just pass it on
-                            Thread.currentThread().getThreadGroup().uncaughtException(Thread.currentThread(), e);
-                        } finally {
-                            if (blockSystemExit) {
-                                System.setSecurityManager(originalSecurityManager);
-                            }
+                        mainHandle.invoke(arguments);
+                    } catch (IllegalAccessException | NoSuchMethodException | NoSuchMethodError e) { // just pass it on
+                        Thread.currentThread()
+                                .getThreadGroup()
+                                .uncaughtException(
+                                        Thread.currentThread(),
+                                        new Exception(
+                                                "The specified mainClass doesn't contain a main method with appropriate signature.",
+                                                e));
+                    } catch (InvocationTargetException e) {
+                        // use the cause if available to improve the plugin execution output
+                        Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
+                        Thread.currentThread()
+                                .getThreadGroup()
+                                .uncaughtException(Thread.currentThread(), exceptionToReport);
+                    } catch (SystemExitException systemExitException) {
+                        getLog().info(systemExitException.getMessage());
+                        if (systemExitException.getExitCode() != 0) {
+                            throw systemExitException;
+                        }
+                    } catch (Throwable e) { // just pass it on
+                        Thread.currentThread().getThreadGroup().uncaughtException(Thread.currentThread(), e);
+                    } finally {
+                        if (blockSystemExit) {
+                            System.setSecurityManager(originalSecurityManager);
                         }
                     }
                 },
@@ -452,7 +438,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
 
     private void terminateThreads(ThreadGroup threadGroup) {
         long startTime = System.currentTimeMillis();
-        Set<Thread> uncooperativeThreads = new HashSet<Thread>(); // these were not responsive to interruption
+        Set<Thread> uncooperativeThreads = new HashSet<>(); // these were not responsive to interruption
         for (Collection<Thread> threads = getActiveThreads(threadGroup);
                 !threads.isEmpty();
                 threads = getActiveThreads(threadGroup), threads.removeAll(uncooperativeThreads)) {
@@ -512,7 +498,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
     private Collection<Thread> getActiveThreads(ThreadGroup threadGroup) {
         Thread[] threads = new Thread[threadGroup.activeCount()];
         int numThreads = threadGroup.enumerate(threads);
-        Collection<Thread> result = new ArrayList<Thread>(numThreads);
+        Collection<Thread> result = new ArrayList<>(numThreads);
         for (int i = 0; i < threads.length && threads[i] != null; i++) {
             result.add(threads[i]);
         }

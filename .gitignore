@@ -5,7 +5,6 @@ target
 .classpath
 dependency-reduced-pom.xml
 build
-.classpath
 .project
 .settings
 .idea
