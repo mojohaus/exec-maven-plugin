@@ -1,4 +1,2 @@
 # Configuration for Release Drafter: https://github.com/toolmantim/release-drafter
 _extends: .github
-name-template: exec-maven-plugin-$NEXT_MINOR_VERSION
-tag-template: exec-maven-plugin-$NEXT_MINOR_VERSION
