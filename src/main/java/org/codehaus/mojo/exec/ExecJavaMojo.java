@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -18,6 +21,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +34,10 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.codehaus.plexus.PlexusContainer;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
@@ -37,7 +45,12 @@ import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.resolution.VersionRangeRequest;
+import org.eclipse.aether.resolution.VersionRangeResolutionException;
+import org.eclipse.aether.resolution.VersionRangeResult;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Executes the supplied java class in the current VM with the enclosing project's dependencies as classpath.
@@ -58,6 +71,20 @@ public class ExecJavaMojo extends AbstractExecMojo {
      * The main class to execute.<br>
      * With Java 9 and above you can prefix it with the modulename, e.g. <code>com.greetings/com.greetings.Main</code>
      * Without modulename the classpath will be used, with modulename a new modulelayer will be created.
+     * <p>
+     * Note that you can also provide a {@link Runnable} fully qualified name.
+     * The runnable can get constructor injections either by type if you have maven in your classpath (can be provided)
+     * or by name (ensure to enable {@code -parameters} Java compiler option) for loose coupling.
+     * Current support loose injections are:
+     * <ul>
+     *     <li><code>systemProperties</code>: <code>Properties</code>, session system properties</li>
+     *     <li><code>systemPropertiesUpdater</code>: <code>BiConsumer&lt;String, String&gt;</code>, session system properties update callback (pass the key/value to update, null value means removal of the key)</li>
+     *     <li><code>userProperties</code>: <code>Properties</code>, session user properties</li>
+     *     <li><code>userPropertiesUpdater</code>: <code>BiConsumer&lt;String, String&gt;</code>, session user properties update callback (pass the key/value to update, null value means removal of the key)</li>
+     *     <li><code>projectProperties</code>: <code>Properties</code>, project properties</li>
+     *     <li><code>projectPropertiesUpdater</code>: <code>BiConsumer&lt;String, String&gt;</code>, project properties update callback (pass the key/value to update, null value means removal of the key)</li>
+     *     <li><code>highestVersionResolver</code>: <code>Function&lt;String, String&gt;</code>, passing a <code>groupId:artifactId</code> you get the latest resolved version from the project repositories</li>
+     * </ul>
      *
      * @since 1.0
      */
@@ -196,10 +223,11 @@ public class ExecJavaMojo extends AbstractExecMojo {
 
     /**
      * Whether to try and prohibit the called Java program from terminating the JVM (and with it the whole Maven build)
-     * by calling {@link System#exit(int)}. When active, a special security manager will intercept those calls. In case
-     * of an exit code 0 (OK), it will simply log the fact that {@link System#exit(int)} was called. Otherwise, it will
-     * throw a {@link SystemExitException}, failing the Maven goal as if the called Java code itself had exited with an
-     * exception. This way, the error is propagated without terminating the whole Maven JVM. In previous versions, users
+     * by calling {@link System#exit(int)}. When active, loaded classes will replace this call by a custom callback.
+     * In case of an exit code 0 (OK), it will simply log the fact that {@link System#exit(int)} was called.
+     * Otherwise, it will throw a {@link SystemExitException}, failing the Maven goal as if the called Java code itself
+     * had exited with an exception.
+     * This way, the error is propagated without terminating the whole Maven JVM. In previous versions, users
      * had to use the {@code exec} instead of the {@code java} goal in such cases, which now with this option is no
      * longer necessary.
      *
@@ -207,6 +235,9 @@ public class ExecJavaMojo extends AbstractExecMojo {
      */
     @Parameter(property = "exec.blockSystemExit", defaultValue = "false")
     private boolean blockSystemExit;
+
+    @Component // todo: for maven4 move to Lookup instead
+    private PlexusContainer container;
 
     /**
      * Execute goal.
@@ -249,7 +280,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
         //   See https://bugs.openjdk.org/browse/JDK-8199704 for details about how users might be able to
         // block
         //   System::exit in post-removal JDKs (still undecided at the time of writing this comment).
-        Thread bootstrapThread = new Thread(
+        Thread bootstrapThread = new Thread( // TODO: drop this useless thread 99% of the time
                 threadGroup,
                 () -> {
                     int sepIndex = mainClass.indexOf('/');
@@ -262,15 +293,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
                     }
 
                     try {
-                        Class<?> bootClass =
-                                Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
-
-                        MethodHandles.Lookup lookup = MethodHandles.lookup();
-
-                        MethodHandle mainHandle =
-                                lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
-
-                        mainHandle.invoke(arguments);
+                        doExec(bootClassName);
                     } catch (IllegalAccessException | NoSuchMethodException | NoSuchMethodError e) { // just pass it on
                         Thread.currentThread()
                                 .getThreadGroup()
@@ -295,7 +318,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
                     }
                 },
                 mainClass + ".main()");
-        URLClassLoader classLoader = getClassLoader();
+        URLClassLoader classLoader = getClassLoader(); // TODO: enable to cache accross executions
         bootstrapThread.setContextClassLoader(classLoader);
         setSystemProperties();
 
@@ -315,7 +338,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
 
             try {
                 threadGroup.destroy();
-            } catch (RuntimeException /* missing method in future java version */ e) {
+            } catch (RuntimeException | Error /* missing method in future java version */ e) {
                 getLog().warn("Couldn't destroy threadgroup " + threadGroup, e);
             }
         }
@@ -342,6 +365,160 @@ public class ExecJavaMojo extends AbstractExecMojo {
         }
 
         registerSourceRoots();
+    }
+
+    private void doExec(final String bootClassName) throws Throwable {
+        Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        try {
+            doMain(lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class)));
+        } catch (final NoSuchMethodException nsme) {
+            if (Runnable.class.isAssignableFrom(bootClass)) {
+                doRun(bootClass);
+            } else {
+                throw nsme;
+            }
+        }
+    }
+
+    private void doMain(final MethodHandle mainHandle) throws Throwable {
+        mainHandle.invoke(arguments);
+    }
+
+    private void doRun(final Class<?> bootClass)
+            throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        final Class<? extends Runnable> runnableClass = bootClass.asSubclass(Runnable.class);
+        final Constructor<? extends Runnable> constructor = Stream.of(runnableClass.getDeclaredConstructors())
+                .map(i -> (Constructor<? extends Runnable>) i)
+                .filter(i -> Modifier.isPublic(i.getModifiers()))
+                .max(Comparator.<Constructor<? extends Runnable>, Integer>comparing(Constructor::getParameterCount))
+                .orElseThrow(() -> new IllegalArgumentException("No public constructor found for " + bootClass));
+        if (getLog().isDebugEnabled()) {
+            getLog().debug("Using constructor " + constructor);
+        }
+
+        Runnable runnable;
+        try { // todo: enhance that but since injection API is being defined at mvn4 level it is
+            // good enough
+            final Object[] args = Stream.of(constructor.getParameters())
+                    .map(param -> {
+                        try {
+                            return lookupParam(param);
+                        } catch (final ComponentLookupException e) {
+                            getLog().error(e.getMessage(), e);
+                            throw new IllegalStateException(e);
+                        }
+                    })
+                    .toArray(Object[]::new);
+            constructor.setAccessible(true);
+            runnable = constructor.newInstance(args);
+        } catch (final RuntimeException re) {
+            if (getLog().isDebugEnabled()) {
+                getLog().debug(
+                                "Can't inject " + runnableClass + "': " + re.getMessage() + ", will ignore injections",
+                                re);
+            }
+            final Constructor<? extends Runnable> declaredConstructor = runnableClass.getDeclaredConstructor();
+            declaredConstructor.setAccessible(true);
+            runnable = declaredConstructor.newInstance();
+        }
+        runnable.run();
+    }
+
+    private Object lookupParam(final java.lang.reflect.Parameter param) throws ComponentLookupException {
+        final String name = param.getName();
+        switch (name) {
+                // loose coupled to maven (wrapped with standard jvm types to not require it)
+            case "systemProperties": // Properties
+                return getSession().getSystemProperties();
+            case "systemPropertiesUpdater": // BiConsumer<String, String>
+                return propertiesUpdater(getSession().getSystemProperties());
+            case "userProperties": // Properties
+                return getSession().getUserProperties();
+            case "userPropertiesUpdater": // BiConsumer<String, String>
+                return propertiesUpdater(getSession().getUserProperties());
+            case "projectProperties": // Properties
+                return project.getProperties();
+            case "projectPropertiesUpdater": // BiConsumer<String, String>
+                return propertiesUpdater(project.getProperties());
+            case "highestVersionResolver": // Function<String, String>
+                return resolveVersion(VersionRangeResult::getHighestVersion);
+                // standard bindings
+            case "session": // MavenSession
+                return getSession();
+            case "container": // PlexusContainer
+                return container;
+            default: // Any
+                return lookup(param, name);
+        }
+    }
+
+    private Object lookup(final java.lang.reflect.Parameter param, final String name) throws ComponentLookupException {
+        // try injecting a real instance but loose coupled - will use reflection
+        if (param.getType() == Object.class && name.contains("_")) {
+            final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+
+            try {
+                final int hintIdx = name.indexOf("__hint_");
+                if (hintIdx > 0) {
+                    final String hint = name.substring(hintIdx + "__hint_".length());
+                    final String typeName = name.substring(0, hintIdx).replace('_', '.');
+                    return container.lookup(loader.loadClass(typeName), hint);
+                }
+
+                final String typeName = name.replace('_', '.');
+                return container.lookup(loader.loadClass(typeName));
+            } catch (final ClassNotFoundException cnfe) {
+                if (getLog().isDebugEnabled()) {
+                    getLog().debug("Can't load param (" + name + "): " + cnfe.getMessage(), cnfe);
+                }
+                // let's try to lookup object, unlikely but not impossible
+            }
+        }
+
+        // just lookup by type
+        return container.lookup(param.getType());
+    }
+
+    private Function<String, String> resolveVersion(final Function<VersionRangeResult, Object> fn) {
+        return ga -> {
+            final int sep = ga.indexOf(':');
+            if (sep < 0) {
+                throw new IllegalArgumentException("Invalid groupId:artifactId argument: '" + ga + "'");
+            }
+
+            final org.eclipse.aether.artifact.Artifact artifact = new DefaultArtifact(ga + ":[0,)");
+            final VersionRangeRequest rangeRequest = new VersionRangeRequest();
+            rangeRequest.setArtifact(artifact);
+            try {
+                if (includePluginDependencies && includeProjectDependencies) {
+                    rangeRequest.setRepositories(Stream.concat(
+                                    project.getRemoteProjectRepositories().stream(),
+                                    project.getRemotePluginRepositories().stream())
+                            .distinct()
+                            .collect(toList()));
+                } else if (includePluginDependencies) {
+                    rangeRequest.setRepositories(project.getRemotePluginRepositories());
+                } else if (includeProjectDependencies) {
+                    rangeRequest.setRepositories(project.getRemoteProjectRepositories());
+                }
+                final VersionRangeResult rangeResult =
+                        repositorySystem.resolveVersionRange(getSession().getRepositorySession(), rangeRequest);
+                return String.valueOf(fn.apply(rangeResult));
+            } catch (final VersionRangeResolutionException e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private BiConsumer<String, String> propertiesUpdater(final Properties props) {
+        return (k, v) -> {
+            if (v == null) {
+                props.remove(k);
+            } else {
+                props.setProperty(k, v);
+            }
+        };
     }
 
     /**

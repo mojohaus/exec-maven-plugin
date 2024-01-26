@@ -20,11 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Properties;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.monitor.logging.DefaultLog;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
@@ -47,8 +49,6 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
     @Mock
     private MavenSession session;
 
-    private static final File LOCAL_REPO = new File("src/test/repository");
-
     private static final int JAVA_VERSION_MAJOR =
             Integer.parseInt(System.getProperty("java.version").replaceFirst("[.].*", ""));
 
@@ -57,6 +57,25 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      * Exception { File pom = new File( getBasedir(), "src/test/projects/project2/pom.xml" ); String output = execute(
      * pom, "java" ); System.out.println(output); assertEquals( -1, output.trim().indexOf( "ERROR" ) ); }
      */
+
+    /**
+     * Check that a simple execution with no arguments and no system properties produces the expected result.<br>
+     * We load the config from a pom file and fill up the MavenProject property ourselves
+     *
+     * @throws Exception if any exception occurs
+     */
+    public void testRunnable() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project19/pom.xml");
+        ExecJavaMojo mojo = (ExecJavaMojo) lookupMojo("java", pom);
+        setUpProject(pom, mojo);
+        mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR, "exec:java")));
+        doExecute(mojo, null, null);
+        assertEquals(
+                "junit: true",
+                ((MavenSession) getVariableValueFromObject(mojo, "session"))
+                        .getSystemProperties()
+                        .getProperty("hello.runnable.output"));
+    }
 
     /**
      * Check that a simple execution with no arguments and no system properties produces the expected result.<br>
@@ -295,17 +314,11 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
     private String execute(File pom, String goal, ByteArrayOutputStream stringOutputStream, OutputStream stderr)
             throws Exception {
 
-        ExecJavaMojo mojo;
-        mojo = (ExecJavaMojo) lookupMojo(goal, pom);
+        ExecJavaMojo mojo = (ExecJavaMojo) lookupMojo(goal, pom);
 
         setUpProject(pom, mojo);
 
         MavenProject project = (MavenProject) getVariableValueFromObject(mojo, "project");
-
-        // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
-        setVariableValueToObject(mojo, "includeProjectDependencies", Boolean.TRUE);
-        setVariableValueToObject(mojo, "cleanupDaemonThreads", Boolean.TRUE);
-        setVariableValueToObject(mojo, "classpathScope", "compile");
 
         assertNotNull(mojo);
         assertNotNull(project);
@@ -318,22 +331,41 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
         mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR, "exec:java")));
 
+        doExecute(mojo, out, err);
+
+        return stringOutputStream.toString();
+    }
+
+    private void doExecute(final ExecJavaMojo mojo, final PrintStream out, final PrintStream err)
+            throws MojoExecutionException, MojoFailureException, InterruptedException {
         try {
             mojo.execute();
         } finally {
             // see testUncooperativeThread() for explaination
             Thread.sleep(300); // time seems about right
-            System.setOut(out);
-            System.setErr(err);
+            if (out != null) {
+                System.setOut(out);
+            }
+            if (err != null) {
+                System.setErr(err);
+            }
         }
-
-        return stringOutputStream.toString();
     }
 
     private void setUpProject(File pomFile, AbstractMojo mojo) throws Exception {
         super.setUp();
 
+        // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
+        setVariableValueToObject(mojo, "includeProjectDependencies", Boolean.TRUE);
+        setVariableValueToObject(mojo, "cleanupDaemonThreads", Boolean.TRUE);
+        setVariableValueToObject(mojo, "classpathScope", "compile");
+
+        Properties systemProps = new Properties();
+        systemProps.setProperty("test.version", "junit");
+
         MockitoAnnotations.initMocks(this);
+        setVariableValueToObject(mojo, "session", session);
+        when(session.getSystemProperties()).thenReturn(systemProps);
 
         ProjectBuildingRequest buildingRequest = mock(ProjectBuildingRequest.class);
         when(session.getProjectBuildingRequest()).thenReturn(buildingRequest);
