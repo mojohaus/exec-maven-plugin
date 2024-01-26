@@ -72,3 +72,5 @@ Exec Maven Plugin
   * {{{./examples/example-exec-using-executabledependency.html} Using executable binary dependencies instead of local executables}}
 
   * {{{./examples/example-java-project-properties.html} Forward maven system properties to the main}}
+
+  * {{{./examples/example-java-runnable.html} Execute a Runnable instead of a main}}
