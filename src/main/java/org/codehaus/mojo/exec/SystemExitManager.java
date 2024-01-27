@@ -16,19 +16,14 @@ package org.codehaus.mojo.exec;
  * limitations under the License.
  */
 
-import java.security.Permission;
-
 /**
- * A special security manager (SM) passing on permission checks to the original SM it replaces, except for
- * {@link #checkExit(int)}
+ * Will be used by {@link BlockExitTransformer} to replace {@link System#exit(int)} by this implementation.
  *
  * @author Alexander Kriegisch
  */
-public class SystemExitManager extends SecurityManager {
-    private final SecurityManager originalSecurityManager;
-
-    public SystemExitManager(SecurityManager originalSecurityManager) {
-        this.originalSecurityManager = originalSecurityManager;
+public final class SystemExitManager {
+    private SystemExitManager() {
+        // no-op
     }
 
     /**
@@ -52,15 +47,7 @@ public class SystemExitManager extends SecurityManager {
      *
      * @param status the exit status
      */
-    @Override
-    public void checkExit(int status) {
+    public static void exit(final int status) {
         throw new SystemExitException("System::exit was called with return code " + status, status);
-    }
-
-    @Override
-    public void checkPermission(Permission perm) {
-        if (originalSecurityManager != null) {
-            originalSecurityManager.checkPermission(perm);
-        }
     }
 }
