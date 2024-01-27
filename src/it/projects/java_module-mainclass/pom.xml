@@ -27,7 +27,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>@project.version@</version>
         <configuration>
-          <mainClass>com.greetings.Main</mainClass>
+          <mainClass>com.greetings/com.greetings.Main</mainClass>
         </configuration>
       </plugin>
     </plugins>
