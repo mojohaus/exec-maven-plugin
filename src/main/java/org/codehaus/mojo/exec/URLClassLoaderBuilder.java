@@ -22,6 +22,9 @@ package org.codehaus.mojo.exec;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -34,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.maven.plugin.logging.Log;
+import org.codehaus.plexus.util.IOUtil;
 
 import static java.util.Arrays.asList;
 
@@ -46,11 +50,17 @@ class URLClassLoaderBuilder {
     private Log logger;
     private Collection<Path> paths;
     private Collection<String> exclusions;
+    private ClassFileTransformer transformer;
 
     private URLClassLoaderBuilder() {}
 
     static URLClassLoaderBuilder builder() {
         return new URLClassLoaderBuilder();
+    }
+
+    public URLClassLoaderBuilder setTransformer(final ClassFileTransformer transformer) {
+        this.transformer = transformer;
+        return this;
     }
 
     URLClassLoaderBuilder setLogger(Log logger) {
@@ -86,7 +96,7 @@ class URLClassLoaderBuilder {
             }
         }
 
-        return new ExecJavaClassLoader(urls.toArray(new URL[0]));
+        return new ExecJavaClassLoader(urls.toArray(new URL[0]), transformer, logger);
     }
 
     // child first strategy
@@ -100,16 +110,24 @@ class URLClassLoaderBuilder {
         }
 
         private final String jre;
+        private final Log logger;
+        private final ClassFileTransformer transformer;
 
-        public ExecJavaClassLoader(URL[] urls) {
+        public ExecJavaClassLoader(final URL[] urls, final ClassFileTransformer transformer, final Log logger) {
             super(urls);
-            jre = getJre();
+            this.jre = getJre();
+            this.logger = logger;
+            this.transformer = transformer;
         }
 
         @Override
         public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
             if (name == null) {
                 throw new ClassNotFoundException();
+            }
+
+            if ("org.codehaus.mojo.exec.SystemExitManager".equals(name)) {
+                return SystemExitManager.class;
             }
 
             synchronized (getClassLoadingLock(name)) {
@@ -135,7 +153,7 @@ class URLClassLoaderBuilder {
 
                 // look for it in this classloader
                 try {
-                    clazz = super.findClass(name);
+                    clazz = transformer != null ? doFindClass(name) : super.findClass(name);
                     if (clazz != null) {
                         if (postLoad(resolve, clazz)) {
                             return clazz;
@@ -161,6 +179,23 @@ class URLClassLoaderBuilder {
                 }
 
                 throw new ClassNotFoundException(name);
+            }
+        }
+
+        private Class<?> doFindClass(final String name) throws ClassNotFoundException {
+            final String resource = name.replace('.', '/') + ".class";
+            final URL url = super.findResource(resource);
+            if (url == null) {
+                throw new ClassNotFoundException(name);
+            }
+
+            try (final InputStream inputStream = url.openStream()) {
+                final byte[] raw = IOUtil.toByteArray(inputStream);
+                final byte[] res = transformer.transform(this, name, null, null, raw);
+                final byte[] bin = res == null ? raw : res;
+                return super.defineClass(name, bin, 0, bin.length);
+            } catch (final ClassFormatError | IOException | IllegalClassFormatException var4) {
+                throw new ClassNotFoundException(name, var4);
             }
         }
 

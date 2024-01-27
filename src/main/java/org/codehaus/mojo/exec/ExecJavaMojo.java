@@ -202,11 +202,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
      * exception. This way, the error is propagated without terminating the whole Maven JVM. In previous versions, users
      * had to use the {@code exec} instead of the {@code java} goal in such cases, which now with this option is no
      * longer necessary.
-     * <p>
-     * <b>Caveat:</b> Since JDK 17, you need to explicitly allow security manager usage when using this option, e.g. by
-     * setting {@code -Djava.security.manager=allow} in {@code MAVEN_OPTS}. Otherwise, the JVM will throw an
-     * {@link UnsupportedOperationException} with a message like "The Security Manager is deprecated and will be removed
-     * in a future release".
      *
      * @since 3.2.0
      */
@@ -266,8 +261,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
                         bootClassName = mainClass;
                     }
 
-                    SecurityManager originalSecurityManager = System.getSecurityManager();
-
                     try {
                         Class<?> bootClass =
                                 Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
@@ -277,9 +270,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
                         MethodHandle mainHandle =
                                 lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
 
-                        if (blockSystemExit) {
-                            System.setSecurityManager(new SystemExitManager(originalSecurityManager));
-                        }
                         mainHandle.invoke(arguments);
                     } catch (IllegalAccessException | NoSuchMethodException | NoSuchMethodError e) { // just pass it on
                         Thread.currentThread()
@@ -302,10 +292,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
                         }
                     } catch (Throwable e) { // just pass it on
                         Thread.currentThread().getThreadGroup().uncaughtException(Thread.currentThread(), e);
-                    } finally {
-                        if (blockSystemExit) {
-                            System.setSecurityManager(originalSecurityManager);
-                        }
                     }
                 },
                 mainClass + ".main()");
@@ -329,7 +315,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
 
             try {
                 threadGroup.destroy();
-            } catch (IllegalThreadStateException e) {
+            } catch (RuntimeException /* missing method in future java version */ e) {
                 getLog().warn("Couldn't destroy threadgroup " + threadGroup, e);
             }
         }
@@ -544,11 +530,14 @@ public class ExecJavaMojo extends AbstractExecMojo {
         this.addAdditionalClasspathElements(classpathURLs);
 
         try {
-            return URLClassLoaderBuilder.builder()
+            final URLClassLoaderBuilder builder = URLClassLoaderBuilder.builder()
                     .setLogger(getLog())
                     .setPaths(classpathURLs)
-                    .setExclusions(classpathFilenameExclusions)
-                    .build();
+                    .setExclusions(classpathFilenameExclusions);
+            if (blockSystemExit) {
+                builder.setTransformer(new BlockExitTransformer());
+            }
+            return builder.build();
         } catch (NullPointerException | IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }

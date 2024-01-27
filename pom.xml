@@ -125,6 +125,7 @@
     <mavenVersion>3.6.3</mavenVersion>
     <recommendedJavaBuildVersion>11</recommendedJavaBuildVersion>
     <slf4j.version>1.7.36</slf4j.version>
+    <asm.version>9.6</asm.version>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2023-11-17T00:21:18Z</project.build.outputTimestamp>
   </properties>
@@ -191,6 +192,17 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-exec</artifactId>
       <version>1.4.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+      <version>${asm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-commons</artifactId>
+      <version>${asm.version}</version>
     </dependency>
 
     <dependency>

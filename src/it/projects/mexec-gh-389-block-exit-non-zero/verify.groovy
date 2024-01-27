@@ -24,4 +24,4 @@ assert buildLogLines[infoMessageLineNumber - 1] == "[one, two, three]"
 // Verify that subsequent lines contain the beginning of the thrown SystemExitException stack trace
 assert buildLogLines[infoMessageLineNumber + 1].startsWith("[WARNING]")
 assert buildLogLines[infoMessageLineNumber + 2].contains("SystemExitException: System::exit was called with return code 123")
-assert buildLogLines[infoMessageLineNumber + 3].contains("SystemExitManager.checkExit (SystemExitManager.java")
+assert buildLogLines[infoMessageLineNumber + 3].contains("SystemExitManager.exit (SystemExitManager.java")
