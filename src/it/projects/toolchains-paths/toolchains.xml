@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF8"?>
+<toolchains>
+  <toolchain>
+    <type>paths</type>
+    <provides>
+      <id>my-paths</id>
+    </provides>
+    <configuration>
+      <paths>
+        <path>scripts</path>
+      </paths>
+    </configuration>
+  </toolchain>
+</toolchains>

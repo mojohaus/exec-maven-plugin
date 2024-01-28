@@ -19,38 +19,59 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import org.apache.maven.toolchain.DefaultToolchain;
+import org.apache.maven.toolchain.ToolchainPrivate;
 import org.apache.maven.toolchain.model.ToolchainModel;
-import org.codehaus.plexus.logging.Logger;
 
 /**
  * Searches a list of configured paths for the requested tool.
  *
  * @author Markus KARG (markus@headcrashing.eu)
  */
-class PathsToolchain extends DefaultToolchain {
+class PathsToolchain implements ToolchainPrivate {
+    private final ToolchainModel model;
+
     private List<String> paths;
 
-    public PathsToolchain(final ToolchainModel model, final Logger logger) {
-        super(model, "paths", logger); // NOI18N
+    public PathsToolchain(ToolchainModel model) {
+        this.model = model;
     }
 
-    public List<String> getPaths() {
-        return this.paths;
+    @Override
+    public ToolchainModel getModel() {
+        return model;
     }
 
-    public void setPaths(final List<String> paths) {
+    @Override
+    public String getType() {
+        return model.getType();
+    }
+
+    public void setPaths(List<String> paths) {
         this.paths = paths;
+    }
+
+    private List<String> getPaths() {
+        return paths != null ? paths : Collections.emptyList();
+    }
+
+    @Override
+    public String findTool(final String toolName) {
+        return ExecMojo.findExecutable(toolName, getPaths());
+    }
+
+    @Override
+    public boolean matchesRequirements(Map<String, String> requirements) {
+        return requirements.entrySet().stream()
+                .anyMatch(entry -> Objects.equals(model.getProvides().get(entry.getKey()), entry.getValue()));
     }
 
     @Override
     public String toString() {
-        return "Paths" + this.getPaths(); // NOI18N
-    }
-
-    public String findTool(final String toolName) {
-        return ExecMojo.findExecutable(toolName, this.paths);
+        return "Paths" + getPaths(); // NOI18N
     }
 }

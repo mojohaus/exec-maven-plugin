@@ -59,13 +59,13 @@ import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -343,6 +343,9 @@ public class ExecMojo extends AbstractExecMojo {
      */
     @Parameter(property = "exec.asyncDestroyOnShutdown", defaultValue = "true")
     private boolean asyncDestroyOnShutdown = true;
+
+    @Component
+    private ToolchainManager toolchainManager;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
 
@@ -936,22 +939,11 @@ public class ExecMojo extends AbstractExecMojo {
     }
 
     private Toolchain getToolchain() {
-        Toolchain tc = null;
-
-        try {
-            if (session != null) // session is null in tests..
-            {
-                ToolchainManager toolchainManager =
-                        (ToolchainManager) session.getContainer().lookup(ToolchainManager.ROLE);
-
-                if (toolchainManager != null) {
-                    tc = toolchainManager.getToolchainFromBuildContext(toolchain, session);
-                }
-            }
-        } catch (ComponentLookupException componentLookupException) {
-            // just ignore, could happen in pre-2.0.9 builds..
+        // session and toolchainManager can be null in tests ...
+        if (session != null && toolchainManager != null) {
+            return toolchainManager.getToolchainFromBuildContext(toolchain, session);
         }
-        return tc;
+        return null;
     }
 
     /**

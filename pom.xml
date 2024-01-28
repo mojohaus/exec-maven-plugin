@@ -182,13 +182,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-component-annotations</artifactId>
-      <version>2.2.0</version>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-exec</artifactId>
       <version>1.4.0</version>
@@ -261,6 +254,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <proc>none</proc>
+        </configuration>
         <executions>
           <execution>
             <id>default-testCompile</id>
@@ -292,18 +288,6 @@
           <execution>
             <goals>
               <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-component-metadata</artifactId>
-        <version>2.2.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>generate-metadata</goal>
             </goals>
           </execution>
         </executions>
@@ -351,6 +335,10 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.sisu</groupId>
+        <artifactId>sisu-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
