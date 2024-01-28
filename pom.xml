@@ -397,14 +397,11 @@
               <showVersion>true</showVersion>
               <preBuildHookScript>setup</preBuildHookScript>
               <postBuildHookScript>verify</postBuildHookScript>
-              <settingsFile>src/it/mrm/settings.xml</settingsFile>
+              <settingsFile>src/it/settings.xml</settingsFile>
               <properties>
                 <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
                 <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
               </properties>
-              <filterProperties>
-                <mrm.repository.url>${mrm.repository.url}</mrm.repository.url>
-              </filterProperties>
               <scriptVariables>
                 <projectVersion>${project.version}</projectVersion>
               </scriptVariables>
@@ -415,29 +412,6 @@
                   <goal>install</goal>
                   <goal>integration-test</goal>
                   <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>mrm-maven-plugin</artifactId>
-            <configuration>
-              <repositories>
-                <mockRepo>
-                  <source>src/it/mrm/repository</source>
-                </mockRepo>
-                <localRepo>
-                  <source>${project.build.directory}/local-repo</source>
-                </localRepo>
-                <proxyRepo />
-              </repositories>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>start</goal>
-                  <goal>stop</goal>
                 </goals>
               </execution>
             </executions>
