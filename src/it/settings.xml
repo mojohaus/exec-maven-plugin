@@ -20,46 +20,30 @@ under the License.
 -->
 
 <settings>
-  <mirrors>
-    <mirror>
-      <id>mrm-maven-plugin</id>
-      <name>Mock Repository Manager</name>
-      <url>@mrm.repository.url@</url>
-      <mirrorOf>*</mirrorOf>
-    </mirror>
-  </mirrors>
   <profiles>
     <profile>
       <id>it-repo</id>
       <repositories>
         <repository>
-          <id>snapshots</id>
-          <url>@mrm.repository.url@</url>
+          <id>local.central</id>
+          <url>@localRepositoryUrl@</url>
           <releases>
             <enabled>true</enabled>
-            <checksumPolicy>ignore</checksumPolicy>
-            <updatePolicy>never</updatePolicy>
           </releases>
           <snapshots>
             <enabled>true</enabled>
-            <checksumPolicy>ignore</checksumPolicy>
-            <updatePolicy>always</updatePolicy>
           </snapshots>
         </repository>
       </repositories>
       <pluginRepositories>
         <pluginRepository>
-          <id>snapshots</id>
-          <url>@mrm.repository.url@</url>
+          <id>local.central</id>
+          <url>@localRepositoryUrl@</url>
           <releases>
             <enabled>true</enabled>
-            <checksumPolicy>ignore</checksumPolicy>
-            <updatePolicy>never</updatePolicy>
           </releases>
           <snapshots>
             <enabled>true</enabled>
-            <checksumPolicy>ignore</checksumPolicy>
-            <updatePolicy>always</updatePolicy>
           </snapshots>
         </pluginRepository>
       </pluginRepositories>
@@ -68,5 +52,4 @@ under the License.
   <activeProfiles>
     <activeProfile>it-repo</activeProfile>
   </activeProfiles>
-  
 </settings>
