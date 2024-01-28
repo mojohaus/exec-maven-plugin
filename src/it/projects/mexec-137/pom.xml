@@ -13,6 +13,10 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
+  <properties>
+    <shellscript.qualifier></shellscript.qualifier>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -26,7 +30,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>test</executable>
+              <executable>${shellscript.qualifier}test</executable>
               <workingDirectory>src/build</workingDirectory>
             </configuration>
           </execution>
@@ -34,5 +38,19 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>Unix</id>
+      <activation>
+        <os>
+          <family>unix</family>
+        </os>
+      </activation>
+      <properties>
+        <shellscript.qualifier>./</shellscript.qualifier>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>
