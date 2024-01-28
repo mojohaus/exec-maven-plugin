@@ -39,7 +39,7 @@ Using Executable Binary Dependencies Instead of Local Executables
 
 ** pom.xml
 
--------------------
++-------------------+
 <project>
   ...
   <build>
@@ -71,4 +71,4 @@ Using Executable Binary Dependencies Instead of Local Executables
   </build>
   ...
 </project>
--------------------
++-------------------+

@@ -29,13 +29,13 @@ Changing the classpath scope when running Java programs
   to change the scope of the plugin execution. This can be achieved using the <<<classpathScope>>> configuration element,
   e.g. for a <<<test>>> scope:
 
--------------------
++-------------------+
         <configuration>
           ...
           <classpathScope>test</classpathScope>
           ...
         </configuration>
--------------------
++-------------------+
 
   or, on the command line,
 

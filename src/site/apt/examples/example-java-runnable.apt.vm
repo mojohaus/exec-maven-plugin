@@ -1,12 +1,12 @@
  ------
- Use Runnable with exec:java goal
+ Execute a Runnable instead of a main
  ------
  Romain Manni-Bucau
  ------
- 2022-11-14
+ 2024-01-27
  ------
 
- ~~ Copyright 2022 The Codehaus
+ ~~ Copyright 2024 The Codehaus
  ~~
  ~~ Licensed under the Apache License, Version 2.0 (the "License");
  ~~ you may not use this file except in compliance with the License.
@@ -23,12 +23,13 @@
  ~~ NOTE: For help with the syntax of this file, see:
  ~~ http://maven.apache.org/doxia/references/apt-format.html
 
+Execute a Runnable instead of a main
 
-You can use since version `3.1.2` a `Runnable` instead of providing a main class to `exec:java`:
+  You can use since version <<<3.2.0>>> a <<<Runnable>>> instead of providing a main class to <<<exec:java>>>:
 
 * pom.xml
 
--------------------
++-------------------+
 <project>
   ...
   <build>
@@ -54,25 +55,33 @@ You can use since version `3.1.2` a `Runnable` instead of providing a main class
   </build>
    ...
 </project>
--------------------
++-------------------+
 
 The Runnable can be a plain class but can also get constructor injections:
 
-* `systemProperties`: `Properties`, session system properties 
-* `systemPropertiesUpdater`: `BiConsumer&lt;String, String&gt;`, session system properties update callback (pass the key/value to update, null value means removal of the key) 
-* `userProperties`: `Properties`, session user properties 
-* `userPropertiesUpdater`: `BiConsumer&lt;String, String&gt;`, session user properties update callback (pass the key/value to update, null value means removal of the key) 
-* `projectProperties`: `Properties`, project properties 
-* `projectPropertiesUpdater`: `BiConsumer&lt;String, String&gt;`, project properties update callback (pass the key/value to update, null value means removal of the key) 
-* `highestVersionResolver`: `Function&lt;String, String&gt;`, passing a `groupId:artifactId` you get the latest resolved version from the project repositories.
+  * <<<systemProperties>>>: <<<Properties>>>, session system properties
 
-Lastly you can inject a custom maven component naming the Runnable constructor parameter with its type and replacing dots by underscores.
-If you need to provide a hint you can suffix previous type name by `__hint_$yourhint` (assuming it stays a valid java name).
-This kind of parameter injection must be typed `Object`.
+  * <<<systemPropertiesUpdate>>>: <<<BiConsumer\<String, String\>>>>, session system properties update callback (pass the key/value to update, null value means removal of the key)
+
+  * <<<userProperties>>>: <<<Properties>>>, session user properties
+
+  * <<<userPropertiesUpdater>>>: <<<BiConsumer\<String, String\>>>>, session user properties update callback (pass the key/value to update, null value means removal of the key)
+
+  * <<<projectProperties>>>: <<<Properties>>>, project properties
+
+  * <<<projectPropertiesUpdater>>>: <<<BiConsumer\<String, String\>>>>, project properties update callback (pass the key/value to update, null value means removal of the key)
+
+  * <<<highestVersionResolver>>>: <<<Function\<String, String\>>>>, passing a <<<groupId:artifactId>>> you get the latest resolved version from the project repositories.
+
+  []
+
+    Lastly you can inject a custom maven component naming the Runnable constructor parameter with its type and replacing dots by underscores.
+    If you need to provide a hint you can suffix previous type name by <<<__hint_$yourhint>>> (assuming it stays a valid java name).
+    This kind of parameter injection must be typed `Object`.
 
 Example:
 
--------------------
++-------------------+
 public class HelloRunnable implements Runnable {
     private final Function<String, String> versionResolver;
     private final Properties properties;
@@ -92,4 +101,4 @@ public class HelloRunnable implements Runnable {
         updater.accept("hello.runnable.output", v + ": " + (versionResolver != null));
     }
 }
--------------------
++-------------------+
