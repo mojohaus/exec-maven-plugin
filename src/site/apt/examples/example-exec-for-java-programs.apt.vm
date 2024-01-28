@@ -50,7 +50,7 @@ mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
 
  To execute Java programs, the Exec Maven Plugin helps by allowing the <<<\<classpath\>>>> special argument:
 
--------------------
++-------------------+
         <configuration>
           <executable>java</executable>
           <arguments>
@@ -79,11 +79,11 @@ mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
             ...
           </arguments>
         </configuration>
--------------------
++-------------------+
 
 In case of the modules as supported since Java9 the configuration looks like
 
--------------------
++-------------------+
         <configuration>
           <executable>java</executable>
           <arguments>
@@ -96,4 +96,4 @@ In case of the modules as supported since Java9 the configuration looks like
             ...
           </arguments>
         </configuration>
--------------------
++-------------------+

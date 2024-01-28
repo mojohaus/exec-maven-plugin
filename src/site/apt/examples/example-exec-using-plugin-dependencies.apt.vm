@@ -54,7 +54,7 @@ Using Plugin Dependencies Instead of Project Dependencies
 
 * Example POM Configuration using Plugin Dependencies
 
--------------------
++-------------------+
 <project>
   ...
   <build>
@@ -104,4 +104,4 @@ Using Plugin Dependencies Instead of Project Dependencies
   </build>
    ...
 </project>
--------------------
++-------------------+

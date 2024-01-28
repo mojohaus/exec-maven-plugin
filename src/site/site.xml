@@ -24,6 +24,10 @@
             href="examples/example-exec-using-toolchains.html"/>
       <item name="Using executable binary dependencies instead of local executables"
             href="examples/example-exec-using-executabledependency.html"/>
+      <item name="Forward maven system properties to the main"
+            href="examples/example-java-project-properties.html"/>
+      <item name="Execute a Runnable instead of a main"
+            href="examples/example-java-runnable.html"/>
     </menu>
   </body>
 </project>

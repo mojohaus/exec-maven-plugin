@@ -40,7 +40,7 @@ Using Toolchains Instead of Explicit Paths
 
 ** pom.xml
 
--------------------
++-------------------+
 <project>
   ...
   <build>
@@ -80,11 +80,11 @@ Using Toolchains Instead of Explicit Paths
   </build>
   ...
 </project>
--------------------
++-------------------+
 
 ** toolchains.xml
 
--------------------
++-------------------+
 <?xml version="1.0" encoding="UTF8"?>
 <toolchains>
   <toolchain>
@@ -102,7 +102,7 @@ Using Toolchains Instead of Explicit Paths
   </toolchain>
   ...
 </toolchains>
--------------------
++-------------------+
 
 * The "jdk" Toolchain
 
@@ -111,7 +111,7 @@ Using Toolchains Instead of Explicit Paths
 
 ** pom.xml
 
--------------------
++-------------------+
 <project>
   ...
   <build>
@@ -145,11 +145,11 @@ Using Toolchains Instead of Explicit Paths
   </build>
   ...
 </project>
--------------------
++-------------------+
 
 ** toolchains.xml
 
--------------------
++-------------------+
 <?xml version="1.0" encoding="UTF8"?>
 <toolchains>
   <toolchain>
@@ -166,7 +166,7 @@ Using Toolchains Instead of Explicit Paths
   </toolchain>
   ...
 </toolchains>
--------------------
++-------------------+
 
 * Custom Toolchains
 
@@ -176,7 +176,7 @@ Using Toolchains Instead of Explicit Paths
 
 ** pom.xml
 
--------------------
++-------------------+
 <project>
   ...
   <build>
@@ -217,11 +217,11 @@ Using Toolchains Instead of Explicit Paths
   </build>
   ...
 </project>
--------------------
++-------------------+
 
 ** toolchains.xml
 
--------------------
++-------------------+
 <?xml version="1.0" encoding="UTF8"?>
 <toolchains>
   <toolchain>
@@ -235,4 +235,4 @@ Using Toolchains Instead of Explicit Paths
   </toolchain>
   ...
 </toolchains>
--------------------
++-------------------+
