@@ -19,24 +19,17 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 import org.apache.maven.toolchain.MisconfiguredToolchainException;
-import org.apache.maven.toolchain.RequirementMatcherFactory;
 import org.apache.maven.toolchain.ToolchainFactory;
 import org.apache.maven.toolchain.ToolchainPrivate;
 import org.apache.maven.toolchain.model.ToolchainModel;
-import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
-import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
@@ -45,35 +38,27 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
  *
  * @author Markus KARG (markus@headcrashing.eu)
  */
-@Component(role = ToolchainFactory.class, hint = "paths")
+@Named("paths")
+@Singleton
 class PathsToolchainFactory implements ToolchainFactory {
 
-    @Requirement
-    private Logger logger;
-
+    @Override
     public ToolchainPrivate createToolchain(final ToolchainModel model) throws MisconfiguredToolchainException {
         if (model == null) return null;
 
-        final PathsToolchain pathsToolchain = new PathsToolchain(model, this.logger);
-        final Properties provides = this.getProvidesProperties(model);
-        for (final Map.Entry<Object, Object> provide : provides.entrySet()) {
-            final String key = (String) provide.getKey();
-            final String value = (String) provide.getValue();
-            if (value == null)
-                throw new MisconfiguredToolchainException(
-                        "Provides token '" + key + "' doesn't have any value configured.");
-
-            pathsToolchain.addProvideToken(key, RequirementMatcherFactory.createExactMatcher(value));
-        }
-
+        final PathsToolchain pathsToolchain = new PathsToolchain(model);
         final Xpp3Dom config = (Xpp3Dom) model.getConfiguration();
         if (config == null) return pathsToolchain;
 
         final Xpp3Dom pathDom = config.getChild("paths");
-        if (pathDom == null) return pathsToolchain;
+        if (pathDom == null) {
+            throw new MisconfiguredToolchainException("paths element is empty");
+        }
 
         final Xpp3Dom[] pathDoms = pathDom.getChildren("path");
-        if (pathDoms == null || pathDoms.length == 0) return pathsToolchain;
+        if (pathDoms == null || pathDoms.length == 0) {
+            throw new MisconfiguredToolchainException("paths -> path elements are not present");
+        }
 
         final List<String> paths = new ArrayList<>(pathDoms.length);
         for (final Xpp3Dom pathdom : pathDoms) {
@@ -94,38 +79,8 @@ class PathsToolchainFactory implements ToolchainFactory {
         return pathsToolchain;
     }
 
+    @Override
     public ToolchainPrivate createDefaultToolchain() {
         return null;
-    }
-
-    protected Properties getProvidesProperties(final ToolchainModel model) {
-        final Object value = this.getBeanProperty(model, "provides");
-
-        return value instanceof Properties ? (Properties) value : toProperties((Xpp3Dom) value);
-    }
-
-    protected static Properties toProperties(final Xpp3Dom dom) {
-        final Properties props = new Properties();
-
-        final Xpp3Dom[] children = dom.getChildren();
-        for (final Xpp3Dom child : children) props.put(child.getName(), child.getValue());
-
-        return props;
-    }
-
-    protected Object getBeanProperty(final Object obj, final String property) {
-        try {
-            final Method method = new PropertyDescriptor(property, obj.getClass()).getReadMethod();
-
-            return method.invoke(obj);
-        } catch (final IntrospectionException | IllegalAccessException e) {
-            throw new RuntimeException("Incompatible toolchain API", e);
-        } catch (final InvocationTargetException e) {
-            final Throwable cause = e.getCause();
-
-            if (cause instanceof RuntimeException) throw (RuntimeException) cause;
-
-            throw new RuntimeException("Incompatible toolchain API", e);
-        }
     }
 }
