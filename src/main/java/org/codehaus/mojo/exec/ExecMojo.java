@@ -19,6 +19,8 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import javax.inject.Inject;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -65,13 +67,13 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.DefaultConsumer;
 import org.codehaus.plexus.util.cli.StreamConsumer;
+import org.eclipse.sisu.Nullable;
 
 /**
  * A Plugin for executing external programs.
@@ -286,12 +288,6 @@ public class ExecMojo extends AbstractExecMojo {
     private File environmentScript = null;
 
     /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Parameter(defaultValue = "${session}", readonly = true)
-    private MavenSession session;
-
-    /**
      * Exit codes to be resolved as successful execution for non-compliant applications (applications not returning 0
      * for success).
      *
@@ -349,10 +345,21 @@ public class ExecMojo extends AbstractExecMojo {
     public static final String MODULEPATH_TOKEN = "%modulepath";
 
     /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
+    @Inject
+    private MavenSession session;
+
+    @Inject
+    @Nullable
+    private ToolchainManager toolchainManager;
+
+    /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
      *
      * @throws MojoExecutionException if a failure happens
      */
+    @Override
     public void execute() throws MojoExecutionException {
         if (executable == null) {
             if (executableDependency == null) {
@@ -937,19 +944,11 @@ public class ExecMojo extends AbstractExecMojo {
 
     private Toolchain getToolchain() {
         Toolchain tc = null;
-
-        try {
-            if (session != null) // session is null in tests..
-            {
-                ToolchainManager toolchainManager =
-                        (ToolchainManager) session.getContainer().lookup(ToolchainManager.ROLE);
-
-                if (toolchainManager != null) {
-                    tc = toolchainManager.getToolchainFromBuildContext(toolchain, session);
-                }
+        if (session != null) // session is null in tests..
+        {
+            if (toolchainManager != null) {
+                tc = toolchainManager.getToolchainFromBuildContext(toolchain, session);
             }
-        } catch (ComponentLookupException componentLookupException) {
-            // just ignore, could happen in pre-2.0.9 builds..
         }
         return tc;
     }
