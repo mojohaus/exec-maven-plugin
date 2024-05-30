@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -23,10 +22,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -36,19 +33,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
-import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyFilter;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.DependencyRequest;
-import org.eclipse.aether.resolution.DependencyResolutionException;
-import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.eclipse.aether.resolution.VersionRangeResult;
-import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 import static java.util.stream.Collectors.toList;
 
@@ -63,9 +51,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
     // Implementation note: Constants can be included in javadocs by {@value #MY_CONST}
     private static final String THREAD_STOP_UNAVAILABLE =
             "Thread.stop() is unavailable in this JRE version, cannot force-stop any threads";
-
-    @Component
-    private RepositorySystem repositorySystem;
 
     /**
      * The main class to execute.<br>
@@ -138,18 +123,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
      */
     @Parameter(property = "exec.includeProjectDependencies", defaultValue = "true")
     private boolean includeProjectDependencies;
-
-    /**
-     * Indicates if this plugin's dependencies should be used when executing the main class.
-     * <p/>
-     * This is useful when project dependencies are not appropriate. Using only the plugin dependencies can be
-     * particularly useful when the project is not a java project. For example a mvn project using the csharp plugins
-     * only expects to see dotnet libraries as dependencies.
-     *
-     * @since 1.1-beta-1
-     */
-    @Parameter(property = "exec.includePluginsDependencies", defaultValue = "false")
-    private boolean includePluginDependencies;
 
     /**
      * Whether to interrupt/join and possibly stop the daemon threads upon quitting. <br/>
@@ -777,63 +750,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
             }
         } else {
             getLog().debug("Project Dependencies will be excluded.");
-        }
-    }
-
-    /**
-     * Determine all plugin dependencies relevant to the executable. Takes includePlugins, and the executableDependency
-     * into consideration.
-     *
-     * @return a set of Artifact objects. (Empty set is returned if there are no relevant plugin dependencies.)
-     * @throws MojoExecutionException if a problem happens resolving the plufin dependencies
-     */
-    private Set<Artifact> determineRelevantPluginDependencies() throws MojoExecutionException {
-        Set<Artifact> relevantDependencies;
-        if (this.includePluginDependencies) {
-            if (this.executableDependency == null) {
-                getLog().debug("All Plugin Dependencies will be included.");
-                relevantDependencies = new HashSet<>(this.getPluginDependencies());
-            } else {
-                getLog().debug("Selected plugin Dependencies will be included.");
-                Artifact executableArtifact = this.findExecutableArtifact();
-                relevantDependencies = this.resolveExecutableDependencies(executableArtifact);
-            }
-        } else {
-            relevantDependencies = Collections.emptySet();
-            getLog().debug("Plugin Dependencies will be excluded.");
-        }
-        return relevantDependencies;
-    }
-
-    /**
-     * Resolve the executable dependencies for the specified project
-     *
-     * @param executableArtifact the executable plugin dependency
-     * @return a set of Artifacts
-     * @throws MojoExecutionException if a failure happens
-     */
-    private Set<Artifact> resolveExecutableDependencies(Artifact executableArtifact) throws MojoExecutionException {
-        try {
-            CollectRequest collectRequest = new CollectRequest();
-            collectRequest.setRoot(new Dependency(RepositoryUtils.toArtifact(executableArtifact), classpathScope));
-            collectRequest.setRepositories(project.getRemotePluginRepositories());
-
-            DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(classpathScope);
-
-            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
-
-            DependencyResult dependencyResult =
-                    repositorySystem.resolveDependencies(getSession().getRepositorySession(), dependencyRequest);
-
-            return dependencyResult.getArtifactResults().stream()
-                    .map(ArtifactResult::getArtifact)
-                    .map(RepositoryUtils::toArtifact)
-                    .collect(Collectors.toSet());
-        } catch (DependencyResolutionException ex) {
-            throw new MojoExecutionException(
-                    "Encountered problems resolving dependencies of the executable "
-                            + "in preparation for its execution.",
-                    ex);
         }
     }
 
