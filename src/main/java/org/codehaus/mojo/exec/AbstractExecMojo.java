@@ -22,18 +22,31 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 /**
  * This class is used for unifying functionality between the 2 mojo exec plugins ('java' and 'exec'). It handles parsing
@@ -43,12 +56,19 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
  * @author Jerome Lacoste
  */
 public abstract class AbstractExecMojo extends AbstractMojo {
+
+    @Component
+    protected RepositorySystem repositorySystem;
+
     /**
      * The enclosing project.
      */
     @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
 
+    /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
     @Parameter(defaultValue = "${session}", readonly = true, required = true)
     private MavenSession session;
 
@@ -133,6 +153,19 @@ public abstract class AbstractExecMojo extends AbstractMojo {
      */
     @Parameter(property = "addOutputToClasspath", defaultValue = "true")
     private boolean addOutputToClasspath;
+
+    /**
+     * Indicates if this plugin's dependencies should be used when executing the main class.
+     * <p>
+     * This is useful when project dependencies are not appropriate. Using only the plugin dependencies can be
+     * particularly useful when the project is not a java project. For example a mvn project using the csharp plugins
+     * only expects to see dotnet libraries as dependencies.
+     * </p>
+     *
+     * @since 3.4.0
+     */
+    @Parameter(property = "exec.includePluginsDependencies", defaultValue = "false")
+    protected boolean includePluginDependencies;
 
     /**
      * Collects the project artifacts in the specified List and the project specific classpath (build output and build
@@ -265,5 +298,62 @@ public abstract class AbstractExecMojo extends AbstractMojo {
         }
 
         return executableTool;
+    }
+
+    /**
+     * Determine all plugin dependencies relevant to the executable. Takes includePlugins, and the executableDependency
+     * into consideration.
+     *
+     * @return a set of Artifact objects. (Empty set is returned if there are no relevant plugin dependencies.)
+     * @throws MojoExecutionException if a problem happens resolving the plufin dependencies
+     */
+    protected Set<Artifact> determineRelevantPluginDependencies() throws MojoExecutionException {
+        Set<Artifact> relevantDependencies;
+        if (this.includePluginDependencies) {
+            if (this.executableDependency == null) {
+                getLog().debug("All Plugin Dependencies will be included.");
+                relevantDependencies = new HashSet<>(this.getPluginDependencies());
+            } else {
+                getLog().debug("Selected plugin Dependencies will be included.");
+                Artifact executableArtifact = this.findExecutableArtifact();
+                relevantDependencies = this.resolveExecutableDependencies(executableArtifact);
+            }
+        } else {
+            relevantDependencies = Collections.emptySet();
+            getLog().debug("Plugin Dependencies will be excluded.");
+        }
+        return relevantDependencies;
+    }
+
+    /**
+     * Resolve the executable dependencies for the specified project
+     *
+     * @param executableArtifact the executable plugin dependency
+     * @return a set of Artifacts
+     * @throws MojoExecutionException if a failure happens
+     */
+    private Set<Artifact> resolveExecutableDependencies(Artifact executableArtifact) throws MojoExecutionException {
+        try {
+            CollectRequest collectRequest = new CollectRequest();
+            collectRequest.setRoot(new Dependency(RepositoryUtils.toArtifact(executableArtifact), classpathScope));
+            collectRequest.setRepositories(project.getRemotePluginRepositories());
+
+            DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(classpathScope);
+
+            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
+
+            DependencyResult dependencyResult =
+                    repositorySystem.resolveDependencies(getSession().getRepositorySession(), dependencyRequest);
+
+            return dependencyResult.getArtifactResults().stream()
+                    .map(ArtifactResult::getArtifact)
+                    .map(RepositoryUtils::toArtifact)
+                    .collect(Collectors.toSet());
+        } catch (DependencyResolutionException ex) {
+            throw new MojoExecutionException(
+                    "Encountered problems resolving dependencies of the executable "
+                            + "in preparation for its execution.",
+                    ex);
+        }
     }
 }

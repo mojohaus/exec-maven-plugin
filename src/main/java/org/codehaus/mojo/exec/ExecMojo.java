@@ -675,7 +675,7 @@ public class ExecMojo extends AbstractExecMojo {
      *            default classpath will be used)
      * @return a platform specific String representation of the classpath
      */
-    private String computeClasspathString(AbstractPath specifiedClasspath) {
+    private String computeClasspathString(AbstractPath specifiedClasspath) throws MojoExecutionException {
         List<String> resultList = computePath(specifiedClasspath);
         StringBuffer theClasspath = new StringBuffer();
 
@@ -695,12 +695,17 @@ public class ExecMojo extends AbstractExecMojo {
      *            default classpath will be used)
      * @return a list of class path elements
      */
-    private List<String> computePath(AbstractPath specifiedClasspath) {
+    private List<String> computePath(AbstractPath specifiedClasspath) throws MojoExecutionException {
         List<Artifact> artifacts = new ArrayList<>();
         List<Path> theClasspathFiles = new ArrayList<>();
         List<String> resultList = new ArrayList<>();
 
         collectProjectArtifactsAndClasspath(artifacts, theClasspathFiles);
+
+        Set<Artifact> pluginDependencies = determineRelevantPluginDependencies();
+        if (pluginDependencies != null) {
+            artifacts.addAll(pluginDependencies);
+        }
 
         if ((specifiedClasspath != null) && (specifiedClasspath.getDependencies() != null)) {
             artifacts = filterArtifacts(artifacts, specifiedClasspath.getDependencies());
