@@ -480,7 +480,7 @@ public class ExecMojo extends AbstractExecMojo {
         // https://github.com/mojohaus/exec-maven-plugin/issues/328
         // It is not enough to avoid duplicates; we must preserve the case found in the "natural" environment.
         // https://developercommunity.visualstudio.com/t/Build-Error:-MSB6001-in-Maven-Build/10527486?sort=newest
-        Map<String, String> enviro = System.getenv();
+        Map<String, String> enviro = new HashMap<>(System.getenv());
         if (environmentVariables != null) {
             enviro.putAll(environmentVariables);
         }
