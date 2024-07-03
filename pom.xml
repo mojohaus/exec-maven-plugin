@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>80</version>
+    <version>84</version>
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
-  <version>3.2.1-SNAPSHOT</version>
+  <version>3.4.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Exec Maven Plugin</name>
@@ -108,6 +108,16 @@
         <role>Feature Contributor</role>
       </roles>
     </contributor>
+    <contributor>
+      <name>Adam Retter</name>
+      <email>adam@evolvedbinary.com</email>
+      <organization>Evolved Binary</organization>
+      <organizationUrl>https://www.evolvedbinary.com</organizationUrl>
+      <roles>
+        <role>Patch Contributor</role>
+      </roles>
+      <timezone>Europe/London</timezone>
+    </contributor>
   </contributors>
 
   <prerequisites>
@@ -126,7 +136,7 @@
     <slf4j.version>1.7.36</slf4j.version>
     <asm.version>9.7</asm.version>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
-    <project.build.outputTimestamp>2024-02-21T22:49:27Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2024-06-01T18:10:21Z</project.build.outputTimestamp>
   </properties>
 
   <dependencies>
@@ -171,7 +181,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-xml</artifactId>
-      <version>3.0.0</version>
+      <version>3.0.1</version>
     </dependency>
 
     <dependency>
