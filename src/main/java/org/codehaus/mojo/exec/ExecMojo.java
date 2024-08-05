@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -476,13 +475,11 @@ public class ExecMojo extends AbstractExecMojo {
     }
 
     private Map<String, String> handleSystemEnvVariables() throws MojoExecutionException {
-
-        Map<String, String> enviro = new HashMap<>();
-        Properties systemEnvVars = CommandLineUtils.getSystemEnvVars();
-        for (Map.Entry<?, ?> entry : systemEnvVars.entrySet()) {
-            enviro.put((String) entry.getKey(), (String) entry.getValue());
-        }
-
+        // Avoid creating env vars that differ only in case on Windows.
+        // https://github.com/mojohaus/exec-maven-plugin/issues/328
+        // It is not enough to avoid duplicates; we must preserve the case found in the "natural" environment.
+        // https://developercommunity.visualstudio.com/t/Build-Error:-MSB6001-in-Maven-Build/10527486?sort=newest
+        Map<String, String> enviro = new HashMap<>(System.getenv());
         if (environmentVariables != null) {
             enviro.putAll(environmentVariables);
         }
