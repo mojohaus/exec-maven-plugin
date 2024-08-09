@@ -6,6 +6,10 @@ This is the [exec-maven-plugin](http://www.mojohaus.org/exec-maven-plugin/).
 [![Maven Central](https://img.shields.io/maven-central/v/org.codehaus.mojo/exec-maven-plugin.svg?label=Maven%20Central)](https://search.maven.org/artifact/org.codehaus.mojo/exec-maven-plugin)
 [![GitHub CI](https://github.com/mojohaus/exec-maven-plugin/actions/workflows/maven.yml/badge.svg)](https://github.com/mojohaus/exec-maven-plugin/actions/workflows/maven.yml)
 
+## Running integration tests
+
+Execute `mvn -P run-its clean verify`
+
 ## Releasing
 
 * Make sure `gpg-agent` is running.

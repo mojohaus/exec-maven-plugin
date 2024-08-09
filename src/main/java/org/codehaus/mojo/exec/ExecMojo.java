@@ -285,12 +285,6 @@ public class ExecMojo extends AbstractExecMojo {
     private File environmentScript = null;
 
     /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Parameter(defaultValue = "${session}", readonly = true)
-    private MavenSession session;
-
-    /**
      * Exit codes to be resolved as successful execution for non-compliant applications (applications not returning 0
      * for success).
      *
@@ -430,8 +424,9 @@ public class ExecMojo extends AbstractExecMojo {
                     // output as a log prefix, to enable easy tracing of program output when intermixed with other
                     // Maven log output. NOTE: The accept(..) methods are running in PumpStreamHandler thread,
                     // which is why we capture the thread name prefix here.
-                    final String logPrefix =
-                            session.isParallel() ? "[" + Thread.currentThread().getName() + "] " : "";
+                    final String logPrefix = getSession().isParallel()
+                            ? "[" + Thread.currentThread().getName() + "] "
+                            : "";
                     Consumer<String> mavenOutRedirect = logMessage -> {
                         if (quietLogs) {
                             getLog().debug(logPrefix + logMessage);
@@ -942,6 +937,7 @@ public class ExecMojo extends AbstractExecMojo {
 
     private Toolchain getToolchain() {
         // session and toolchainManager can be null in tests ...
+        MavenSession session = getSession();
         if (session != null && toolchainManager != null) {
             return toolchainManager.getToolchainFromBuildContext(toolchain, session);
         }
