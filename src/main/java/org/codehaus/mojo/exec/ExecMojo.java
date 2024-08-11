@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -488,8 +489,7 @@ public class ExecMojo extends AbstractExecMojo {
         }
 
         if (this.getLog().isDebugEnabled()) {
-            Set<String> keys = new TreeSet<>();
-            keys.addAll(enviro.keySet());
+            Set<String> keys = new TreeSet<>(enviro.keySet());
             for (String key : keys) {
                 this.getLog().debug("env: " + key + "=" + enviro.get(key));
             }
@@ -825,10 +825,13 @@ public class ExecMojo extends AbstractExecMojo {
         List<String> paths = new ArrayList<>();
         paths.add("");
 
-        String path = enviro.get("PATH");
-        if (path != null) {
-            paths.addAll(Arrays.asList(StringUtils.split(path, File.pathSeparator)));
-        }
+        enviro.entrySet().stream()
+                .filter(entry -> "PATH".equalsIgnoreCase(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .filter(Objects::nonNull)
+                .map(path -> path.split(File.pathSeparator))
+                .map(Arrays::asList)
+                .forEach(paths::addAll);
 
         return paths;
     }
