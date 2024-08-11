@@ -144,17 +144,20 @@ public class ExecMojoTest extends AbstractMojoTestCase {
 
             final String comSpec = System.getenv("ComSpec");
 
+            // for windows scripts cmd should be used
             realMojo.setExecutable("javax.bat");
             cmd = realMojo.getExecutablePath(enviro, workdir);
-            assertTrue(
-                    "is bat file on windows, execute using ComSpec.",
-                    cmd.getExecutable().equals(comSpec));
+            assertEquals("is bat file on windows, execute using ComSpec.", comSpec, cmd.getExecutable());
+            assertEquals("is /c argument pass using ComSpec.", "/c", cmd.getArguments()[0]);
 
-            enviro.put("PATH", workdir.getAbsolutePath() + File.separator + "target");
+            String path = workdir.getAbsolutePath() + File.separator + "target";
+            enviro.put("Path", path);
+            realMojo.setExecutable("javax"); // FIXME javax.bat should be also allowed
             cmd = realMojo.getExecutablePath(enviro, workdir);
-            assertTrue(
-                    "is bat file on windows' PATH, execute using ComSpec.",
-                    cmd.getExecutable().equals(comSpec));
+            assertEquals("is bat file on windows, execute using ComSpec.", comSpec, cmd.getExecutable());
+            assertEquals("is /c argument pass using ComSpec.", "/c", cmd.getArguments()[0]);
+            assertEquals("full path is discovered.", path + File.separator + "javax.bat", cmd.getArguments()[1]);
+
             f.delete();
             assertFalse("file deleted...", f.exists());
         }
