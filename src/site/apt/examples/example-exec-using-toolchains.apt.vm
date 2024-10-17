@@ -47,7 +47,7 @@ Using Toolchains Instead of Explicit Paths
     <plugins>
       <plugin>
         <artifactId>maven-toolchains-plugin</artifactId>
-        <version>1.1</version>
+        <version>$context.get("maven-toolchains-plugin.version")</version>
         <executions>
           <execution>
             <goals>
@@ -118,7 +118,7 @@ Using Toolchains Instead of Explicit Paths
     <plugins>
       <plugin>
         <artifactId>maven-toolchains-plugin</artifactId>
-        <version>1.1</version>
+        <version>$context.get("maven-toolchains-plugin.version")</version>
         <executions>
           <execution>
             <goals>
@@ -189,7 +189,7 @@ Using Toolchains Instead of Explicit Paths
     <plugins>
       <plugin>
         <artifactId>maven-toolchains-plugin</artifactId>
-        <version>1.1</version>
+        <version>$context.get("maven-toolchains-plugin.version")</version>
         <executions>
           <execution>
             <goals>
