@@ -137,6 +137,7 @@
     <asm.version>9.7.1</asm.version>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2024-08-12T19:43:34Z</project.build.outputTimestamp>
+    <maven-toolchains-plugin.version>3.2.0</maven-toolchains-plugin.version>
   </properties>
 
   <dependencies>
@@ -247,6 +248,12 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <!-- TODO move to parent ... -->
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-toolchains-plugin</artifactId>
+          <version>${maven-toolchains-plugin.version}</version>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
