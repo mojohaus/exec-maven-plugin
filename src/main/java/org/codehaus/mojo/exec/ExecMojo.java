@@ -87,6 +87,7 @@ public class ExecMojo extends AbstractExecMojo {
      * Trying to recognize whether the given {@link #executable} might be a {@code java} binary.
      */
     private static final Pattern ENDS_WITH_JAVA = Pattern.compile("^.*java(\\.exe|\\.bin)?$", Pattern.CASE_INSENSITIVE);
+    private static final String TOOLCHAIN_JAVA_ENV_NAME = "TOOLCHAIN_JAVA";
 
     /**
      * <p>
@@ -486,6 +487,11 @@ public class ExecMojo extends AbstractExecMojo {
             if (envVarsFromScript != null) {
                 enviro.putAll(envVarsFromScript);
             }
+        }
+
+        Toolchain tc = getToolchain();
+        if (tc != null) {
+            enviro.put(TOOLCHAIN_JAVA_ENV_NAME, tc.findTool("java"));
         }
 
         if (this.getLog().isDebugEnabled()) {
