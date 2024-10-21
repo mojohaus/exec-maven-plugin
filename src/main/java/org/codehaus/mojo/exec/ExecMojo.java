@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -338,6 +339,13 @@ public class ExecMojo extends AbstractExecMojo {
     @Parameter(property = "exec.asyncDestroyOnShutdown", defaultValue = "true")
     private boolean asyncDestroyOnShutdown = true;
 
+    /**
+     * @since 3.5.0
+     * Name of environment variable that will contain path to java executable provided by the toolchain (works only if JDK toolchain feature is used)
+     */
+    @Parameter(property = "exec.toolchainJavaHomeEnvName", defaultValue = "TOOLCHAIN_JAVA_HOME")
+    private String toolchainJavaHomeEnvName = "TOOLCHAIN_JAVA_HOME";
+
     @Component
     private ToolchainManager toolchainManager;
 
@@ -485,6 +493,16 @@ public class ExecMojo extends AbstractExecMojo {
             Map<String, String> envVarsFromScript = this.createEnvs(this.environmentScript);
             if (envVarsFromScript != null) {
                 enviro.putAll(envVarsFromScript);
+            }
+        }
+
+        Toolchain tc = getToolchain();
+        if (tc != null && "jdk".equals(tc.getType())) {
+            String toolchainJava = tc.findTool("java");
+            if (toolchainJava != null) {
+                String toolchainJavaHome =
+                        Paths.get(toolchainJava).getParent().getParent().toString();
+                enviro.put(toolchainJavaHomeEnvName, toolchainJavaHome);
             }
         }
 

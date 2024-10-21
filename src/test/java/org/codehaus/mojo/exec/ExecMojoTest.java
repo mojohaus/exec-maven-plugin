@@ -12,7 +12,9 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,17 +30,21 @@ import org.apache.commons.exec.OS;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
-import org.mockito.Mock;
+import org.apache.maven.toolchain.ToolchainManager;
 
 import static java.util.Collections.emptyMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Jerome Lacoste
  * @version $Id$
  */
 public class ExecMojoTest extends AbstractMojoTestCase {
-    @Mock
-    private MavenSession session;
+    private MavenSession session = mock(MavenSession.class);
+    private ToolchainManager toolchainManager = mock(ToolchainManager.class);
 
     private static final File LOCAL_REPO = new File("src/test/repository");
 
@@ -285,6 +291,40 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         assertTrue(
                 "dir should have been created",
                 Paths.get("target", "dist", "mails").toFile().exists());
+    }
+
+    public void testToolchainJavaHomePropertySetWhenToolchainIsUsed() throws Exception {
+        // given
+        File basedir;
+        String testJavaPath;
+        File pom;
+
+        if (OS.isFamilyWindows()) {
+            testJavaPath = "\\path\\to\\java\\home";
+            pom = new File(getBasedir(), "src\\test\\projects\\project21\\pom.xml");
+            when(toolchainManager.getToolchainFromBuildContext(any(), eq(session)))
+                    .thenReturn(new DummyJdkToolchain(testJavaPath + "\\bin\\java"));
+        } else {
+            testJavaPath = "/path/to/java/home";
+            pom = new File(getBasedir(), "src/test/projects/project20/pom.xml");
+            when(toolchainManager.getToolchainFromBuildContext(any(), eq(session)))
+                    .thenReturn(new DummyJdkToolchain(testJavaPath + "/bin/java"));
+        }
+
+        ExecMojo execMojo = (ExecMojo) lookupMojo("exec", pom);
+        setVariableValueToObject(execMojo, "session", session);
+        setVariableValueToObject(execMojo, "toolchainManager", toolchainManager);
+
+        basedir = new File("target");
+        execMojo.setBasedir(basedir);
+
+        // when
+        execMojo.execute();
+
+        // then
+        Path resultFilePath = basedir.toPath().resolve("testfile.txt");
+        String result = new String(Files.readAllBytes(resultFilePath), StandardCharsets.UTF_8);
+        assertTrue(result.contains(testJavaPath));
     }
 
     private void checkMojo(String expectedCommandLine) {
