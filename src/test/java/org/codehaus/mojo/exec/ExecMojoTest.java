@@ -295,21 +295,31 @@ public class ExecMojoTest extends AbstractMojoTestCase {
 
     public void testToolchainJavaHomePropertySetWhenToolchainIsUsed() throws Exception {
         // given
-        String testJavaPath = "/path/to/java/home";
+        File basedir;
+        String testJavaPath;
+        File pom;
 
-        File pom = new File(getBasedir(), "src/test/projects/project20/pom.xml");
-        ExecMojo mojo = (ExecMojo) lookupMojo("exec", pom);
+        if (OS.isFamilyWindows()) {
+            testJavaPath = "\\path\\to\\java\\home";
+            pom = new File(getBasedir(), "src\\test\\projects\\project21\\pom.xml");
+            when(toolchainManager.getToolchainFromBuildContext(any(), eq(session)))
+                    .thenReturn(new DummyJdkToolchain(testJavaPath + "\\bin\\java"));
+        } else {
+            testJavaPath = "/path/to/java/home";
+            pom = new File(getBasedir(), "src/test/projects/project20/pom.xml");
+            when(toolchainManager.getToolchainFromBuildContext(any(), eq(session)))
+                    .thenReturn(new DummyJdkToolchain(testJavaPath + "/bin/java"));
+        }
 
-        setVariableValueToObject(mojo, "session", session);
-        setVariableValueToObject(mojo, "toolchainManager", toolchainManager);
-        when(toolchainManager.getToolchainFromBuildContext(any(), eq(session)))
-                .thenReturn(new DummyToolchain(testJavaPath + "/bin/java"));
+        ExecMojo execMojo = (ExecMojo) lookupMojo("exec", pom);
+        setVariableValueToObject(execMojo, "session", session);
+        setVariableValueToObject(execMojo, "toolchainManager", toolchainManager);
 
-        File basedir = new File("target");
-        mojo.setBasedir(basedir);
+        basedir = new File("target");
+        execMojo.setBasedir(basedir);
 
         // when
-        mojo.execute();
+        execMojo.execute();
 
         // then
         Path resultFilePath = basedir.toPath().resolve("testfile.txt");
