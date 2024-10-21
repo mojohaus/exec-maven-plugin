@@ -341,7 +341,7 @@ public class ExecMojo extends AbstractExecMojo {
 
     /**
      * @since 3.5.0
-     * Name of environment variable that will contain path to java executable provided by the toolchain (works only if toolchain feature is used)
+     * Name of environment variable that will contain path to java executable provided by the toolchain (works only if JDK toolchain feature is used)
      */
     @Parameter(property = "exec.toolchainJavaHomeEnvName", defaultValue = "TOOLCHAIN_JAVA_HOME")
     private String toolchainJavaHomeEnvName = "TOOLCHAIN_JAVA_HOME";
