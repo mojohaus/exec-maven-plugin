@@ -48,6 +48,8 @@ import static java.util.Arrays.asList;
  */
 class URLClassLoaderBuilder {
     private Log logger;
+    private List<String> forcedJvmPackages;
+    private List<String> excludedJvmPackages;
     private Collection<Path> paths;
     private Collection<String> exclusions;
     private ClassFileTransformer transformer;
@@ -56,6 +58,18 @@ class URLClassLoaderBuilder {
 
     static URLClassLoaderBuilder builder() {
         return new URLClassLoaderBuilder();
+    }
+
+    URLClassLoaderBuilder setExcludedJvmPackages(List<String> excludedJvmPackages )
+    {
+        this.excludedJvmPackages = excludedJvmPackages;
+        return this;
+    }
+
+    URLClassLoaderBuilder setForcedJvmPackages(List<String> forcedJvmPackages )
+    {
+        this.forcedJvmPackages = forcedJvmPackages;
+        return this;
     }
 
     public URLClassLoaderBuilder setTransformer(final ClassFileTransformer transformer) {
@@ -96,7 +110,7 @@ class URLClassLoaderBuilder {
             }
         }
 
-        return new ExecJavaClassLoader(urls.toArray(new URL[0]), transformer, logger);
+        return new ExecJavaClassLoader( urls.toArray( new URL[0] ), transformer, logger, forcedJvmPackages, excludedJvmPackages );
     }
 
     // child first strategy
@@ -112,12 +126,17 @@ class URLClassLoaderBuilder {
         private final String jre;
         private final Log logger;
         private final ClassFileTransformer transformer;
+        private final List<String> forcedJvmPackages;
+        private final List<String> excludedJvmPackages;
 
-        public ExecJavaClassLoader(final URL[] urls, final ClassFileTransformer transformer, final Log logger) {
+        public ExecJavaClassLoader(URL[] urls, ClassFileTransformer transformer, Log logger, List<String> forcedJvmPackages, List<String> excludedJvmPackages )
+        {
             super(urls);
             this.jre = getJre();
             this.logger = logger;
             this.transformer = transformer;
+            this.forcedJvmPackages = forcedJvmPackages;
+            this.excludedJvmPackages = excludedJvmPackages;
         }
 
         @Override
@@ -307,52 +326,72 @@ class URLClassLoaderBuilder {
             return false;
         }
 
-        // not all jvm classes, for ex "javax" can be overriden so don't list it here
+        // not all jvm classes, for ex "javax" can be overridden so don't list it them all here (javax.resource for ex)
         private boolean isDirectJvmClass(final String name) {
-            if (name.startsWith("java.")) {
+            if (excludedJvmPackages != null && excludedJvmPackages.stream().anyMatch( name::startsWith ))
+            {
+                return false;
+            }
+            if (name.startsWith( "java." ) )
+            {
                 return true;
             }
-            if (name.startsWith("sun.")) {
+            if ( name.startsWith( "sun." ) )
+            {
                 return true;
             }
-            if (name.startsWith("jdk.")) {
+            if ( name.startsWith( "jdk." ) )
+            {
                 return true;
             }
-            if (name.startsWith("oracle.")) {
+            if ( name.startsWith( "oracle." ) )
+            {
                 return true;
             }
-            if (name.startsWith("javafx.")) {
+            if ( name.startsWith( "javafx." ) )
+            {
                 return true;
             }
-            if (name.startsWith("netscape.")) {
+            if ( name.startsWith( "netscape." ) )
+            {
                 return true;
             }
-            if (name.startsWith("org.")) {
-                final String sub = name.substring("org.".length());
-                if (sub.startsWith("w3c.dom.")) {
+            if ( name.startsWith( "org." ) )
+            {
+                final String sub = name.substring( "org.".length() );
+                if ( sub.startsWith( "w3c.dom." ) )
+                {
                     return true;
                 }
-                if (sub.startsWith("omg.")) {
+                if ( sub.startsWith( "omg." ) )
+                {
                     return true;
                 }
-                if (sub.startsWith("xml.sax.")) {
+                if ( sub.startsWith( "xml.sax." ) )
+                {
                     return true;
                 }
-                if (sub.startsWith("ietf.jgss.")) {
+                if ( sub.startsWith( "ietf.jgss." ) )
+                {
                     return true;
                 }
-                if (sub.startsWith("jcp.xml.dsig.internal.")) {
+                if ( sub.startsWith( "jcp.xml.dsig.internal." ) )
+                {
                     return true;
                 }
             }
-            if (name.startsWith("com.")) {
-                final String sub = name.substring("com.".length());
-                if (sub.startsWith("oracle.")) {
+            if ( name.startsWith( "com." ) )
+            {
+                final String sub = name.substring( "com.".length() );
+                if ( sub.startsWith( "oracle." ) )
+                {
                     return true;
                 }
-                if (sub.startsWith("sun.")) {
-                    final String subSun = sub.substring("sun.".length());
-                    if (subSun.startsWith("accessibility.")) {
+                if ( sub.startsWith( "sun." ) )
+                {
+                    final String subSun = sub.substring( "sun.".length() );
+                    if ( subSun.startsWith( "accessibility." ) )
+                    {
                         return true;
                     }
                     if (subSun.startsWith("activation.")) {
@@ -427,10 +466,9 @@ class URLClassLoaderBuilder {
                     if (subSun.startsWith("xml.internal.")) {
                         return true;
                     }
-                    return false;
                 }
             }
-            return false;
+            return forcedJvmPackages != null && forcedJvmPackages.stream().anyMatch( name::startsWith );
         }
 
         private class FilteringUrlEnum implements Enumeration<URL> {

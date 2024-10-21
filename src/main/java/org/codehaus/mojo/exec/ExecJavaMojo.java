@@ -195,6 +195,23 @@ public class ExecJavaMojo extends AbstractExecMojo {
     private List<String> classpathFilenameExclusions;
 
     /**
+     * Additional packages to load from the jvm even if a classpath dependency matches.
+     *
+     * @since 3.1.1
+     */
+    @Parameter
+    private List<String> forcedJvmPackages;
+
+    /**
+     * Additional packages to NOT load from the jvm even if it is in a flat classpath.
+     * Can enable to reproduce a webapp behavior for example where library is loaded over the JVM.
+     *
+     * @since 3.1.1
+     */
+    @Parameter
+    private List<String> excludedJvmPackages;
+
+    /**
      * Whether to try and prohibit the called Java program from terminating the JVM (and with it the whole Maven build)
      * by calling {@link System#exit(int)}. When active, loaded classes will replace this call by a custom callback.
      * In case of an exit code 0 (OK), it will simply log the fact that {@link System#exit(int)} was called.
@@ -678,12 +695,13 @@ public class ExecJavaMojo extends AbstractExecMojo {
         this.addRelevantPluginDependenciesToClasspath(classpathURLs);
         this.addRelevantProjectDependenciesToClasspath(classpathURLs);
         this.addAdditionalClasspathElements(classpathURLs);
-
         try {
             final URLClassLoaderBuilder builder = URLClassLoaderBuilder.builder()
                     .setLogger(getLog())
                     .setPaths(classpathURLs)
-                    .setExclusions(classpathFilenameExclusions);
+                    .setExclusions(classpathFilenameExclusions)
+                    .setForcedJvmPackages(forcedJvmPackages)
+                    .setExcludedJvmPackages(excludedJvmPackages);
             if (blockSystemExit) {
                 builder.setTransformer(new BlockExitTransformer());
             }
