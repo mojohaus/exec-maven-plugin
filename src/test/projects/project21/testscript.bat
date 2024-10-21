@@ -1,1 +1,1 @@
-echo|set /p="123" > test.txt
+echo|set /p="%CUSTOM_NAME_FOR_TOOLCHAIN_JAVA%" > testfile.txt
