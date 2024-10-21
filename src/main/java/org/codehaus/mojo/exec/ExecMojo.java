@@ -87,7 +87,6 @@ public class ExecMojo extends AbstractExecMojo {
      * Trying to recognize whether the given {@link #executable} might be a {@code java} binary.
      */
     private static final Pattern ENDS_WITH_JAVA = Pattern.compile("^.*java(\\.exe|\\.bin)?$", Pattern.CASE_INSENSITIVE);
-    private static final String TOOLCHAIN_JAVA_ENV_NAME = "TOOLCHAIN_JAVA";
 
     /**
      * <p>
@@ -339,6 +338,12 @@ public class ExecMojo extends AbstractExecMojo {
     @Parameter(property = "exec.asyncDestroyOnShutdown", defaultValue = "true")
     private boolean asyncDestroyOnShutdown = true;
 
+    /**
+     * Name of environment variable that will contain path to java executable provided by the toolchain (if the toolchain w
+     */
+    @Parameter(property = "exec.toolchainJavaHomeEnvName", defaultValue = "TOOLCHAIN_JAVA_HOME")
+    private String toolchainJavaHomeEnvName = "TOOLCHAIN_JAVA_HOME";
+
     @Component
     private ToolchainManager toolchainManager;
 
@@ -491,7 +496,10 @@ public class ExecMojo extends AbstractExecMojo {
 
         Toolchain tc = getToolchain();
         if (tc != null) {
-            enviro.put(TOOLCHAIN_JAVA_ENV_NAME, tc.findTool("java"));
+            String toolchainJava = tc.findTool("java");
+            if (toolchainJava != null) {
+                enviro.put(toolchainJavaHomeEnvName, toolchainJava.replaceFirst("bin/java$", ""));
+            }
         }
 
         if (this.getLog().isDebugEnabled()) {
