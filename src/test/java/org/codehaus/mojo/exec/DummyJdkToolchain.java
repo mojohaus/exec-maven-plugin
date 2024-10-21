@@ -1,19 +1,18 @@
 package org.codehaus.mojo.exec;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.maven.toolchain.Toolchain;
 
-public class DummyToolchain implements Toolchain {
+public class DummyJdkToolchain implements Toolchain {
 
     private final String testJavaPath;
 
-    public DummyToolchain(String testJavaPath) {
+    public DummyJdkToolchain(String testJavaPath) {
         this.testJavaPath = testJavaPath;
     }
 
     @Override
     public String getType() {
-        throw new NotImplementedException("testToolchain");
+        return "jdk";
     }
 
     @Override
