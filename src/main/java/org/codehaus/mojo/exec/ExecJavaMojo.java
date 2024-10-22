@@ -197,7 +197,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
     /**
      * Additional packages to load from the jvm even if a classpath dependency matches.
      *
-     * @since 3.1.1
+     * @since 3.5.0
      */
     @Parameter
     private List<String> forcedJvmPackages;
@@ -206,7 +206,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
      * Additional packages to NOT load from the jvm even if it is in a flat classpath.
      * Can enable to reproduce a webapp behavior for example where library is loaded over the JVM.
      *
-     * @since 3.1.1
+     * @since 3.5.0
      */
     @Parameter
     private List<String> excludedJvmPackages;
