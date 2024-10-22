@@ -17,4 +17,5 @@
  * under the License.
  */
 
-new IntegrationBase().checkExistenceAndContentOfAFile(new File( basedir, "build.log" ), [ "Main Result: <null>" ])
+File log = new File(basedir, 'build.log')
+assert log.text.contains( 'Main Result: <null>')
