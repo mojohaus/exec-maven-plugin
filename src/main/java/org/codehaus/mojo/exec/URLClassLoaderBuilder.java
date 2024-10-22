@@ -423,7 +423,6 @@ class URLClassLoaderBuilder {
 
         private class FilteringUrlEnum implements Enumeration<URL> {
             private final Enumeration<URL> delegate;
-
             private URL next;
 
             private FilteringUrlEnum(Enumeration<URL> delegate) {
@@ -449,7 +448,6 @@ class URLClassLoaderBuilder {
 
         private static class ChainedEnumerations implements Enumeration<URL> {
             private final Iterator<Enumeration<URL>> enumerations;
-
             private Enumeration<URL> current;
 
             private ChainedEnumerations(Iterator<Enumeration<URL>> enumerations) {
