@@ -42,12 +42,13 @@ import org.codehaus.plexus.util.IOUtil;
 import static java.util.Arrays.asList;
 
 /**
- *
  * @author Robert Scholte
  * @since 3.0.0
  */
 class URLClassLoaderBuilder {
     private Log logger;
+    private List<String> forcedJvmPackages;
+    private List<String> excludedJvmPackages;
     private Collection<Path> paths;
     private Collection<String> exclusions;
     private ClassFileTransformer transformer;
@@ -56,6 +57,16 @@ class URLClassLoaderBuilder {
 
     static URLClassLoaderBuilder builder() {
         return new URLClassLoaderBuilder();
+    }
+
+    URLClassLoaderBuilder setExcludedJvmPackages(List<String> excludedJvmPackages) {
+        this.excludedJvmPackages = excludedJvmPackages;
+        return this;
+    }
+
+    URLClassLoaderBuilder setForcedJvmPackages(List<String> forcedJvmPackages) {
+        this.forcedJvmPackages = forcedJvmPackages;
+        return this;
     }
 
     public URLClassLoaderBuilder setTransformer(final ClassFileTransformer transformer) {
@@ -96,7 +107,7 @@ class URLClassLoaderBuilder {
             }
         }
 
-        return new ExecJavaClassLoader(urls.toArray(new URL[0]), transformer, logger);
+        return new ExecJavaClassLoader(urls.toArray(new URL[0]), transformer, forcedJvmPackages, excludedJvmPackages);
     }
 
     // child first strategy
@@ -110,14 +121,20 @@ class URLClassLoaderBuilder {
         }
 
         private final String jre;
-        private final Log logger;
         private final ClassFileTransformer transformer;
+        private final List<String> forcedJvmPackages;
+        private final List<String> excludedJvmPackages;
 
-        public ExecJavaClassLoader(final URL[] urls, final ClassFileTransformer transformer, final Log logger) {
+        public ExecJavaClassLoader(
+                URL[] urls,
+                ClassFileTransformer transformer,
+                List<String> forcedJvmPackages,
+                List<String> excludedJvmPackages) {
             super(urls);
             this.jre = getJre();
-            this.logger = logger;
             this.transformer = transformer;
+            this.forcedJvmPackages = forcedJvmPackages;
+            this.excludedJvmPackages = excludedJvmPackages;
         }
 
         @Override
@@ -307,130 +324,101 @@ class URLClassLoaderBuilder {
             return false;
         }
 
-        // not all jvm classes, for ex "javax" can be overriden so don't list it here
+        // not all jvm classes, for ex "javax" can be overridden so don't list it them all here (javax.resource for ex)
         private boolean isDirectJvmClass(final String name) {
+            if (excludedJvmPackages != null && excludedJvmPackages.stream().anyMatch(name::startsWith)) {
+                return false;
+            }
             if (name.startsWith("java.")) {
                 return true;
-            }
-            if (name.startsWith("sun.")) {
+            } else if (name.startsWith("javax.")) {
+                final String sub = name.substring("javax.".length());
+                if (sub.startsWith("xml.")) {
+                    return true;
+                }
+            } else if (name.startsWith("sun.")) {
                 return true;
-            }
-            if (name.startsWith("jdk.")) {
+            } else if (name.startsWith("jdk.")) {
                 return true;
-            }
-            if (name.startsWith("oracle.")) {
+            } else if (name.startsWith("oracle.")) {
                 return true;
-            }
-            if (name.startsWith("javafx.")) {
+            } else if (name.startsWith("javafx.")) {
                 return true;
-            }
-            if (name.startsWith("netscape.")) {
+            } else if (name.startsWith("netscape.")) {
                 return true;
-            }
-            if (name.startsWith("org.")) {
+            } else if (name.startsWith("org.")) {
                 final String sub = name.substring("org.".length());
                 if (sub.startsWith("w3c.dom.")) {
                     return true;
-                }
-                if (sub.startsWith("omg.")) {
+                } else if (sub.startsWith("omg.")) {
+                    return true;
+                } else if (sub.startsWith("xml.sax.")) {
+                    return true;
+                } else if (sub.startsWith("ietf.jgss.")) {
+                    return true;
+                } else if (sub.startsWith("jcp.xml.dsig.internal.")) {
                     return true;
                 }
-                if (sub.startsWith("xml.sax.")) {
-                    return true;
-                }
-                if (sub.startsWith("ietf.jgss.")) {
-                    return true;
-                }
-                if (sub.startsWith("jcp.xml.dsig.internal.")) {
-                    return true;
-                }
-            }
-            if (name.startsWith("com.")) {
+            } else if (name.startsWith("com.")) {
                 final String sub = name.substring("com.".length());
                 if (sub.startsWith("oracle.")) {
                     return true;
-                }
-                if (sub.startsWith("sun.")) {
+                } else if (sub.startsWith("sun.")) {
                     final String subSun = sub.substring("sun.".length());
                     if (subSun.startsWith("accessibility.")) {
                         return true;
-                    }
-                    if (subSun.startsWith("activation.")) {
+                    } else if (subSun.startsWith("activation.")) {
+                        return true;
+                    } else if (subSun.startsWith("awt.")) {
+                        return true;
+                    } else if (subSun.startsWith("beans.")) {
+                        return true;
+                    } else if (subSun.startsWith("corba.se.")) {
+                        return true;
+                    } else if (subSun.startsWith("demo.jvmti.")) {
+                        return true;
+                    } else if (subSun.startsWith("image.codec.jpeg.")) {
+                        return true;
+                    } else if (subSun.startsWith("imageio.")) {
+                        return true;
+                    } else if (subSun.startsWith("istack.internal.")) {
+                        return true;
+                    } else if (subSun.startsWith("java.")) {
+                        return true;
+                    } else if (subSun.startsWith("java_cup.")) {
+                        return true;
+                    } else if (subSun.startsWith("jmx.")) {
+                        return true;
+                    } else if (subSun.startsWith("jndi.")) {
+                        return true;
+                    } else if (subSun.startsWith("management.")) {
+                        return true;
+                    } else if (subSun.startsWith("media.sound.")) {
+                        return true;
+                    } else if (subSun.startsWith("naming.internal.")) {
+                        return true;
+                    } else if (subSun.startsWith("net.")) {
+                        return true;
+                    } else if (subSun.startsWith("nio.")) {
+                        return true;
+                    } else if (subSun.startsWith("org.")) {
+                        return true;
+                    } else if (subSun.startsWith("rmi.rmid.")) {
+                        return true;
+                    } else if (subSun.startsWith("rowset.")) {
+                        return true;
+                    } else if (subSun.startsWith("security.")) {
+                        return true;
+                    } else if (subSun.startsWith("swing.")) {
+                        return true;
+                    } else if (subSun.startsWith("tracing.")) {
+                        return true;
+                    } else if (subSun.startsWith("xml.internal.")) {
                         return true;
                     }
-                    if (subSun.startsWith("awt.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("beans.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("corba.se.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("demo.jvmti.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("image.codec.jpeg.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("imageio.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("istack.internal.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("java.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("java_cup.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("jmx.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("jndi.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("management.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("media.sound.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("naming.internal.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("net.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("nio.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("org.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("rmi.rmid.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("rowset.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("security.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("swing.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("tracing.")) {
-                        return true;
-                    }
-                    if (subSun.startsWith("xml.internal.")) {
-                        return true;
-                    }
-                    return false;
                 }
             }
-            return false;
+            return forcedJvmPackages != null && forcedJvmPackages.stream().anyMatch(name::startsWith);
         }
 
         private class FilteringUrlEnum implements Enumeration<URL> {
