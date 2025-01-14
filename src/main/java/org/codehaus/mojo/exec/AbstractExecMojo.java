@@ -106,6 +106,7 @@ public abstract class AbstractExecMojo extends AbstractMojo {
 
     /**
      * Arguments separated by space for the executed program. For example: "-j 20"
+     * Use ${env.XYZ} if you want to use environment variables as parameters.
      */
     @Parameter(property = "exec.args")
     private String commandlineArgs;
