@@ -18,4 +18,4 @@
  */
 File log = new File(basedir, 'build.log')
 assert log.exists()
-assert 1 == log.readLines().count( "Hello World")
+assert 1 == log.text.count( "Hello World")

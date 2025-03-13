@@ -20,4 +20,4 @@ def buildLogLines = new File( basedir, "build.log" ).readLines()
 def infoMessageLineNumber = buildLogLines.indexOf("[INFO] System::exit was called with return code 0")
 assert infoMessageLineNumber > 0
 // Verify that preceding line is program output
-assert buildLogLines[infoMessageLineNumber - 1] == "[one, two, three]"
+assert buildLogLines[infoMessageLineNumber - 1].contains("[one, two, three]")

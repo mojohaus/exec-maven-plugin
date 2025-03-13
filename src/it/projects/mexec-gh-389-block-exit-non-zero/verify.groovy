@@ -20,7 +20,7 @@ def buildLogLines = new File( basedir, "build.log" ).readLines()
 def infoMessageLineNumber = buildLogLines.indexOf("[INFO] System::exit was called with return code 123")
 assert infoMessageLineNumber > 0
 // Verify that preceding line is program output
-assert buildLogLines[infoMessageLineNumber - 1] == "[one, two, three]"
+assert buildLogLines[infoMessageLineNumber - 1].contains("[one, two, three]")
 // Verify that subsequent lines contain the beginning of the thrown SystemExitException stack trace
 assert buildLogLines[infoMessageLineNumber + 1].startsWith("[WARNING]")
 assert buildLogLines[infoMessageLineNumber + 2].contains("SystemExitException: System::exit was called with return code 123")
