@@ -134,7 +134,7 @@
   <properties>
     <mavenVersion>3.6.3</mavenVersion>
     <slf4j.version>1.7.36</slf4j.version>
-    <asm.version>9.7.1</asm.version>
+    <asm.version>9.8</asm.version>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2024-10-22T07:46:45Z</project.build.outputTimestamp>
     <maven-toolchains-plugin.version>3.2.0</maven-toolchains-plugin.version>
