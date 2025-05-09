@@ -264,12 +264,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
         }
 
         IsolatedThreadGroup threadGroup = new IsolatedThreadGroup(mainClass /* name */);
-        // TODO:
-        //   Adjust implementation for future JDKs after removal of SecurityManager.
-        //   See https://openjdk.org/jeps/411 for basic information.
-        //   See https://bugs.openjdk.org/browse/JDK-8199704 for details about how users might be able to
-        // block
-        //   System::exit in post-removal JDKs (still undecided at the time of writing this comment).
         Thread bootstrapThread = new Thread( // TODO: drop this useless thread 99% of the time
                 threadGroup,
                 () -> {
@@ -299,9 +293,11 @@ public class ExecJavaMojo extends AbstractExecMojo {
                                 .getThreadGroup()
                                 .uncaughtException(Thread.currentThread(), exceptionToReport);
                     } catch (SystemExitException systemExitException) {
-                        getLog().info(systemExitException.getMessage());
                         if (systemExitException.getExitCode() != 0) {
+                            getLog().error(systemExitException.getMessage());
                             throw systemExitException;
+                        } else {
+                            getLog().info(systemExitException.getMessage());
                         }
                     } catch (Throwable e) { // just pass it on
                         Thread.currentThread().getThreadGroup().uncaughtException(Thread.currentThread(), e);
@@ -696,16 +692,14 @@ public class ExecJavaMojo extends AbstractExecMojo {
         this.addRelevantProjectDependenciesToClasspath(classpathURLs);
         this.addAdditionalClasspathElements(classpathURLs);
         try {
-            final URLClassLoaderBuilder builder = URLClassLoaderBuilder.builder()
+            return URLClassLoaderBuilder.builder()
                     .setLogger(getLog())
                     .setPaths(classpathURLs)
                     .setExclusions(classpathFilenameExclusions)
                     .setForcedJvmPackages(forcedJvmPackages)
-                    .setExcludedJvmPackages(excludedJvmPackages);
-            if (blockSystemExit) {
-                builder.setTransformer(new BlockExitTransformer());
-            }
-            return builder.build();
+                    .setExcludedJvmPackages(excludedJvmPackages)
+                    .withTransformers(blockSystemExit)
+                    .build();
         } catch (NullPointerException | IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }

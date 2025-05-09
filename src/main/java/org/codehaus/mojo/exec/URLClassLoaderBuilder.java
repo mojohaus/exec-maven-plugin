@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -51,7 +50,7 @@ class URLClassLoaderBuilder {
     private List<String> excludedJvmPackages;
     private Collection<Path> paths;
     private Collection<String> exclusions;
-    private ClassFileTransformer transformer;
+    private boolean withTransformers;
 
     private URLClassLoaderBuilder() {}
 
@@ -69,11 +68,6 @@ class URLClassLoaderBuilder {
         return this;
     }
 
-    public URLClassLoaderBuilder setTransformer(final ClassFileTransformer transformer) {
-        this.transformer = transformer;
-        return this;
-    }
-
     URLClassLoaderBuilder setLogger(Log logger) {
         this.logger = logger;
         return this;
@@ -86,6 +80,11 @@ class URLClassLoaderBuilder {
 
     URLClassLoaderBuilder setPaths(Collection<Path> paths) {
         this.paths = paths;
+        return this;
+    }
+
+    URLClassLoaderBuilder withTransformers(boolean wiTransformers) {
+        this.withTransformers = wiTransformers;
         return this;
     }
 
@@ -107,7 +106,13 @@ class URLClassLoaderBuilder {
             }
         }
 
-        return new ExecJavaClassLoader(urls.toArray(new URL[0]), transformer, forcedJvmPackages, excludedJvmPackages);
+        URL[] urlsArray = urls.toArray(new URL[0]);
+        BlockExitTransformer transformer = null;
+        if (withTransformers) {
+            transformer = new BlockExitTransformer(new URLClassLoader(urlsArray), logger);
+        }
+
+        return new ExecJavaClassLoader(urlsArray, transformer, forcedJvmPackages, excludedJvmPackages);
     }
 
     // child first strategy
@@ -121,13 +126,13 @@ class URLClassLoaderBuilder {
         }
 
         private final String jre;
-        private final ClassFileTransformer transformer;
+        private final BlockExitTransformer transformer;
         private final List<String> forcedJvmPackages;
         private final List<String> excludedJvmPackages;
 
         public ExecJavaClassLoader(
                 URL[] urls,
-                ClassFileTransformer transformer,
+                BlockExitTransformer transformer,
                 List<String> forcedJvmPackages,
                 List<String> excludedJvmPackages) {
             super(urls);
@@ -135,6 +140,14 @@ class URLClassLoaderBuilder {
             this.transformer = transformer;
             this.forcedJvmPackages = forcedJvmPackages;
             this.excludedJvmPackages = excludedJvmPackages;
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
+            if (transformer != null) {
+                transformer.close();
+            }
         }
 
         @Override
@@ -208,7 +221,7 @@ class URLClassLoaderBuilder {
 
             try (final InputStream inputStream = url.openStream()) {
                 final byte[] raw = IOUtil.toByteArray(inputStream);
-                final byte[] res = transformer.transform(this, name, null, null, raw);
+                final byte[] res = transformer.transform(null, name, null, null, raw);
                 final byte[] bin = res == null ? raw : res;
                 return super.defineClass(name, bin, 0, bin.length);
             } catch (final ClassFormatError | IOException | IllegalClassFormatException var4) {
