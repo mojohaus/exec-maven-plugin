@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo.exec.it</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <artifactId>mexec-gh-389</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+
+  <description>
+    For bigger and more complicated classes org.objectweb.asm.ClassWriter
+    requires access to classloader where can found classes used in transformed class.
+  </description>
+
+  <properties>
+    <xsd-file>dbchangelog-4.31</xsd-file>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.java.dev.msv</groupId>
+      <artifactId>msv-rngconverter</artifactId>
+      <version>2022.7</version>
+    </dependency>
+    <dependency>
+      <groupId>org.relaxng</groupId>
+      <artifactId>trang</artifactId>
+      <version>20241231</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <id>convert-xsd-to-rng</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>com.sun.msv.writer.relaxng.Driver</mainClass>
+              <commandlineArgs>
+                ${project.basedir}/${xsd-file}.xsd
+                ${project.build.directory}/${xsd-file}.rng
+              </commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>convert-liquibase-rng-to-rnc</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>com.thaiopensource.relaxng.translate.Driver</mainClass>
+              <blockSystemExit>true</blockSystemExit>
+              <arguments>
+                <argument>${project.build.directory}/${xsd-file}.rng</argument>
+                <argument>${project.build.directory}/${xsd-file}.rnc</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

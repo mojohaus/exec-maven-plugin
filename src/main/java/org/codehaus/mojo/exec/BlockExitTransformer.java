@@ -19,9 +19,13 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
+import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 
+import org.apache.maven.plugin.logging.Log;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -33,22 +37,55 @@ import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
 import static org.objectweb.asm.Opcodes.ASM9;
 
 public class BlockExitTransformer implements ClassFileTransformer {
+
+    private final URLClassLoader classLoader;
+
+    private final Log logger;
+
+    BlockExitTransformer(URLClassLoader classLoader, Log logger) {
+        this.classLoader = classLoader;
+        this.logger = logger;
+    }
+
     @Override
     public byte[] transform(
             final ClassLoader loader,
             final String className,
             final Class<?> classBeingRedefined,
             final ProtectionDomain protectionDomain,
-            final byte[] classfileBuffer) {
+            final byte[] classfileBuffer)
+            throws IllegalClassFormatException {
         try {
             final ClassReader reader = new ClassReader(classfileBuffer);
-            final ClassWriter writer = new ClassWriter(COMPUTE_FRAMES);
+            final ClassWriter writer = createClassWriter();
             final SystemExitOverrideVisitor visitor = new SystemExitOverrideVisitor(writer);
             reader.accept(visitor, EXPAND_FRAMES);
             return writer.toByteArray();
         } catch (final RuntimeException re) { // too old asm for ex, ignore these classes to not block the rest
+            logger.warn("Unable to transform class " + className + " : " + re.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Creates a new {@link ClassWriter} that uses the dedicated  {@link ClassLoader} of this transformer.
+     * <p>
+     * For bigger and more complicated classes {@link ClassWriter}
+     * requires access to classloader where can found classes used in transformed class.
+     *
+     * @return a new {@link ClassWriter}
+     */
+    private ClassWriter createClassWriter() {
+        return new ClassWriter(COMPUTE_FRAMES) {
+            @Override
+            protected ClassLoader getClassLoader() {
+                return classLoader;
+            }
+        };
+    }
+
+    public void close() throws IOException {
+        classLoader.close();
     }
 
     private static class SystemExitOverrideVisitor extends ClassVisitor {
