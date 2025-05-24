@@ -414,7 +414,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
     private Object lookupParam(final java.lang.reflect.Parameter param) throws ComponentLookupException {
         final String name = param.getName();
         switch (name) {
-                // loose coupled to maven (wrapped with standard jvm types to not require it)
             case "systemProperties": // Properties
                 return getSession().getSystemProperties();
             case "systemPropertiesUpdater": // BiConsumer<String, String>
@@ -429,7 +428,6 @@ public class ExecJavaMojo extends AbstractExecMojo {
                 return propertiesUpdater(project.getProperties());
             case "highestVersionResolver": // Function<String, String>
                 return resolveVersion(VersionRangeResult::getHighestVersion);
-                // standard bindings
             case "session": // MavenSession
                 return getSession();
             case "container": // PlexusContainer
