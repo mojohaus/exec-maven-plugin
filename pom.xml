@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>mojo-parent</artifactId>
-    <version>92</version>
+    <version>91</version>
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
@@ -144,26 +144,26 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
-      <version>${mavenVersion}</version>
+      <version>3.6.3</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
-      <version>${mavenVersion}</version>
+      <version>3.6.3</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-core</artifactId>
-      <version>${mavenVersion}</version>
+      <version>3.6.3</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
-      <version>${mavenVersion}</version>
+      <version>3.6.3</version>
       <scope>provided</scope>
     </dependency>
 
@@ -200,12 +200,12 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>${asm.version}</version>
+      <version>9.8</version>
     </dependency>
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-commons</artifactId>
-      <version>${asm.version}</version>
+      <version>9.8</version>
     </dependency>
 
     <dependency>
@@ -216,7 +216,7 @@
     <dependency>
       <groupId>org.apache.maven.plugin-testing</groupId>
       <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>3.3.0</version>
+      <version>4.0.0-alpha-2</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -228,7 +228,7 @@
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-compat</artifactId>
-      <version>${mavenVersion}</version>
+      <version>3.6.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -240,7 +240,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
+      <version>1.7.36</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
