@@ -35,6 +35,7 @@ import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystemSession;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -89,6 +90,50 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         String output = execute(pom, "java");
 
         assertEquals("Hello" + System.getProperty("line.separator"), output);
+    }
+
+    public void testJSR512InstanceMainNoArgs() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project22/pom.xml");
+
+        String output = execute(pom, "java");
+
+        assertEquals("Correct choice" + System.getProperty("line.separator"), output);
+    }
+
+    public void testJSR512PrefersStringArrayArgs() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project23/pom.xml");
+
+        String output = execute(pom, "java");
+
+        assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
+    }
+
+    public void testJSR512StaticMainNoArgs() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project24/pom.xml");
+
+        String output = execute(pom, "java");
+
+        assertEquals("Correct choice" + System.getProperty("line.separator"), output);
+    }
+
+    public void testJSR512FailureInstanceMainPrivateNoArgsConstructor() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project25/pom.xml");
+        try {
+            execute(pom, "java");
+            fail("Expected Exception to be thrown but none was thrown");
+        } catch (Throwable e) {
+            assertTrue(e instanceof MojoExecutionException);
+
+            assertEquals("The specified mainClass doesn't contain a main method with appropriate signature.", e.getCause().getMessage());
+        }
+    }
+
+    public void testJSR512InheritedMain() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project26/pom.xml");
+
+        String output = execute(pom, "java");
+
+        assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
     }
 
     /**

@@ -357,18 +357,48 @@ public class ExecJavaMojo extends AbstractExecMojo {
         Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            doMain(lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class)));
-        } catch (final NoSuchMethodException nsme) {
-            if (Runnable.class.isAssignableFrom(bootClass)) {
-                doRun(bootClass);
-            } else {
-                throw nsme;
-            }
+            MethodHandle mainHandle = lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
+            mainHandle.invoke(arguments);
+            return;
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            // No static main(String[])
         }
+        try {
+            MethodHandle mainHandle = lookup.findVirtual(bootClass, "main", MethodType.methodType(void.class, String[].class));
+            mainHandle.invoke(newInstance(bootClass), arguments);
+            return;
+        } catch (final NoSuchMethodException  | IllegalAccessException e) {
+            // No instance main(String[])
+        }
+        try {
+            MethodHandle mainHandle = lookup.findStatic(bootClass, "main", MethodType.methodType(void.class));
+            mainHandle.invoke();
+            return;
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
+            // No static main()
+        }
+        try {
+            MethodHandle mainHandle = lookup.findVirtual(bootClass, "main", MethodType.methodType(void.class));
+            mainHandle.invoke(newInstance(bootClass));
+            return;
+        } catch (final NoSuchMethodException  | IllegalAccessException e) {
+            // No instance main()
+        }
+
+        if (Runnable.class.isAssignableFrom(bootClass)) {
+            doRun(bootClass);
+            return;
+        }
+
+        throw new NoSuchMethodException("No suitable main method found for " + bootClass + ", and not Runnable");
     }
 
-    private void doMain(final MethodHandle mainHandle) throws Throwable {
-        mainHandle.invoke(arguments);
+    private Object newInstance(final Class<?> bootClass) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+        final Constructor<?> constructor = bootClass.getDeclaredConstructor();
+        if ((constructor.getModifiers() & Modifier.PRIVATE) != 0) {
+            throw new NoSuchMethodException("No public constructor found for " + bootClass);
+        }
+        return constructor.newInstance();
     }
 
     private void doRun(final Class<?> bootClass)
