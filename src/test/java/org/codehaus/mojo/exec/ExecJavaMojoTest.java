@@ -123,7 +123,9 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         } catch (Throwable e) {
             assertTrue(e instanceof MojoExecutionException);
 
-            assertEquals("The specified mainClass doesn't contain a main method with appropriate signature.", e.getCause().getMessage());
+            assertEquals(
+                    "The specified mainClass doesn't contain a main method with appropriate signature.",
+                    e.getCause().getMessage());
         }
     }
 
