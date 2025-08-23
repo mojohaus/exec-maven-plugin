@@ -357,17 +357,19 @@ public class ExecJavaMojo extends AbstractExecMojo {
         Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            MethodHandle mainHandle = lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
+            MethodHandle mainHandle =
+                    lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
             mainHandle.invoke(arguments);
             return;
         } catch (final NoSuchMethodException | IllegalAccessException e) {
             // No static main(String[])
         }
         try {
-            MethodHandle mainHandle = lookup.findVirtual(bootClass, "main", MethodType.methodType(void.class, String[].class));
+            MethodHandle mainHandle =
+                    lookup.findVirtual(bootClass, "main", MethodType.methodType(void.class, String[].class));
             mainHandle.invoke(newInstance(bootClass), arguments);
             return;
-        } catch (final NoSuchMethodException  | IllegalAccessException e) {
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
             // No instance main(String[])
         }
         try {
@@ -381,7 +383,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
             MethodHandle mainHandle = lookup.findVirtual(bootClass, "main", MethodType.methodType(void.class));
             mainHandle.invoke(newInstance(bootClass));
             return;
-        } catch (final NoSuchMethodException  | IllegalAccessException e) {
+        } catch (final NoSuchMethodException | IllegalAccessException e) {
             // No instance main()
         }
 
@@ -393,7 +395,8 @@ public class ExecJavaMojo extends AbstractExecMojo {
         throw new NoSuchMethodException("No suitable main method found for " + bootClass + ", and not Runnable");
     }
 
-    private Object newInstance(final Class<?> bootClass) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    private Object newInstance(final Class<?> bootClass)
+            throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         final Constructor<?> constructor = bootClass.getDeclaredConstructor();
         if ((constructor.getModifiers() & Modifier.PRIVATE) != 0) {
             throw new NoSuchMethodException("No public constructor found for " + bootClass);
