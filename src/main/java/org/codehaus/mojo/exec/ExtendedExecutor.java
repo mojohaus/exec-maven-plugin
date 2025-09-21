@@ -41,7 +41,7 @@ public class ExtendedExecutor extends DefaultExecutor {
     public ExtendedExecutor(boolean inheritIo) {
         this.inheritIo = inheritIo;
     }
-    
+
     @Override
     protected Process launch(CommandLine command, Map<String, String> env, Path workingDirectory) throws IOException {
         return this.launch(command, env, workingDirectory.toFile());
