@@ -356,4 +356,80 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         }
         return result;
     }
+
+    public void testGetShebang() throws Exception {
+        ExecMojo execMojo = new ExecMojo();
+
+        // without shebang
+        File noShebang = Files.createTempFile("noShebang", ".sh").toFile();
+        Files.write(noShebang.toPath(), Arrays.asList("echo hello"), StandardCharsets.UTF_8);
+        assertNull(execMojo.getShebang(noShebang));
+        noShebang.delete();
+
+        // with shebang
+        File withShebang = Files.createTempFile("withShebang", ".sh").toFile();
+        Files.write(withShebang.toPath(), Arrays.asList("#!/bin/bash -x", "echo hello"), StandardCharsets.UTF_8);
+        assertEquals("/bin/bash -x", execMojo.getShebang(withShebang));
+        withShebang.delete();
+
+        // with shebang but no args
+        File withShebangNoArgs =
+                Files.createTempFile("withShebangNoArgs", ".sh").toFile();
+        Files.write(
+                withShebangNoArgs.toPath(),
+                Arrays.asList("#!/usr/bin/env python3", "print('hello')"),
+                StandardCharsets.UTF_8);
+        assertEquals("/usr/bin/env python3", execMojo.getShebang(withShebangNoArgs));
+        withShebangNoArgs.delete();
+    }
+
+    public void testCreateEnvWrapperFile() throws Exception {
+        ExecMojo execMojo = new ExecMojo();
+
+        // without shebang
+        File envScript = Files.createTempFile("envScript", ".sh").toFile();
+        Files.write(envScript.toPath(), Arrays.asList("export TEST_VAR=test_value"), StandardCharsets.UTF_8);
+        File wrapper = execMojo.createEnvWrapperFile(envScript);
+        List<String> lines = Files.readAllLines(wrapper.toPath(), StandardCharsets.UTF_8);
+
+        if (OS.isFamilyWindows()) {
+            assertEquals("@echo off", lines.get(0));
+            assertTrue(lines.get(1).startsWith("call \""));
+            assertTrue(lines.get(1).endsWith(envScript.getCanonicalPath() + "\""));
+            assertEquals("echo " + EnvStreamConsumer.START_PARSING_INDICATOR, lines.get(2));
+            assertEquals("set", lines.get(3));
+        } else {
+            assertEquals("#!/bin/sh", lines.get(0));
+            assertEquals(". " + envScript.getCanonicalPath(), lines.get(1));
+            assertEquals("echo " + EnvStreamConsumer.START_PARSING_INDICATOR, lines.get(2));
+            assertEquals("env", lines.get(3));
+        }
+        wrapper.delete();
+        envScript.delete();
+
+        // with shebang
+        File envScriptWithShebang =
+                Files.createTempFile("envScriptWithShebang", ".sh").toFile();
+        Files.write(
+                envScriptWithShebang.toPath(),
+                Arrays.asList("#!/bin/bash", "export TEST_VAR=test_value"),
+                StandardCharsets.UTF_8);
+        File wrapper2 = execMojo.createEnvWrapperFile(envScriptWithShebang);
+        List<String> lines2 = Files.readAllLines(wrapper2.toPath(), StandardCharsets.UTF_8);
+
+        if (OS.isFamilyWindows()) {
+            assertEquals("@echo off", lines2.get(0));
+            assertTrue(lines2.get(1).startsWith("call \""));
+            assertTrue(lines2.get(1).endsWith(envScriptWithShebang.getCanonicalPath() + "\""));
+            assertEquals("echo " + EnvStreamConsumer.START_PARSING_INDICATOR, lines2.get(2));
+            assertEquals("set", lines2.get(3));
+        } else {
+            assertEquals("#!/bin/bash", lines2.get(0));
+            assertEquals(". " + envScriptWithShebang.getCanonicalPath(), lines2.get(1));
+            assertEquals("echo " + EnvStreamConsumer.START_PARSING_INDICATOR, lines2.get(2));
+            assertEquals("env", lines2.get(3));
+        }
+        wrapper2.delete();
+        envScriptWithShebang.delete();
+    }
 }

@@ -20,6 +20,7 @@ package org.codehaus.mojo.exec;
  */
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -277,9 +278,11 @@ public class ExecMojo extends AbstractExecMojo {
     private Map<String, String> environmentVariables = new HashMap<>();
 
     /**
-     * Environment script to be merged with <i>environmentVariables</i> This script is platform specifics, on Unix its
-     * must be Bourne shell format. Use this feature if you have a need to create environment variable dynamically such
-     * as invoking Visual Studio environment script file
+     * Environment script to be merged with <i>environmentVariables</i>. on Unix-like system if the script
+     * contains a shebang line, the executable filename is read from the shebang line; otherwise,
+     * Bourne shell format is used.
+     * Use this feature if you have a need to create environment variable dynamically such as invoking
+     * Visual Studio environment script file.
      *
      * @since 1.4.0
      */
@@ -1013,6 +1016,22 @@ public class ExecMojo extends AbstractExecMojo {
         }
     }
 
+    String getShebang(File script) {
+        if (script == null || !script.canRead()) {
+            getLog().warn("Cannot read script file " + script);
+            return null;
+        }
+        try (BufferedReader reader = Files.newBufferedReader(script.toPath())) {
+            String line = reader.readLine();
+            if (line != null && line.startsWith("#!")) {
+                return line.substring(2).trim();
+            }
+        } catch (IOException e) {
+            getLog().warn("Could not read shebang from " + script.getAbsolutePath(), e);
+        }
+        return null;
+    }
+
     protected Map<String, String> createEnvs(File envScriptFile) throws MojoExecutionException {
         Map<String, String> results = null;
 
@@ -1023,7 +1042,16 @@ public class ExecMojo extends AbstractExecMojo {
             Commandline cl = new Commandline(); // commons-exec instead?
             cl.setExecutable(tmpEnvExecFile.getAbsolutePath());
             if (!OS.isFamilyWindows()) {
-                cl.setExecutable("sh");
+                String shebang = getShebang(envScriptFile);
+                if (shebang != null && !shebang.isEmpty()) {
+                    String[] parts = shebang.split("\\s+");
+                    cl.setExecutable(parts[0]);
+                    for (int i = 1; i < parts.length; i++) {
+                        cl.createArg().setValue(parts[i]);
+                    }
+                } else {
+                    cl.setExecutable("sh");
+                }
                 cl.createArg().setFile(tmpEnvExecFile);
             }
 
@@ -1077,8 +1105,13 @@ public class ExecMojo extends AbstractExecMojo {
         } else {
             tmpFile = Files.createTempFile("env", ".sh").toFile();
             // tmpFile.setExecutable( true );//java 6 only
+            String shebang = getShebang(envScript);
             try (PrintWriter writer = new PrintWriter(tmpFile)) {
-                writer.append("#! /bin/sh").println();
+                if (shebang != null && !shebang.isEmpty()) {
+                    writer.append("#!").append(shebang).println();
+                } else {
+                    writer.append("#!/bin/sh").println();
+                }
                 writer.append(". ").append(envScript.getCanonicalPath()).println(); // works on all unix??
                 writer.append("echo " + EnvStreamConsumer.START_PARSING_INDICATOR)
                         .println();
