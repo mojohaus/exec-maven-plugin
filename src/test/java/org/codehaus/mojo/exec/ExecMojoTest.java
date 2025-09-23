@@ -12,7 +12,6 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -360,19 +359,17 @@ public class ExecMojoTest extends AbstractMojoTestCase {
 
     public void testGetShebang() throws Exception {
         ExecMojo execMojo = new ExecMojo();
-        Method method = ExecMojo.class.getDeclaredMethod("getShebang", File.class);
-        method.setAccessible(true);
 
         // without shebang
         File noShebang = Files.createTempFile("noShebang", ".sh").toFile();
         Files.write(noShebang.toPath(), Arrays.asList("echo hello"), StandardCharsets.UTF_8);
-        assertNull(method.invoke(execMojo, noShebang));
+        assertNull(execMojo.getShebang(noShebang));
         noShebang.delete();
 
         // with shebang
         File withShebang = Files.createTempFile("withShebang", ".sh").toFile();
         Files.write(withShebang.toPath(), Arrays.asList("#!/bin/bash -x", "echo hello"), StandardCharsets.UTF_8);
-        assertEquals("/bin/bash -x", method.invoke(execMojo, withShebang));
+        assertEquals("/bin/bash -x", execMojo.getShebang(withShebang));
         withShebang.delete();
 
         // with shebang but no args
@@ -382,7 +379,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
                 withShebangNoArgs.toPath(),
                 Arrays.asList("#!/usr/bin/env python3", "print('hello')"),
                 StandardCharsets.UTF_8);
-        assertEquals("/usr/bin/env python3", method.invoke(execMojo, withShebangNoArgs));
+        assertEquals("/usr/bin/env python3", execMojo.getShebang(withShebangNoArgs));
         withShebangNoArgs.delete();
     }
 

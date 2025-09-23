@@ -278,9 +278,11 @@ public class ExecMojo extends AbstractExecMojo {
     private Map<String, String> environmentVariables = new HashMap<>();
 
     /**
-     * Environment script to be merged with <i>environmentVariables</i> This script is platform specifics, on Unix its
-     * must be Bourne shell format. Use this feature if you have a need to create environment variable dynamically such
-     * as invoking Visual Studio environment script file
+     * Environment script to be merged with <i>environmentVariables</i>. on Unix-like system if the script
+     * contains a shebang line, the executable filename is read from the shebang line; otherwise,
+     * Bourne shell format is used.
+     * Use this feature if you have a need to create environment variable dynamically such as invoking
+     * Visual Studio environment script file.
      *
      * @since 1.4.0
      */
@@ -1014,7 +1016,7 @@ public class ExecMojo extends AbstractExecMojo {
         }
     }
 
-    private String getShebang(File script) {
+    String getShebang(File script) {
         if (script == null || !script.canRead()) {
             getLog().warn("Cannot read script file " + script);
             return null;
