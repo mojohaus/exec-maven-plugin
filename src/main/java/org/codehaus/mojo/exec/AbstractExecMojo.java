@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -57,8 +57,7 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
  */
 public abstract class AbstractExecMojo extends AbstractMojo {
 
-    @Component
-    protected RepositorySystem repositorySystem;
+    protected final RepositorySystem repositorySystem;
 
     /**
      * The enclosing project.
@@ -167,6 +166,10 @@ public abstract class AbstractExecMojo extends AbstractMojo {
      */
     @Parameter(property = "exec.includePluginsDependencies", defaultValue = "false")
     protected boolean includePluginDependencies;
+
+    protected AbstractExecMojo(RepositorySystem repositorySystem) {
+        this.repositorySystem = Objects.requireNonNull(repositorySystem);
+    }
 
     /**
      * Collects the project artifacts in the specified List and the project specific classpath (build output and build

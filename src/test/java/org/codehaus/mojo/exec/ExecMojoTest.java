@@ -31,6 +31,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.eclipse.aether.RepositorySystem;
 
 import static java.util.Collections.emptyMap;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.when;
 public class ExecMojoTest extends AbstractMojoTestCase {
     private MavenSession session = mock(MavenSession.class);
     private ToolchainManager toolchainManager = mock(ToolchainManager.class);
+    private RepositorySystem repositorySystem = mock(RepositorySystem.class);
 
     private static final File LOCAL_REPO = new File("src/test/repository");
 
@@ -64,6 +66,10 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         public String failureMsg;
 
         public Map<String, String> systemProperties = new HashMap<>();
+
+        protected MockExecMojo(RepositorySystem repositorySystem, ToolchainManager toolchainManager) {
+            super(repositorySystem, toolchainManager);
+        }
 
         protected int executeCommandLine(
                 Executor exec, CommandLine commandLine, Map enviro, OutputStream out, OutputStream err)
@@ -90,7 +96,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
 
     public void setUp() throws Exception {
         super.setUp();
-        mojo = new MockExecMojo();
+        mojo = new MockExecMojo(repositorySystem, toolchainManager);
         // note: most of the tests below assume that the specified
         // executable path is not fully specicied. See ExecMojo#getExecutablePath
         mojo.setExecutable(SOME_EXECUTABLE);
@@ -121,7 +127,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
     // MEXEC-12, MEXEC-72
     public void testGetExecutablePath() throws IOException {
 
-        ExecMojo realMojo = new ExecMojo();
+        ExecMojo realMojo = new ExecMojo(repositorySystem, toolchainManager);
 
         File workdir = new File(System.getProperty("user.dir"));
         Map<String, String> enviro = new HashMap<>();
@@ -177,7 +183,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
         if (!OS.isFamilyWindows()) {
             return;
         }
-        final ExecMojo realMojo = new ExecMojo();
+        final ExecMojo realMojo = new ExecMojo(repositorySystem, toolchainManager);
 
         final String tmp = System.getProperty("java.io.tmpdir");
         final File workdir = new File(tmp, "testGetExecutablePathPreferExecutableExtensionsOnWindows");
@@ -251,7 +257,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
     }
 
     public void testIsResultCodeAFailure() {
-        ExecMojo execMojo = new ExecMojo();
+        ExecMojo execMojo = new ExecMojo(repositorySystem, toolchainManager);
         assertTrue(execMojo.isResultCodeAFailure(1));
         assertFalse(execMojo.isResultCodeAFailure(0));
 
@@ -268,7 +274,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
 
     // MEXEC-81
     public void testParseCommandlineOSWin() throws Exception {
-        ExecMojo execMojo = new ExecMojo();
+        ExecMojo execMojo = new ExecMojo(repositorySystem, toolchainManager);
         final String javaHome = "C:\\Java\\jdk1.5.0_15";
         // can only be set by expression or plugin-configuration
         setVariableValueToObject(execMojo, "commandlineArgs", javaHome);
@@ -278,7 +284,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
 
     public void test_exec_receives_all_parameters() throws MojoExecutionException {
         // given
-        ExecMojo execMojo = new ExecMojo();
+        ExecMojo execMojo = new ExecMojo(repositorySystem, toolchainManager);
         execMojo.setExecutable("mkdir");
         execMojo.setArguments(Arrays.asList("-p", "dist/mails"));
         execMojo.setBasedir(new File("target"));
@@ -358,7 +364,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
     }
 
     public void testGetShebang() throws Exception {
-        ExecMojo execMojo = new ExecMojo();
+        ExecMojo execMojo = new ExecMojo(repositorySystem, toolchainManager);
 
         // without shebang
         File noShebang = Files.createTempFile("noShebang", ".sh").toFile();
@@ -384,7 +390,7 @@ public class ExecMojoTest extends AbstractMojoTestCase {
     }
 
     public void testCreateEnvWrapperFile() throws Exception {
-        ExecMojo execMojo = new ExecMojo();
+        ExecMojo execMojo = new ExecMojo(repositorySystem, toolchainManager);
 
         // without shebang
         File envScript = Files.createTempFile("envScript", ".sh").toFile();

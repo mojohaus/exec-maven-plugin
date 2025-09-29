@@ -1,5 +1,7 @@
 package org.codehaus.mojo.exec;
 
+import javax.inject.Inject;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -15,6 +17,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -27,12 +30,12 @@ import java.util.stream.Stream;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
+import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.resolution.VersionRangeRequest;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
@@ -226,8 +229,14 @@ public class ExecJavaMojo extends AbstractExecMojo {
     @Parameter(property = "exec.blockSystemExit", defaultValue = "false")
     private boolean blockSystemExit;
 
-    @Component // todo: for maven4 move to Lookup instead
-    private PlexusContainer container;
+    // todo: for maven4 move to Lookup instead
+    private final PlexusContainer container;
+
+    @Inject
+    protected ExecJavaMojo(RepositorySystem repositorySystem, PlexusContainer container) {
+        super(repositorySystem);
+        this.container = Objects.requireNonNull(container);
+    }
 
     /**
      * Execute goal.
