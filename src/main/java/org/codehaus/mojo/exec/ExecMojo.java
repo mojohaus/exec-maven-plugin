@@ -19,6 +19,8 @@ package org.codehaus.mojo.exec;
  * under the License.
  */
 
+import javax.inject.Inject;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -61,7 +63,6 @@ import org.apache.maven.artifact.resolver.filter.AndArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.IncludesArtifactFilter;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -74,6 +75,7 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.DefaultConsumer;
 import org.codehaus.plexus.util.cli.StreamConsumer;
+import org.eclipse.aether.RepositorySystem;
 
 /**
  * A Plugin for executing external programs.
@@ -350,12 +352,17 @@ public class ExecMojo extends AbstractExecMojo {
     @Parameter(property = "exec.toolchainJavaHomeEnvName", defaultValue = "TOOLCHAIN_JAVA_HOME")
     private String toolchainJavaHomeEnvName = "TOOLCHAIN_JAVA_HOME";
 
-    @Component
-    private ToolchainManager toolchainManager;
+    private final ToolchainManager toolchainManager;
 
     public static final String CLASSPATH_TOKEN = "%classpath";
 
     public static final String MODULEPATH_TOKEN = "%modulepath";
+
+    @Inject
+    protected ExecMojo(RepositorySystem repositorySystem, ToolchainManager toolchainManager) {
+        super(repositorySystem);
+        this.toolchainManager = Objects.requireNonNull(toolchainManager);
+    }
 
     /**
      * priority in the execute method will be to use System properties arguments over the pom specification.
