@@ -21,6 +21,7 @@ package org.codehaus.mojo.exec;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 import org.apache.commons.exec.CommandLine;
@@ -39,6 +40,11 @@ public class ExtendedExecutor extends DefaultExecutor {
 
     public ExtendedExecutor(boolean inheritIo) {
         this.inheritIo = inheritIo;
+    }
+
+    @Override
+    protected Process launch(CommandLine command, Map<String, String> env, Path workingDirectory) throws IOException {
+        return this.launch(command, env, workingDirectory.toFile());
     }
 
     @Override
