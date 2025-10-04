@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo.exec.it</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <artifactId>custom-plugin-repository</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <description>
+    Tests executing a JAR which only exists in a custom Maven repository but not in Central
+  </description>
+
+  <pluginRepositories>
+    <!-- JAR executed by this IT currently only exists in Google Maven repository -->
+    <pluginRepository>
+      <id>google</id>
+      <url>https://maven.google.com</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <addOutputToClasspath>false</addOutputToClasspath>
+          <includeProjectDependencies>false</includeProjectDependencies>
+          <includePluginDependencies>true</includePluginDependencies>
+          <!-- Runs R8, see also https://r8.googlesource.com/r8/+/refs/heads/main/README.md -->
+          <executableDependency>
+            <groupId>com.android.tools</groupId>
+            <artifactId>r8</artifactId>
+          </executableDependency>
+          <mainClass>com.android.tools.r8.R8</mainClass>
+          <arguments>
+            <argument>--version</argument>
+          </arguments>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.android.tools</groupId>
+            <artifactId>r8</artifactId>
+            <!-- Use old version whose artifact is 'relatively' small -->
+            <version>2.0.98 </version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+</project>
