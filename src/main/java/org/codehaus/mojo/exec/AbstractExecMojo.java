@@ -320,7 +320,7 @@ public abstract class AbstractExecMojo extends AbstractMojo {
             } else {
                 getLog().debug("Selected plugin Dependencies will be included.");
                 Artifact executableArtifact = this.findExecutableArtifact();
-                relevantDependencies = this.resolveExecutableDependencies(executableArtifact);
+                relevantDependencies = this.resolveExecutablePluginDependencies(executableArtifact);
             }
         } else {
             relevantDependencies = Collections.emptySet();
@@ -336,11 +336,13 @@ public abstract class AbstractExecMojo extends AbstractMojo {
      * @return a set of Artifacts
      * @throws MojoExecutionException if a failure happens
      */
-    private Set<Artifact> resolveExecutableDependencies(Artifact executableArtifact) throws MojoExecutionException {
+    private Set<Artifact> resolveExecutablePluginDependencies(Artifact executableArtifact)
+            throws MojoExecutionException {
         try {
             CollectRequest collectRequest = new CollectRequest();
             collectRequest.setRoot(new Dependency(RepositoryUtils.toArtifact(executableArtifact), classpathScope));
-            collectRequest.setRepositories(project.getRemoteProjectRepositories());
+            // as this method is called only determineRelevantPluginDependencies, se we need a plugin repository here
+            collectRequest.setRepositories(project.getRemotePluginRepositories());
 
             DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(classpathScope);
 
