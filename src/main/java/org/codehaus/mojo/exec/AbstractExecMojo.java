@@ -341,7 +341,7 @@ public abstract class AbstractExecMojo extends AbstractMojo {
         try {
             CollectRequest collectRequest = new CollectRequest();
             collectRequest.setRoot(new Dependency(RepositoryUtils.toArtifact(executableArtifact), classpathScope));
-            // as this method is called only determineRelevantPluginDependencies, se we need a plugin repository here
+            // this method is called only by determineRelevantPluginDependencies, so we need a plugin repository here
             collectRequest.setRepositories(project.getRemotePluginRepositories());
 
             DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(classpathScope);
