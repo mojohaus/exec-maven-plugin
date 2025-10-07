@@ -22,6 +22,9 @@ assert buildLog.exists()
 def buildLogText = buildLog.getText()
 // Should have downloaded artifact from custom repository, not from Central
 // (requires running `mvn clean ...`)
-assert buildLogText.contains('Downloaded from google: https://maven.google.com/com/android/tools/r8/2.0.98/r8-2.0.98.jar')
+assert buildLogText.split('\n').any{ line ->
+    line.contains('Downloaded from custom-repo: ')
+    && line.contains('custom-plugin-repository-build-0.0.1-SNAPSHOT.jar')
+}
 // Should contain program output
-assert buildLogText.contains('R8 2.0.98 (build engineering)')
+assert buildLogText.contains('Can you hear me, Major Tom?')

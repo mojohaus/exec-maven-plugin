@@ -9,17 +9,23 @@
     <version>0.1</version>
   </parent>
 
-  <artifactId>custom-plugin-repository</artifactId>
+  <artifactId>custom-plugin-repository-use</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <description>
     Tests executing a JAR which only exists in a custom Maven repository but not in Central
   </description>
 
   <pluginRepositories>
-    <!-- JAR executed by this IT currently only exists in Google Maven repository -->
     <pluginRepository>
-      <id>google</id>
-      <url>https://maven.google.com</url>
+      <id>custom-repo</id>
+      <!-- Note: On Windows using `project.basedir` includes backslashes in this URI, which is not ideal
+        but seems to work -->
+      <url>file:///${project.basedir}/custom-repo</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <!-- Test setup does not generate checksum files for artifact -->
+        <checksumPolicy>ignore</checksumPolicy>
+      </snapshots>
     </pluginRepository>
   </pluginRepositories>
 
@@ -41,22 +47,17 @@
           <addOutputToClasspath>false</addOutputToClasspath>
           <includeProjectDependencies>false</includeProjectDependencies>
           <includePluginDependencies>true</includePluginDependencies>
-          <!-- Runs R8, see also https://r8.googlesource.com/r8/+/refs/heads/main/README.md -->
           <executableDependency>
-            <groupId>com.android.tools</groupId>
-            <artifactId>r8</artifactId>
+            <groupId>org.codehaus.mojo.exec.it</groupId>
+            <artifactId>custom-plugin-repository-build</artifactId>
           </executableDependency>
-          <mainClass>com.android.tools.r8.R8</mainClass>
-          <arguments>
-            <argument>--version</argument>
-          </arguments>
+          <mainClass>example.Main</mainClass>
         </configuration>
         <dependencies>
           <dependency>
-            <groupId>com.android.tools</groupId>
-            <artifactId>r8</artifactId>
-            <!-- Use old version whose artifact is 'relatively' small -->
-            <version>2.0.98 </version>
+            <groupId>org.codehaus.mojo.exec.it</groupId>
+            <artifactId>custom-plugin-repository-build</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
           </dependency>
         </dependencies>
       </plugin>
