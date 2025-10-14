@@ -115,6 +115,22 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Correct choice" + System.getProperty("line.separator"), output);
     }
 
+    public void testJSR512PackagePrivateStaticMainNoArgs() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project27/pom.xml");
+
+        String output = execute(pom, "java");
+
+        assertEquals("Correct choice" + System.getProperty("line.separator"), output);
+    }
+
+    public void testJSR512PackagePrivateStaticMainWithArgs() throws Exception {
+        File pom = new File(getBasedir(), "src/test/projects/project28/pom.xml");
+
+        String output = execute(pom, "java");
+
+        assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
+    }
+
     public void testJSR512FailureInstanceMainPrivateNoArgsConstructor() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project25/pom.xml");
         try {

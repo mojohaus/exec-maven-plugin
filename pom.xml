@@ -133,6 +133,7 @@
 
   <properties>
     <mavenVersion>3.9.11</mavenVersion>
+    <mojo.java.target>9</mojo.java.target>
     <minimalMavenBuildVersion>3.6.3</minimalMavenBuildVersion>
     <slf4j.version>1.7.36</slf4j.version>
     <asm.version>9.9</asm.version>
@@ -312,6 +313,7 @@
           </signature>
           <ignores>
             <ignore>java.lang.invoke.MethodHandle</ignore>
+            <ignore>java.lang.invoke.MethodHandles</ignore>
           </ignores>
         </configuration>
         <executions>

@@ -366,6 +366,11 @@ public class ExecJavaMojo extends AbstractExecMojo {
         Class<?> bootClass = Thread.currentThread().getContextClassLoader().loadClass(bootClassName);
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
+            lookup = MethodHandles.privateLookupIn(bootClass, lookup);
+        } catch (IllegalAccessException e) {
+            getLog().error("Unable to lookup " + bootClass + " with private lookup in: " + e.getMessage(), e);
+        }
+        try {
             MethodHandle mainHandle =
                     lookup.findStatic(bootClass, "main", MethodType.methodType(void.class, String[].class));
             mainHandle.invoke(arguments);
