@@ -302,9 +302,20 @@ public class ExecJavaMojo extends AbstractExecMojo {
                     } catch (InvocationTargetException e) {
                         // use the cause if available to improve the plugin execution output
                         Throwable exceptionToReport = e.getCause() != null ? e.getCause() : e;
-                        Thread.currentThread()
-                                .getThreadGroup()
-                                .uncaughtException(Thread.currentThread(), exceptionToReport);
+                        // Special handling for SystemExitException
+                        if (exceptionToReport instanceof SystemExitException) {
+                            SystemExitException systemExitException = (SystemExitException) exceptionToReport;
+                            if (systemExitException.getExitCode() != 0) {
+                                getLog().error(systemExitException.getMessage());
+                                throw systemExitException;
+                            } else {
+                                getLog().info(systemExitException.getMessage());
+                            }
+                        } else {
+                            Thread.currentThread()
+                                    .getThreadGroup()
+                                    .uncaughtException(Thread.currentThread(), exceptionToReport);
+                        }
                     } catch (SystemExitException systemExitException) {
                         if (systemExitException.getExitCode() != 0) {
                             getLog().error(systemExitException.getMessage());
@@ -455,7 +466,7 @@ public class ExecJavaMojo extends AbstractExecMojo {
             }
         }
 
-        // Try static main(String[] args)
+        // Try static main(String[] args) - highest priority
         try {
             java.lang.reflect.Method mainMethod = bootClass.getMethod("main", String[].class);
             if (Modifier.isStatic(mainMethod.getModifiers())) {
@@ -467,37 +478,29 @@ public class ExecJavaMojo extends AbstractExecMojo {
             getLog().debug("No static method 'main(String[])' found", e);
         }
 
-        // Try instance main(String[] args)
-        try {
-            java.lang.reflect.Method mainMethod = bootClass.getMethod("main", String[].class);
-            if (!Modifier.isStatic(mainMethod.getModifiers())) {
-                mainMethod.invoke(newInstance(bootClass), (Object) arguments);
-                return;
-            }
-        } catch (final NoSuchMethodException e) {
-            getLog().debug("No instance method 'main(String[])' found", e);
+        // Try static main() - JSR-512
+        java.lang.reflect.Method staticMainNoArgs = findMethod(bootClass, "main", true, new Class<?>[0]);
+        if (staticMainNoArgs != null) {
+            staticMainNoArgs.setAccessible(true);
+            staticMainNoArgs.invoke(null);
+            return;
         }
 
-        // Try static main()
-        try {
-            java.lang.reflect.Method mainMethod = bootClass.getMethod("main");
-            if (Modifier.isStatic(mainMethod.getModifiers())) {
-                mainMethod.invoke(null);
-                return;
-            }
-        } catch (final NoSuchMethodException e) {
-            getLog().debug("No static method 'main()' found", e);
+        // Try instance main(String[] args) - JSR-512
+        java.lang.reflect.Method instanceMainArgs =
+                findMethod(bootClass, "main", false, new Class<?>[] {String[].class});
+        if (instanceMainArgs != null) {
+            instanceMainArgs.setAccessible(true);
+            instanceMainArgs.invoke(newInstance(bootClass), (Object) arguments);
+            return;
         }
 
-        // Try instance main()
-        try {
-            java.lang.reflect.Method mainMethod = bootClass.getMethod("main");
-            if (!Modifier.isStatic(mainMethod.getModifiers())) {
-                mainMethod.invoke(newInstance(bootClass));
-                return;
-            }
-        } catch (final NoSuchMethodException e) {
-            getLog().debug("No instance method 'main()' found", e);
+        // Try instance main() - JSR-512
+        java.lang.reflect.Method instanceMainNoArgs = findMethod(bootClass, "main", false, new Class<?>[0]);
+        if (instanceMainNoArgs != null) {
+            instanceMainNoArgs.setAccessible(true);
+            instanceMainNoArgs.invoke(newInstance(bootClass));
+            return;
         }
 
         if (Runnable.class.isAssignableFrom(bootClass)) {
@@ -506,6 +509,36 @@ public class ExecJavaMojo extends AbstractExecMojo {
         }
 
         throw new NoSuchMethodException("No suitable main method found for " + bootClass + ", and not Runnable");
+    }
+
+    /**
+     * Finds a method with the given name, parameter types, and static modifier requirement.
+     * Searches the class hierarchy including inherited methods.
+     * Only matches methods with void return type (for JSR-512 compliance).
+     *
+     * @param clazz the class to search
+     * @param methodName the method name
+     * @param isStatic whether the method should be static
+     * @param parameterTypes the parameter types
+     * @return the matching method, or null if not found
+     */
+    private java.lang.reflect.Method findMethod(
+            Class<?> clazz, String methodName, boolean isStatic, Class<?>[] parameterTypes) {
+        Class<?> currentClass = clazz;
+        while (currentClass != null) {
+            try {
+                java.lang.reflect.Method method = currentClass.getDeclaredMethod(methodName, parameterTypes);
+                boolean methodIsStatic = Modifier.isStatic(method.getModifiers());
+                // Check if static modifier matches requirement and return type is void
+                if (methodIsStatic == isStatic && method.getReturnType() == void.class) {
+                    return method;
+                }
+            } catch (NoSuchMethodException e) {
+                // Method not found in this class, continue to superclass
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        return null;
     }
 
     private Object newInstance(final Class<?> bootClass)
