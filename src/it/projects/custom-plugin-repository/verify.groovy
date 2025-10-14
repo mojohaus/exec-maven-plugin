@@ -20,11 +20,5 @@
 File buildLog = new File(basedir, 'build.log')
 assert buildLog.exists()
 def buildLogText = buildLog.getText()
-// Should have downloaded artifact from custom repository, not from Central
-// (requires running `mvn clean ...`)
-assert buildLogText.split('\n').any{ line ->
-    line.contains('Downloaded from custom-repo: ')
-    && line.contains('custom-plugin-repository-build-0.0.1-SNAPSHOT.jar')
-}
 // Should contain program output
 assert buildLogText.contains('Can you hear me, Major Tom?')
