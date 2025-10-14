@@ -139,6 +139,8 @@
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2025-10-05T19:10:54Z</project.build.outputTimestamp>
     <maven-toolchains-plugin.version>3.2.0</maven-toolchains-plugin.version>
+
+    <mojo.java.target>9</mojo.java.target>
   </properties>
 
   <dependencies>
@@ -286,6 +288,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <proc>none</proc>
+          <source>9</source>
+          <target>9</target>
         </configuration>
         <executions>
           <execution>
@@ -305,6 +309,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
         <configuration>
+          <skip>true</skip>
           <signature>
             <groupId>org.codehaus.mojo.signature</groupId>
             <artifactId>java18</artifactId>
