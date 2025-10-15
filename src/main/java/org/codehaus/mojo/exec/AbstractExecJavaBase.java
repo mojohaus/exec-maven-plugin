@@ -395,16 +395,12 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      * @throws Throwable if execution fails
      */
     protected void executeMainMethod(Class<?> bootClass) throws Throwable {
-        // Try static main(String[] args) - highest priority
-        try {
-            java.lang.reflect.Method mainMethod = bootClass.getMethod("main", String[].class);
-            if (Modifier.isStatic(mainMethod.getModifiers())) {
-                mainMethod.setAccessible(true);
-                mainMethod.invoke(null, (Object) arguments);
-                return;
-            }
-        } catch (final NoSuchMethodException e) {
-            getLog().debug("No static method 'main(String[])' found", e);
+        // Try static main(String[] args) - highest priority (JEP 445)
+        java.lang.reflect.Method staticMainArgs = findMethod(bootClass, "main", true, new Class<?>[] {String[].class});
+        if (staticMainArgs != null) {
+            staticMainArgs.setAccessible(true);
+            staticMainArgs.invoke(null, (Object) arguments);
+            return;
         }
 
         // Try static main() - JEP 445
