@@ -5,9 +5,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class LineRedirectOutputStreamTest {
 
@@ -26,9 +28,9 @@ public class LineRedirectOutputStreamTest {
     @Test
     public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCp1252_thenShouldDecodeProperly()
             throws IOException {
-        Assume.assumeTrue(
-                "The JVM does not contain the cp-1252 charset",
-                Charset.availableCharsets().containsKey("windows-1252"));
+        assumeTrue(
+                Charset.availableCharsets().containsKey("windows-1252"),
+                "The JVM does not contain the cp-1252 charset");
         internalTestForCharset(Charset.forName("windows-1252"));
     }
 
@@ -44,14 +46,14 @@ public class LineRedirectOutputStreamTest {
         internalTestForCharset(sb -> new LineRedirectOutputStream(sb::append), Charset.defaultCharset());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void givenNullCharset_whenInstantiating_thenShouldThrow() {
-        new LineRedirectOutputStream(new StringBuilder()::append, null);
+        assertThrows(NullPointerException.class, () -> new LineRedirectOutputStream(new StringBuilder()::append, null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void givenNullStringConsumer_whenInstantiating_thenShouldThrow() {
-        new LineRedirectOutputStream(null, Charset.defaultCharset());
+        assertThrows(NullPointerException.class, () -> new LineRedirectOutputStream(null, Charset.defaultCharset()));
     }
 
     private void internalTestForCharset(Charset charset) throws IOException {
@@ -72,6 +74,6 @@ public class LineRedirectOutputStreamTest {
 
         // The String to bytes to String is required here because StringCoding uses the Charset.defaultCharset()
         // internally so it would make the test fail when testing for different charsets.
-        Assert.assertEquals(new String(expectedString.getBytes(charset), charset), sb.toString());
+        assertEquals(new String(expectedString.getBytes(charset), charset), sb.toString());
     }
 }
