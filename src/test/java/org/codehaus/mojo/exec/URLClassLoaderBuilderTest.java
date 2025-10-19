@@ -25,10 +25,10 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Basic tests about the custom classloader we set to execute the project.
@@ -47,7 +47,7 @@ public class URLClassLoaderBuilderTest {
                         .build();
                 PrintStream tmpStderr = new PrintStream(stderr)) {
             System.setErr(tmpStderr);
-            assertEquals(tmpStderr, System.err);
+            assertEquals(System.err, tmpStderr);
             thread.setContextClassLoader(loader);
             Class<?> lf = loader.loadClass("org.slf4j.LoggerFactory");
             Object logger = lf.getMethod("getLogger", Class.class).invoke(null, String.class);
