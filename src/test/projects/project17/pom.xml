@@ -31,9 +31,9 @@
         <configuration>
           <mainClass>org.codehaus.mojo.exec.Slf4jMain</mainClass>
           <additionalClasspathElements> <!-- simply check nominal binding works -->
-            <additionalClasspathElements>../../../../target/test-classes</additionalClasspathElements> <!-- test setup requires it -->
-            <additionalClasspathElements>../../../../target/test-dependencies/slf4j-api.jar</additionalClasspathElements>
-            <additionalClasspathElements>../../../../target/test-dependencies/slf4j-jdk14.jar</additionalClasspathElements>
+            <additionalClasspathElements>target/test-classes</additionalClasspathElements> <!-- test setup requires it -->
+            <additionalClasspathElements>target/test-dependencies/slf4j-api.jar</additionalClasspathElements>
+            <additionalClasspathElements>target/test-dependencies/slf4j-jdk14.jar</additionalClasspathElements>
           </additionalClasspathElements>
         </configuration>
       </plugin>

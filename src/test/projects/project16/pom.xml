@@ -32,10 +32,10 @@
           <mainClass>org.codehaus.mojo.exec.Slf4jMain</mainClass>
           <!-- simulate plugin deps bringing one binding and project deps bringing another one -->
           <additionalClasspathElements>
-            <additionalClasspathElements>../../../../target/test-classes</additionalClasspathElements> <!-- test setup requires it -->
-            <additionalClasspathElements>../../../../target/test-dependencies/slf4j-api.jar</additionalClasspathElements>
-            <additionalClasspathElements>../../../../target/test-dependencies/slf4j-jdk14.jar</additionalClasspathElements>
-            <additionalClasspathElements>../../../../target/test-dependencies/slf4j-simple.jar</additionalClasspathElements>
+            <additionalClasspathElements>target/test-classes</additionalClasspathElements> <!-- test setup requires it -->
+            <additionalClasspathElements>target/test-dependencies/slf4j-api.jar</additionalClasspathElements>
+            <additionalClasspathElements>target/test-dependencies/slf4j-jdk14.jar</additionalClasspathElements>
+            <additionalClasspathElements>target/test-dependencies/slf4j-simple.jar</additionalClasspathElements>
           </additionalClasspathElements>
           <classpathFilenameExclusions>
             <classpathFilenameExclusion>slf4j-jdk14.jar</classpathFilenameExclusion>
