@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo.exec.it</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <artifactId>custom-plugin-repository-use</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <description>
+    Tests executing a JAR which only exists in a custom Maven repository but not in Central
+  </description>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>custom-repo</id>
+      <!-- Note: On Windows using `project.basedir` includes backslashes in this URI, which is not ideal
+        but seems to work -->
+      <url>file:///${project.basedir}/custom-repo</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <!-- Test setup does not generate checksum files for artifact -->
+        <checksumPolicy>ignore</checksumPolicy>
+      </snapshots>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <addOutputToClasspath>false</addOutputToClasspath>
+          <includeProjectDependencies>false</includeProjectDependencies>
+          <includePluginDependencies>true</includePluginDependencies>
+          <executableDependency>
+            <groupId>org.codehaus.mojo.exec.it</groupId>
+            <artifactId>custom-plugin-repository-build</artifactId>
+          </executableDependency>
+          <mainClass>example.Main</mainClass>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.mojo.exec.it</groupId>
+            <artifactId>custom-plugin-repository-build</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+</project>
