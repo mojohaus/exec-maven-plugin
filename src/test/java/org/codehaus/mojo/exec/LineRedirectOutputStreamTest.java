@@ -11,23 +11,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class LineRedirectOutputStreamTest {
+class LineRedirectOutputStreamTest {
 
     @Test
-    public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithUtf8Charset_thenShouldDecodeProperly()
+    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithUtf8Charset_thenShouldDecodeProperly()
             throws IOException {
         internalTestForCharset(StandardCharsets.UTF_8);
     }
 
     @Test
-    public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithIso8859Charset_thenShouldDecodeProperly()
+    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithIso8859Charset_thenShouldDecodeProperly()
             throws IOException {
         internalTestForCharset(StandardCharsets.ISO_8859_1);
     }
 
     @Test
-    public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCp1252_thenShouldDecodeProperly()
-            throws IOException {
+    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCp1252_thenShouldDecodeProperly() throws IOException {
         assumeTrue(
                 Charset.availableCharsets().containsKey("windows-1252"),
                 "The JVM does not contain the cp-1252 charset");
@@ -35,24 +34,24 @@ public class LineRedirectOutputStreamTest {
     }
 
     @Test
-    public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithDefaultCharset_thenShouldDecodeProperly()
+    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithDefaultCharset_thenShouldDecodeProperly()
             throws IOException {
         internalTestForCharset(Charset.defaultCharset());
     }
 
     @Test
-    public void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCharsetUnspecified_thenShouldDecodeProperly()
+    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCharsetUnspecified_thenShouldDecodeProperly()
             throws IOException {
         internalTestForCharset(sb -> new LineRedirectOutputStream(sb::append), Charset.defaultCharset());
     }
 
     @Test
-    public void givenNullCharset_whenInstantiating_thenShouldThrow() {
+    void givenNullCharset_whenInstantiating_thenShouldThrow() {
         assertThrows(NullPointerException.class, () -> new LineRedirectOutputStream(new StringBuilder()::append, null));
     }
 
     @Test
-    public void givenNullStringConsumer_whenInstantiating_thenShouldThrow() {
+    void givenNullStringConsumer_whenInstantiating_thenShouldThrow() {
         assertThrows(NullPointerException.class, () -> new LineRedirectOutputStream(null, Charset.defaultCharset()));
     }
 

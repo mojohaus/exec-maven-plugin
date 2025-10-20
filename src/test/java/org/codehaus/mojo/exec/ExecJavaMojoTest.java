@@ -15,6 +15,8 @@ package org.codehaus.mojo.exec;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import javax.inject.Inject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -22,35 +24,54 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Properties;
 
+import org.apache.maven.api.plugin.testing.InjectMojo;
+import org.apache.maven.api.plugin.testing.MojoParameter;
+import org.apache.maven.api.plugin.testing.MojoTest;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.monitor.logging.DefaultLog;
-import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuilder;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.logging.console.ConsoleLogger;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystemSession;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
  * @author Jerome Lacoste
  * @version $Id$
  */
-public class ExecJavaMojoTest extends AbstractMojoTestCase {
-    @Mock
+@ExtendWith(MockitoExtension.class)
+@MojoTest
+class ExecJavaMojoTest {
+
+    @Inject
     private MavenSession session;
 
-    private static final int JAVA_VERSION_MAJOR =
-            Integer.parseInt(System.getProperty("java.version").replaceFirst("[.].*", ""));
+    @Inject
+    private MavenProject project;
+
+    @BeforeEach
+    void beforeEach() {
+
+        session.getSystemProperties().setProperty("test.version", "junit");
+        when(session.getCurrentProject()).thenReturn(project);
+
+        Build build = new Build();
+        build.setOutputDirectory(new File("target/test-classes").getAbsolutePath());
+        when(project.getBuild()).thenReturn(build);
+    }
 
     /*
      * This one won't work yet public void xxtestSimpleRunPropertiesAndArguments() throws MojoExecutionException,
@@ -64,17 +85,12 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testRunnable() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project19/pom.xml");
-        ExecJavaMojo mojo = (ExecJavaMojo) lookupMojo("java", pom);
-        setUpProject(pom, mojo);
-        mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR, "exec:java")));
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.HelloRunnable")
+    void testRunnable(ExecJavaMojo mojo) throws Exception {
         doExecute(mojo, null, null);
-        assertEquals(
-                "junit: true",
-                ((MavenSession) getVariableValueFromObject(mojo, "session"))
-                        .getSystemProperties()
-                        .getProperty("hello.runnable.output"));
+        assertEquals("junit: true", session.getSystemProperties().getProperty("hello.runnable.output"));
     }
 
     /**
@@ -83,74 +99,73 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testSimpleRun() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project4/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Hello" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.DummyMain")
+    void testSimpleRun(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Hello" + System.lineSeparator(), output);
     }
 
-    public void testJSR512InstanceMainNoArgs() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project22/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Correct choice" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain1")
+    void testJSR512InstanceMainNoArgs(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Correct choice" + System.lineSeparator(), output);
     }
 
-    public void testJSR512PrefersStringArrayArgs() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project23/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain2")
+    @MojoParameter(name = "arguments", value = "arg1,arg2")
+    void testJSR512PrefersStringArrayArgs(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Correct choice arg1 arg2" + System.lineSeparator(), output);
     }
 
-    public void testJSR512StaticMainNoArgs() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project24/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Correct choice" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain3")
+    void testJSR512StaticMainNoArgs(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Correct choice" + System.lineSeparator(), output);
     }
 
-    public void testJSR512PackagePrivateStaticMainNoArgs() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project27/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Correct choice" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain6")
+    public void testJSR512PackagePrivateStaticMainNoArgs(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Correct choice" + System.lineSeparator(), output);
     }
 
-    public void testJSR512PackagePrivateStaticMainWithArgs() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project28/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain7")
+    @MojoParameter(name = "arguments", value = "arg1,arg2")
+    public void testJSR512PackagePrivateStaticMainWithArgs(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Correct choice arg1 arg2" + System.lineSeparator(), output);
     }
 
-    public void testJSR512FailureInstanceMainPrivateNoArgsConstructor() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project25/pom.xml");
-        try {
-            execute(pom, "java");
-            fail("Expected Exception to be thrown but none was thrown");
-        } catch (Throwable e) {
-            assertTrue(e instanceof MojoExecutionException);
-
-            assertEquals(
-                    "The specified mainClass doesn't contain a main method with appropriate signature.",
-                    e.getCause().getMessage());
-        }
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain4")
+    void testJSR512FailureInstanceMainPrivateNoArgsConstructor(ExecJavaMojo mojo) {
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertEquals(
+                "The specified mainClass doesn't contain a main method with appropriate signature.",
+                exception.getCause().getMessage());
     }
 
-    public void testJSR512InheritedMain() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project26/pom.xml");
-
-        String output = execute(pom, "java");
-
-        assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain5")
+    @MojoParameter(name = "arguments", value = "arg1,arg2")
+    void testJSR512InheritedMain(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertEquals("Correct choice arg1 arg2" + System.lineSeparator(), output);
     }
 
     /**
@@ -160,15 +175,16 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testEmptySystemProperty() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project5/pom.xml");
+    @Test
+    @InjectMojo(goal = "java", pom = "src/test/projects/project5/pom.xml")
+    void testEmptySystemProperty(ExecJavaMojo mojo) throws Exception {
 
-        assertNull("System property not yet created", System.getProperty("test.name"));
+        assertNull(System.getProperty("test.name"), "System property not yet created");
 
-        assertEquals("Hello " + System.lineSeparator(), execute(pom, "java"));
+        assertEquals("Hello " + System.lineSeparator(), execute(mojo));
 
         // ensure we get back in the original state and didn't leak the execution config
-        assertNull("System property not yet created", System.getProperty("test.name"));
+        assertNull(System.getProperty("test.name"), "System property not yet created");
     }
 
     /**
@@ -176,22 +192,14 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      * and correctly unwraps the InvocationTargetException.
      *
      * @author Lukasz Cwik
-     * @throws Exception if any exception occurs
      */
-    public void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project15/pom.xml");
-
-        try {
-            execute(pom, "java");
-
-            fail("Expected Exception to be thrown but none was thrown");
-        } catch (Throwable e) {
-            assertTrue(e instanceof MojoExecutionException);
-
-            assertTrue(e.getCause() instanceof IOException);
-
-            assertEquals("expected IOException thrown by test", e.getCause().getMessage());
-        }
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.ThrowingMain")
+    void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException(ExecJavaMojo mojo) {
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertInstanceOf(IOException.class, exception.getCause());
+        assertEquals("expected IOException thrown by test", exception.getCause().getMessage());
     }
 
     /**
@@ -243,11 +251,12 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testWaitNoDaemonThreads() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project7/pom.xml");
-
-        String output = execute(pom, "java");
-
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainWithThreads")
+    @MojoParameter(name = "arguments", value = "cancelTimer")
+    void testWaitNoDaemonThreads(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
         assertEquals(MainWithThreads.ALL_EXITED, output.trim());
     }
 
@@ -258,11 +267,12 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testWaitNonInterruptibleDaemonThreads() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project9/pom.xml");
-
-        String output = execute(pom, "java");
-
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainWithThreads")
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "4000")
+    void testWaitNonInterruptibleDaemonThreads(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
         assertEquals(MainWithThreads.TIMER_IGNORED, output.trim());
     }
 
@@ -274,24 +284,30 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testUncooperativeThread() throws Exception {
-        // FIXME:
-        //   This will fail the test, because Assume is a JUnit 4 thing, but we are running in JUnit 3 mode, because
-        //   AbstractMojoTestCase extends PlexusTestCase extends TestCase. The latter is a JUnit 3 compatibility class.
-        //   If we would simply use JUnit 4 annotations, conditional ignores via Assume would just work correctly in
-        //   Surefire and IDEs. We could than have two dedicated test cases, one for each JDK 20+ and one for older
-        //   versions. In JUnit 5, we could even conveniently use @EnabledOnJre.
-        // Assume.assumeTrue( JAVA_VERSION_MAJOR < 20 );
-
-        File pom = new File(getBasedir(), "src/test/projects/project10/pom.xml");
-        String output = execute(pom, "java");
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "3000")
+    @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
+    @EnabledForJreRange(max = JRE.JAVA_19)
+    void testUncooperativeThread(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
         // note: execute() will wait a little bit before returning the output,
         // thereby allowing the stop()'ed thread to output the final "(f)".
-        if (JAVA_VERSION_MAJOR < 20) {
-            assertEquals(MainUncooperative.SUCCESS, output.trim());
-        } else {
-            assertEquals(MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim());
-        }
+        assertEquals(MainUncooperative.SUCCESS, output.trim());
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "3000")
+    @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
+    @EnabledForJreRange(min = JRE.JAVA_20)
+    void testUncooperativeThreadJdk20(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        // note: execute() will wait a little bit before returning the output,
+        // thereby allowing the stop()'ed thread to output the final "(f)".
+        assertEquals(MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim());
     }
 
     /**
@@ -309,45 +325,51 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
 
     /**
      * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
+     *
      * @throws Exception if any exception occurs
      */
-    public void testRunWithArgs() throws Exception {
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.DummyMain")
+    @MojoParameter(name = "commandlineArgs", value = "\"Arg1\" \"Arg2a Arg2b\"")
+    void testRunWithArgs(ExecJavaMojo mojo) throws Exception {
+        String resultString = execute(mojo);
 
-        String resultString = execute(new File(getBasedir(), "src/test/projects/project8/pom.xml"), "java");
-
-        String LS = System.getProperty("line.separator");
+        String LS = System.lineSeparator();
         String expectedResult = "Hello" + LS + "Arg1" + LS + "Arg2a Arg2b" + LS;
         assertEquals(expectedResult, resultString);
     }
 
     /**
      * Ensures that classpath can be filtered (exclude from plugin deps or project deps) to resolve conflicts.
+     *
      * @throws Exception if something unexpected occurs.
      */
-    public void testExcludedClasspathElement() throws Exception {
-        String LS = System.getProperty("line.separator");
+    @Test
+    @InjectMojo(goal = "java", pom = "src/test/projects/project16/pom.xml")
+    void testExcludedClasspathElementSlf4jSimple(ExecJavaMojo mojo) throws Exception {
+        String LS = System.lineSeparator();
 
         // slf4j-simple
-        {
-            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
-            execute(new File(getBasedir(), "src/test/projects/project16/pom.xml"), "java", stdout, stderr);
-            assertEquals("org.slf4j.impl.SimpleLogger", stdout.toString().trim());
-            assertEquals(
-                    "[org.codehaus.mojo.exec.Slf4jMain.main()] INFO org.codehaus.mojo.exec.Slf4jMain - hello[]" + LS,
-                    stderr.toString());
-        }
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        execute(mojo, stdout, stderr);
+        assertEquals("org.slf4j.impl.SimpleLogger", stdout.toString().trim());
+        assertEquals(
+                "[org.codehaus.mojo.exec.Slf4jMain.main()] INFO org.codehaus.mojo.exec.Slf4jMain - hello[]" + LS,
+                stderr.toString());
+    }
 
-        // slf4j-jdk14
-        {
-            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
-            execute(new File(getBasedir(), "src/test/projects/project17/pom.xml"), "java", stdout, stderr);
-            assertEquals("org.slf4j.impl.JDK14LoggerAdapter", stdout.toString().trim());
-            final String stderrString = stderr.toString(); // simpler check, just validate it is not simple output
-            assertTrue(stderrString.contains(" org.codehaus.mojo.exec.Slf4jMain main"));
-            assertTrue(stderrString.contains(": hello[]"));
-        }
+    @Test
+    @InjectMojo(goal = "java", pom = "src/test/projects/project17/pom.xml")
+    void testExcludedClasspathElementSlf4jJdk14(ExecJavaMojo mojo) throws Exception {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        execute(mojo, stdout, stderr);
+        assertEquals("org.slf4j.impl.JDK14LoggerAdapter", stdout.toString().trim());
+        final String stderrString = stderr.toString(); // simpler check, just validate it is not simple output
+        assertTrue(stderrString.contains(" org.codehaus.mojo.exec.Slf4jMain main"));
+        assertTrue(stderrString.contains(": hello[]"));
     }
 
     /**
@@ -355,35 +377,32 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testProjectProperties() throws Exception {
-        File pom = new File(getBasedir(), "src/test/projects/project18/pom.xml");
+    @Test
+    @InjectMojo(goal = "java", pom = "src/test/projects/project18/pom.xml")
+    void testProjectProperties(ExecJavaMojo mojo) throws Exception {
+        // only mojo configuration is taken from the pom, we have to mock the project properties ourselves
+        Properties properties = new Properties();
+        properties.put("test.name", "project18 project");
+        Mockito.when(project.getProperties()).thenReturn(properties);
 
-        String output = execute(pom, "java");
-
+        String output = execute(mojo);
         assertEquals("Hello project18 project" + System.lineSeparator(), output);
     }
 
     /**
      * @return output from System.out during mojo execution
      */
-    private String execute(File pom, String goal) throws Exception {
-        return execute(pom, goal, new ByteArrayOutputStream(), new ByteArrayOutputStream());
+    private String execute(ExecJavaMojo mojo) throws Exception {
+        return execute(mojo, new ByteArrayOutputStream(), new ByteArrayOutputStream());
     }
 
     /**
      * @return output from System.out during mojo execution
      */
-    private String execute(File pom, String goal, ByteArrayOutputStream stringOutputStream, OutputStream stderr)
+    private String execute(ExecJavaMojo mojo, ByteArrayOutputStream stringOutputStream, OutputStream stderr)
             throws Exception {
 
-        ExecJavaMojo mojo = (ExecJavaMojo) lookupMojo(goal, pom);
-
-        setUpProject(pom, mojo);
-
-        MavenProject project = (MavenProject) getVariableValueFromObject(mojo, "project");
-
         assertNotNull(mojo);
-        assertNotNull(project);
 
         // trap System.out
         PrintStream out = System.out;
@@ -391,7 +410,7 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         System.setOut(new PrintStream(stringOutputStream));
         System.setErr(new PrintStream(stderr));
         // ensure we don't log unnecessary stuff which would interfere with assessing success of tests
-        mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR, "exec:java")));
+        // mojo.setLog(new DefaultLog(new ConsoleLogger(Logger.LEVEL_ERROR, "exec:java")));
 
         doExecute(mojo, out, err);
 
@@ -412,33 +431,5 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
                 System.setErr(err);
             }
         }
-    }
-
-    private void setUpProject(File pomFile, AbstractMojo mojo) throws Exception {
-        super.setUp();
-
-        // why isn't this set up by the harness based on the default-value? TODO get to bottom of this!
-        setVariableValueToObject(mojo, "includeProjectDependencies", Boolean.TRUE);
-        setVariableValueToObject(mojo, "cleanupDaemonThreads", Boolean.TRUE);
-        setVariableValueToObject(mojo, "classpathScope", "compile");
-
-        Properties systemProps = new Properties();
-        systemProps.setProperty("test.version", "junit");
-
-        MockitoAnnotations.initMocks(this);
-        setVariableValueToObject(mojo, "session", session);
-        when(session.getSystemProperties()).thenReturn(systemProps);
-
-        ProjectBuildingRequest buildingRequest = mock(ProjectBuildingRequest.class);
-        when(session.getProjectBuildingRequest()).thenReturn(buildingRequest);
-        RepositorySystemSession repositorySession = new DefaultRepositorySystemSession();
-        when(buildingRequest.getRepositorySession()).thenReturn(repositorySession);
-
-        ProjectBuilder builder = lookup(ProjectBuilder.class);
-
-        MavenProject project = builder.build(pomFile, buildingRequest).getProject();
-        // this gets the classes for these tests of this mojo (exec plugin) onto the project classpath for the test
-        project.getBuild().setOutputDirectory(new File("target/test-classes").getAbsolutePath());
-        setVariableValueToObject(mojo, "project", project);
     }
 }
