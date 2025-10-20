@@ -15,10 +15,6 @@
     </license>
   </licenses>
 
-  <properties>
-    <test.name>${project.artifactId} project</test.name>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
