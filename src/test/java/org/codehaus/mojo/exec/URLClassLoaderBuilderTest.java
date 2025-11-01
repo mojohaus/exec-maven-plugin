@@ -33,9 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Basic tests about the custom classloader we set to execute the project.
  */
-public class URLClassLoaderBuilderTest {
+class URLClassLoaderBuilderTest {
     @Test
-    public void childFirst() throws Exception {
+    void childFirst() throws Exception {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         PrintStream originalStderr = System.err;
         Thread thread = Thread.currentThread();
