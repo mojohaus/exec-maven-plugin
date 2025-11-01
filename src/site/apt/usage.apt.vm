@@ -93,14 +93,42 @@ mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="
 *--------------------------------------+------------------------------------------+
 | The VM exits as soon as the only     |  By default daemon threads are joined    |
 | remaining threads are daemon threads | and interrupted once all known non       |
-|                                      | daemon threads have quit. The join    |
-|                                      | timeout is customisable                  |
-|                                      | The user might wish to further   |
+|                                      | daemon threads have quit. The join       |
+|                                      | timeout is customisable.                 |
+|                                      | The user might wish to further           |
 |                                      | cleanup by stopping the unresponsive     |
 |                                      | threads.                                 |
 |                                      | The user can disable the full extra      |
 |                                      | thread management (interrupt/join/[stop])|
 *--------------------------------------+------------------------------------------+
+
+*** Important limitation: Thread Group Isolation
+
+  The java goal tracks threads created within its own <<isolated thread group>>.
+  It does <<not>> track threads created in other thread groups.
+  This means that if your code creates threads outside the isolated thread group
+  (for example, through RMI, JMX, or other frameworks), those threads will not be
+  detected as "known" threads, and the plugin may exit even if such non-daemon threads are still running.
+
+  <<Examples of affected scenarios:>>
+
+  * <<RMI>> - <<<java.rmi.registry.LocateRegistry.createRegistry()>>> creates non-daemon threads
+    in the system thread group, not in the plugin's isolated thread group.
+
+  * <<JMX>> - Similar to RMI, JMX remote connectors may create threads outside the isolated group.
+
+  * <<Other frameworks>> that manage their own thread pools or create threads using
+    the system thread group.
+
+  []
+
+  In such cases, the plugin will exit when all threads in <<its own thread group>> have completed,
+  even though non-daemon threads may still be running in other thread groups. This can cause
+  servers or services to be terminated prematurely.
+
+  <<Workaround:>> If you need threads created by frameworks like RMI to keep the JVM alive,
+  use the {{{./exec-mojo.html}exec goal}} to run your Java program in a separate JVM process instead.
+  The exec goal spawns a new process which will behave like running <<<java>>> from the command line.
 
   Read the documentation for the {{{./java-mojo.html}java goal}} for more information on how to configure this behavior.
 
