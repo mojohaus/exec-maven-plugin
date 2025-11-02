@@ -35,9 +35,16 @@ import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystemSession;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,7 +52,7 @@ import static org.mockito.Mockito.when;
  * @author Jerome Lacoste
  * @version $Id$
  */
-public class ExecJavaMojoTest extends AbstractMojoTestCase {
+class ExecJavaMojoTest extends AbstractMojoTestCase {
     @Mock
     private MavenSession session;
 
@@ -64,7 +71,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testRunnable() throws Exception {
+    @Test
+    void runnable() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project19/pom.xml");
         ExecJavaMojo mojo = (ExecJavaMojo) lookupMojo("java", pom);
         setUpProject(pom, mojo);
@@ -83,7 +91,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testSimpleRun() throws Exception {
+    @Test
+    void simpleRun() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project4/pom.xml");
 
         String output = execute(pom, "java");
@@ -91,7 +100,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Hello" + System.getProperty("line.separator"), output);
     }
 
-    public void testJSR512InstanceMainNoArgs() throws Exception {
+    @Test
+    void jsr512InstanceMainNoArgs() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project22/pom.xml");
 
         String output = execute(pom, "java");
@@ -99,7 +109,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Correct choice" + System.getProperty("line.separator"), output);
     }
 
-    public void testJSR512PrefersStringArrayArgs() throws Exception {
+    @Test
+    void jsr512PrefersStringArrayArgs() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project23/pom.xml");
 
         String output = execute(pom, "java");
@@ -107,7 +118,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
     }
 
-    public void testJSR512StaticMainNoArgs() throws Exception {
+    @Test
+    void jsr512StaticMainNoArgs() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project24/pom.xml");
 
         String output = execute(pom, "java");
@@ -115,7 +127,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Correct choice" + System.getProperty("line.separator"), output);
     }
 
-    public void testJSR512PackagePrivateStaticMainNoArgs() throws Exception {
+    @Test
+    void jsr512PackagePrivateStaticMainNoArgs() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project27/pom.xml");
 
         String output = execute(pom, "java");
@@ -123,7 +136,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Correct choice" + System.getProperty("line.separator"), output);
     }
 
-    public void testJSR512PackagePrivateStaticMainWithArgs() throws Exception {
+    @Test
+    void jsr512PackagePrivateStaticMainWithArgs() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project28/pom.xml");
 
         String output = execute(pom, "java");
@@ -131,13 +145,14 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         assertEquals("Correct choice arg1 arg2" + System.getProperty("line.separator"), output);
     }
 
-    public void testJSR512FailureInstanceMainPrivateNoArgsConstructor() throws Exception {
+    @Test
+    void jsr512FailureInstanceMainPrivateNoArgsConstructor() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project25/pom.xml");
         try {
             execute(pom, "java");
             fail("Expected Exception to be thrown but none was thrown");
         } catch (Throwable e) {
-            assertTrue(e instanceof MojoExecutionException);
+            assertInstanceOf(MojoExecutionException.class, e);
 
             assertEquals(
                     "The specified mainClass doesn't contain a main method with appropriate signature.",
@@ -145,7 +160,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
         }
     }
 
-    public void testJSR512InheritedMain() throws Exception {
+    @Test
+    void jsr512InheritedMain() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project26/pom.xml");
 
         String output = execute(pom, "java");
@@ -160,15 +176,16 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testEmptySystemProperty() throws Exception {
+    @Test
+    void emptySystemProperty() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project5/pom.xml");
 
-        assertNull("System property not yet created", System.getProperty("test.name"));
+        assertNull(System.getProperty("test.name"), "System property not yet created");
 
         assertEquals("Hello " + System.lineSeparator(), execute(pom, "java"));
 
         // ensure we get back in the original state and didn't leak the execution config
-        assertNull("System property not yet created", System.getProperty("test.name"));
+        assertNull(System.getProperty("test.name"), "System property not yet created");
     }
 
     /**
@@ -178,7 +195,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      * @author Lukasz Cwik
      * @throws Exception if any exception occurs
      */
-    public void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException() throws Exception {
+    @Test
+    void runWhichThrowsExceptionIsNotWrappedInInvocationTargetException() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project15/pom.xml");
 
         try {
@@ -186,9 +204,9 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
 
             fail("Expected Exception to be thrown but none was thrown");
         } catch (Throwable e) {
-            assertTrue(e instanceof MojoExecutionException);
+            assertInstanceOf(MojoExecutionException.class, e);
 
-            assertTrue(e.getCause() instanceof IOException);
+            assertInstanceOf(IOException.class, e.getCause());
 
             assertEquals("expected IOException thrown by test", e.getCause().getMessage());
         }
@@ -243,7 +261,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testWaitNoDaemonThreads() throws Exception {
+    @Test
+    void waitNoDaemonThreads() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project7/pom.xml");
 
         String output = execute(pom, "java");
@@ -258,7 +277,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testWaitNonInterruptibleDaemonThreads() throws Exception {
+    @Test
+    void waitNonInterruptibleDaemonThreads() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project9/pom.xml");
 
         String output = execute(pom, "java");
@@ -274,7 +294,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testUncooperativeThread() throws Exception {
+    @Test
+    void uncooperativeThread() throws Exception {
         // FIXME:
         //   This will fail the test, because Assume is a JUnit 4 thing, but we are running in JUnit 3 mode, because
         //   AbstractMojoTestCase extends PlexusTestCase extends TestCase. The latter is a JUnit 3 compatibility class.
@@ -311,7 +332,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
      * @throws Exception if any exception occurs
      */
-    public void testRunWithArgs() throws Exception {
+    @Test
+    void runWithArgs() throws Exception {
 
         String resultString = execute(new File(getBasedir(), "src/test/projects/project8/pom.xml"), "java");
 
@@ -324,7 +346,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      * Ensures that classpath can be filtered (exclude from plugin deps or project deps) to resolve conflicts.
      * @throws Exception if something unexpected occurs.
      */
-    public void testExcludedClasspathElement() throws Exception {
+    @Test
+    void excludedClasspathElement() throws Exception {
         String LS = System.getProperty("line.separator");
 
         // slf4j-simple
@@ -355,7 +378,8 @@ public class ExecJavaMojoTest extends AbstractMojoTestCase {
      *
      * @throws Exception if any exception occurs
      */
-    public void testProjectProperties() throws Exception {
+    @Test
+    void projectProperties() throws Exception {
         File pom = new File(getBasedir(), "src/test/projects/project18/pom.xml");
 
         String output = execute(pom, "java");
