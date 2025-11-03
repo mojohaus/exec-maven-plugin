@@ -12,7 +12,6 @@ package org.codehaus.mojo.exec;
 import javax.inject.Inject;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -141,7 +140,7 @@ class ExecMojoTest {
     }
 
     @Test
-    void testRunOK() throws MojoExecutionException {
+    void runOK() throws Exception {
         mojo.execute();
 
         checkMojo(SOME_EXECUTABLE + " --version");
@@ -163,7 +162,7 @@ class ExecMojoTest {
     // MEXEC-12, MEXEC-72
     @Test
     @InjectMojo(goal = "exec")
-    void testGetExecutablePath(ExecMojo realMojo) throws IOException {
+    void getExecutablePath(ExecMojo realMojo) throws Exception {
 
         File workdir = new File(System.getProperty("user.dir"));
         Map<String, String> enviro = new HashMap<>();
@@ -216,7 +215,7 @@ class ExecMojoTest {
     // see https://github.com/mojohaus/exec-maven-plugin/issues/42
     @Test
     @EnabledOnOs(OS.WINDOWS)
-    void testGetExecutablePathPreferExecutableExtensionsOnWindows() throws IOException {
+    void getExecutablePathPreferExecutableExtensionsOnWindows() throws Exception {
         // this test is for Windows
         final ExecMojo realMojo = new ExecMojo(repositorySystem, toolchainManager);
 
@@ -246,7 +245,7 @@ class ExecMojoTest {
     }
 
     @Test
-    void testRunFailure() {
+    void runFailure() {
         mojo.executeResult = 1;
 
         try {
@@ -260,7 +259,7 @@ class ExecMojoTest {
     }
 
     @Test
-    void testRunError() {
+    void runError() {
         mojo.failureMsg = "simulated failure";
 
         try {
@@ -274,7 +273,7 @@ class ExecMojoTest {
     }
 
     @Test
-    void testOverrides() throws MojoExecutionException {
+    void overrides() throws Exception {
         mojo.systemProperties.put("exec.args", "-f pom.xml");
         mojo.execute();
 
@@ -282,7 +281,7 @@ class ExecMojoTest {
     }
 
     @Test
-    void testOverrides3() throws MojoExecutionException {
+    void overrides3() throws Exception {
         mojo.systemProperties.put("exec.args", null);
         mojo.execute();
 
@@ -297,7 +296,7 @@ class ExecMojoTest {
 
     @Test
     @InjectMojo(goal = "exec")
-    void testIsResultCodeAFailure(ExecMojo execMojo) {
+    void isResultCodeAFailure(ExecMojo execMojo) {
         assertTrue(execMojo.isResultCodeAFailure(1));
         assertFalse(execMojo.isResultCodeAFailure(0));
 
@@ -315,7 +314,7 @@ class ExecMojoTest {
     // MEXEC-81
     @Test
     @InjectMojo(goal = "exec")
-    void testParseCommandlineOSWin(ExecMojo execMojo) throws Exception {
+    void parseCommandlineOSWin(ExecMojo execMojo) throws Exception {
         final String javaHome = "C:\\Java\\jdk1.5.0_15";
         // can only be set by expression or plugin-configuration
         setVariableValueToObject(execMojo, "commandlineArgs", javaHome);
@@ -325,7 +324,7 @@ class ExecMojoTest {
 
     @Test
     @InjectMojo(goal = "exec")
-    void test_exec_receives_all_parameters(ExecMojo execMojo) throws MojoExecutionException {
+    void exec_receives_all_parameters(ExecMojo execMojo) throws Exception {
         // given
         execMojo.setExecutable("mkdir");
         execMojo.setArguments(Arrays.asList("-p", "dist/mails"));
@@ -342,7 +341,7 @@ class ExecMojoTest {
     @Test
     @InjectMojo(goal = "exec", pom = "src/test/projects/project20/pom.xml")
     @DisabledOnOs(OS.WINDOWS)
-    void testToolchainJavaHomePropertySetWhenToolchainIsUsed(ExecMojo execMojo) throws Exception {
+    void toolchainJavaHomePropertySetWhenToolchainIsUsed(ExecMojo execMojo) throws Exception {
         // given
         File basedir;
         String testJavaPath;
@@ -366,7 +365,7 @@ class ExecMojoTest {
     @Test
     @InjectMojo(goal = "exec", pom = "src/test/projects/project21/pom.xml")
     @EnabledOnOs(OS.WINDOWS)
-    void testToolchainJavaHomePropertySetWhenToolchainIsUsedWindows(ExecMojo execMojo) throws Exception {
+    void toolchainJavaHomePropertySetWhenToolchainIsUsedWindows(ExecMojo execMojo) throws Exception {
         // given
         File basedir;
         String testJavaPath;
@@ -420,7 +419,7 @@ class ExecMojoTest {
 
     @Test
     @InjectMojo(goal = "exec")
-    void testGetShebang(ExecMojo execMojo) throws Exception {
+    void getShebang(ExecMojo execMojo) throws Exception {
         // without shebang
         File noShebang = Files.createTempFile("noShebang", ".sh").toFile();
         Files.write(noShebang.toPath(), Collections.singletonList("echo hello"), StandardCharsets.UTF_8);
@@ -446,7 +445,7 @@ class ExecMojoTest {
 
     @Test
     @InjectMojo(goal = "exec")
-    void testCreateEnvWrapperFile(ExecMojo execMojo) throws Exception {
+    void createEnvWrapperFile(ExecMojo execMojo) throws Exception {
 
         // without shebang
         File envScript = Files.createTempFile("envScript", ".sh").toFile();

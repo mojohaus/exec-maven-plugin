@@ -15,18 +15,18 @@ class LineRedirectOutputStreamTest {
 
     @Test
     void givenExtendedUnicodeCharacterOutput_whenRedirectingWithUtf8Charset_thenShouldDecodeProperly()
-            throws IOException {
+            throws Exception {
         internalTestForCharset(StandardCharsets.UTF_8);
     }
 
     @Test
     void givenExtendedUnicodeCharacterOutput_whenRedirectingWithIso8859Charset_thenShouldDecodeProperly()
-            throws IOException {
+            throws Exception {
         internalTestForCharset(StandardCharsets.ISO_8859_1);
     }
 
     @Test
-    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCp1252_thenShouldDecodeProperly() throws IOException {
+    void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCp1252_thenShouldDecodeProperly() throws Exception {
         assumeTrue(
                 Charset.availableCharsets().containsKey("windows-1252"),
                 "The JVM does not contain the cp-1252 charset");
@@ -35,13 +35,13 @@ class LineRedirectOutputStreamTest {
 
     @Test
     void givenExtendedUnicodeCharacterOutput_whenRedirectingWithDefaultCharset_thenShouldDecodeProperly()
-            throws IOException {
+            throws Exception {
         internalTestForCharset(Charset.defaultCharset());
     }
 
     @Test
     void givenExtendedUnicodeCharacterOutput_whenRedirectingWithCharsetUnspecified_thenShouldDecodeProperly()
-            throws IOException {
+            throws Exception {
         internalTestForCharset(sb -> new LineRedirectOutputStream(sb::append), Charset.defaultCharset());
     }
 

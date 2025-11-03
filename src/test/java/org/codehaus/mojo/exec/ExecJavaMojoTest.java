@@ -88,7 +88,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.HelloRunnable")
-    void testRunnable(ExecJavaMojo mojo) throws Exception {
+    void runnable(ExecJavaMojo mojo) throws Exception {
         doExecute(mojo, null, null);
         assertEquals("junit: true", session.getSystemProperties().getProperty("hello.runnable.output"));
     }
@@ -102,7 +102,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.DummyMain")
-    void testSimpleRun(ExecJavaMojo mojo) throws Exception {
+    void simpleRun(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Hello" + System.lineSeparator(), output);
     }
@@ -110,7 +110,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain1")
-    void testJSR512InstanceMainNoArgs(ExecJavaMojo mojo) throws Exception {
+    void jsr512InstanceMainNoArgs(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Correct choice" + System.lineSeparator(), output);
     }
@@ -119,7 +119,7 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain2")
     @MojoParameter(name = "arguments", value = "arg1,arg2")
-    void testJSR512PrefersStringArrayArgs(ExecJavaMojo mojo) throws Exception {
+    void jsr512PrefersStringArrayArgs(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Correct choice arg1 arg2" + System.lineSeparator(), output);
     }
@@ -127,7 +127,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain3")
-    void testJSR512StaticMainNoArgs(ExecJavaMojo mojo) throws Exception {
+    void jsr512StaticMainNoArgs(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Correct choice" + System.lineSeparator(), output);
     }
@@ -135,7 +135,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain6")
-    public void testJSR512PackagePrivateStaticMainNoArgs(ExecJavaMojo mojo) throws Exception {
+    void jsr512PackagePrivateStaticMainNoArgs(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Correct choice" + System.lineSeparator(), output);
     }
@@ -144,7 +144,7 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain7")
     @MojoParameter(name = "arguments", value = "arg1,arg2")
-    public void testJSR512PackagePrivateStaticMainWithArgs(ExecJavaMojo mojo) throws Exception {
+    void jsr512PackagePrivateStaticMainWithArgs(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Correct choice arg1 arg2" + System.lineSeparator(), output);
     }
@@ -152,7 +152,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain4")
-    void testJSR512FailureInstanceMainPrivateNoArgsConstructor(ExecJavaMojo mojo) {
+    void jsr512FailureInstanceMainPrivateNoArgsConstructor(ExecJavaMojo mojo) {
         MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
         assertEquals(
                 "The specified mainClass doesn't contain a main method with appropriate signature.",
@@ -163,7 +163,7 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain5")
     @MojoParameter(name = "arguments", value = "arg1,arg2")
-    void testJSR512InheritedMain(ExecJavaMojo mojo) throws Exception {
+    void jsr512InheritedMain(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals("Correct choice arg1 arg2" + System.lineSeparator(), output);
     }
@@ -177,7 +177,7 @@ class ExecJavaMojoTest {
      */
     @Test
     @InjectMojo(goal = "java", pom = "src/test/projects/project5/pom.xml")
-    void testEmptySystemProperty(ExecJavaMojo mojo) throws Exception {
+    void emptySystemProperty(ExecJavaMojo mojo) throws Exception {
 
         assertNull(System.getProperty("test.name"), "System property not yet created");
 
@@ -196,7 +196,7 @@ class ExecJavaMojoTest {
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.ThrowingMain")
-    void testRunWhichThrowsExceptionIsNotWrappedInInvocationTargetException(ExecJavaMojo mojo) {
+    void runWhichThrowsExceptionIsNotWrappedInInvocationTargetException(ExecJavaMojo mojo) {
         MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
         assertInstanceOf(IOException.class, exception.getCause());
         assertEquals("expected IOException thrown by test", exception.getCause().getMessage());
@@ -255,7 +255,7 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainWithThreads")
     @MojoParameter(name = "arguments", value = "cancelTimer")
-    void testWaitNoDaemonThreads(ExecJavaMojo mojo) throws Exception {
+    void waitNoDaemonThreads(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals(MainWithThreads.ALL_EXITED, output.trim());
     }
@@ -271,7 +271,7 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainWithThreads")
     @MojoParameter(name = "daemonThreadJoinTimeout", value = "4000")
-    void testWaitNonInterruptibleDaemonThreads(ExecJavaMojo mojo) throws Exception {
+    void waitNonInterruptibleDaemonThreads(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         assertEquals(MainWithThreads.TIMER_IGNORED, output.trim());
     }
@@ -290,7 +290,7 @@ class ExecJavaMojoTest {
     @MojoParameter(name = "daemonThreadJoinTimeout", value = "3000")
     @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
     @EnabledForJreRange(max = JRE.JAVA_19)
-    void testUncooperativeThread(ExecJavaMojo mojo) throws Exception {
+    void uncooperativeThread(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         // note: execute() will wait a little bit before returning the output,
         // thereby allowing the stop()'ed thread to output the final "(f)".
@@ -303,7 +303,7 @@ class ExecJavaMojoTest {
     @MojoParameter(name = "daemonThreadJoinTimeout", value = "3000")
     @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
     @EnabledForJreRange(min = JRE.JAVA_20)
-    void testUncooperativeThreadJdk20(ExecJavaMojo mojo) throws Exception {
+    void uncooperativeThreadJdk20(ExecJavaMojo mojo) throws Exception {
         String output = execute(mojo);
         // note: execute() will wait a little bit before returning the output,
         // thereby allowing the stop()'ed thread to output the final "(f)".
@@ -332,7 +332,7 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.DummyMain")
     @MojoParameter(name = "commandlineArgs", value = "\"Arg1\" \"Arg2a Arg2b\"")
-    void testRunWithArgs(ExecJavaMojo mojo) throws Exception {
+    void runWithArgs(ExecJavaMojo mojo) throws Exception {
         String resultString = execute(mojo);
 
         String LS = System.lineSeparator();
@@ -347,7 +347,7 @@ class ExecJavaMojoTest {
      */
     @Test
     @InjectMojo(goal = "java", pom = "src/test/projects/project16/pom.xml")
-    void testExcludedClasspathElementSlf4jSimple(ExecJavaMojo mojo) throws Exception {
+    void excludedClasspathElementSlf4jSimple(ExecJavaMojo mojo) throws Exception {
         String LS = System.lineSeparator();
 
         // slf4j-simple
@@ -362,7 +362,7 @@ class ExecJavaMojoTest {
 
     @Test
     @InjectMojo(goal = "java", pom = "src/test/projects/project17/pom.xml")
-    void testExcludedClasspathElementSlf4jJdk14(ExecJavaMojo mojo) throws Exception {
+    void excludedClasspathElementSlf4jJdk14(ExecJavaMojo mojo) throws Exception {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
         execute(mojo, stdout, stderr);
@@ -379,7 +379,7 @@ class ExecJavaMojoTest {
      */
     @Test
     @InjectMojo(goal = "java", pom = "src/test/projects/project18/pom.xml")
-    void testProjectProperties(ExecJavaMojo mojo) throws Exception {
+    void projectProperties(ExecJavaMojo mojo) throws Exception {
         // only mojo configuration is taken from the pom, we have to mock the project properties ourselves
         Properties properties = new Properties();
         properties.put("test.name", "project18 project");
