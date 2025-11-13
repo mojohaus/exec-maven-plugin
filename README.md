@@ -8,7 +8,17 @@ This is the [exec-maven-plugin](http://www.mojohaus.org/exec-maven-plugin/).
 
 ## Running integration tests
 
-Execute `mvn -P run-its clean verify`
+Execute
+
+```sh
+mvn -P run-its clean verify
+```
+
+Running a single test:
+
+```sh
+mvn -P run-its clean verify "-Dinvoker.test=setup-parent,<TEST-PROJECT-NAME>"
+```
 
 ## Releasing
 
