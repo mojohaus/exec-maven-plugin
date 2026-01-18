@@ -18,7 +18,6 @@ package org.codehaus.mojo.exec;
 import javax.inject.Inject;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -28,7 +27,6 @@ import org.apache.maven.api.plugin.testing.InjectMojo;
 import org.apache.maven.api.plugin.testing.MojoParameter;
 import org.apache.maven.api.plugin.testing.MojoTest;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
@@ -46,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Jerome Lacoste
@@ -64,13 +61,7 @@ class ExecJavaMojoTest {
 
     @BeforeEach
     void beforeEach() {
-
         session.getSystemProperties().setProperty("test.version", "junit");
-        when(session.getCurrentProject()).thenReturn(project);
-
-        Build build = new Build();
-        build.setOutputDirectory(new File("target/test-classes").getAbsolutePath());
-        when(project.getBuild()).thenReturn(build);
     }
 
     /*
