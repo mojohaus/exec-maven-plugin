@@ -339,6 +339,29 @@ class ExecMojoTest {
     }
 
     @Test
+    @InjectMojo(goal = "exec", pom = "src/test/projects/project22/pom.xml")
+    void exec_uses_arguments_as_file(ExecMojo execMojo) throws Exception {
+        // given
+        String testJavaPath;
+
+        testJavaPath = "/path/to/java/home";
+        when(toolchainManager.getToolchainFromBuildContext(any(), eq(session)))
+                .thenReturn(new DummyJdkToolchain(testJavaPath + "/bin/java"));
+
+        // when
+        try {
+            execMojo.execute();
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // then
+        assertTrue(
+                Paths.get("target", "commandLineArguments").toFile().exists(),
+                "commandline arugments file should have been created");
+    }
+
+    @Test
     @InjectMojo(goal = "exec", pom = "src/test/projects/project20/pom.xml")
     @DisabledOnOs(OS.WINDOWS)
     void toolchainJavaHomePropertySetWhenToolchainIsUsed(ExecMojo execMojo) throws Exception {
