@@ -40,7 +40,7 @@ Running Java programs with the exec goal
 * Command line
 
  If specified as part of the <<<exec.args>>> argument, the special string <<<%classpath>>>
- will be replaced by the project classpath as computed by Maven. Same couunts for <<<%modulepath>>>
+ will be replaced by the project classpath as computed by Maven. Same counts for <<<%modulepath>>>
 
 -----
 mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
