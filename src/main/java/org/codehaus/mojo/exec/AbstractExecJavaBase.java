@@ -472,6 +472,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         if ((constructor.getModifiers() & Modifier.PRIVATE) != 0) {
             throw new NoSuchMethodException("No public constructor found for " + bootClass);
         }
+        constructor.setAccessible(true);
         return constructor.newInstance();
     }
 
