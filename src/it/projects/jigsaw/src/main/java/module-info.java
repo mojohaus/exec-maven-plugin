@@ -1,6 +1,6 @@
 module exec.boot
 {
-  requires plexus.utils;
+  requires org.codehaus.plexus.util;
   
   exports org.mojohaus.exec;
 }
