@@ -337,6 +337,12 @@ public class ExecMojo extends AbstractExecMojo {
     private boolean async;
 
     /**
+     * If set to true all arguments will be written to file and then used as arguments file using a '@' when using the exec variant.
+     */
+    @Parameter(property = "exec.argumentsFile", defaultValue = "false")
+    private boolean argumentsFile;
+
+    /**
      * If set to true, the asynchronous child process is destroyed upon JVM shutdown. If set to false, asynchronous
      * child process continues execution after JVM shutdown. Applies only to asynchronous processes; ignored for
      * synchronous processes.
@@ -410,9 +416,14 @@ public class ExecMojo extends AbstractExecMojo {
 
             CommandLine commandLine = getExecutablePath(enviro, workingDirectory);
 
-            String[] args = commandArguments.toArray(new String[commandArguments.size()]);
-
-            commandLine.addArguments(args, false);
+            if (argumentsFile) {
+                Path commandLineArguments = Paths.get("target", "commandLineArguments");
+                Files.write(commandLineArguments, commandArguments);
+                commandLine.addArguments(new String[] {"@" + commandLineArguments.toString()}, false);
+            } else {
+                String[] args = commandArguments.toArray(new String[0]);
+                commandLine.addArguments(args, false);
+            }
 
             Executor exec = new ExtendedExecutor(inheritIo);
             if (this.timeout > 0) {
@@ -923,6 +934,10 @@ public class ExecMojo extends AbstractExecMojo {
     //
     // methods used for tests purposes - allow mocking and simulate automatic setters
     //
+
+    void setArgumentsFile(boolean argumentsFile) {
+        this.argumentsFile = argumentsFile;
+    }
 
     void setExecutable(String executable) {
         this.executable = executable;
