@@ -1,6 +1,6 @@
 module mcli.boot
 {
-  requires plexus.utils;
+  requires org.codehaus.plexus.util;
   
   exports org.mojohaus.mcli;
 }
