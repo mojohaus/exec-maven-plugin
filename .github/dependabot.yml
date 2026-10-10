@@ -6,7 +6,10 @@ updates:
       - "src/it/**"
       - "src/test/projects/**"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    groups:
+      maven:
+        update-types: ["minor", "patch"]
     ignore:
       # Maven Resolver 2.x targets Maven 4
       - dependency-name: "org.apache.maven.resolver:*"
@@ -23,4 +26,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns: ["*"]
