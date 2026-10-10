@@ -440,10 +440,9 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
             <configuration>
-              <environmentVariables>
-                <!-- each IT is a short-lived JVM: C2 compilation and parallel GC only add startup time -->
-                <JAVA_TOOL_OPTIONS>-XX:TieredStopAtLevel=1 -XX:+UseSerialGC</JAVA_TOOL_OPTIONS>
-              </environmentVariables>
+              <!-- each IT is a short-lived JVM: C2 compilation and parallel GC only add startup time;
+                   not JAVA_TOOL_OPTIONS, which the JVMs started by the ITs would report on stderr -->
+              <mavenOpts>-XX:TieredStopAtLevel=1 -XX:+UseSerialGC</mavenOpts>
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
               <projectsDirectory>src/it/projects</projectsDirectory>
               <showErrors>true</showErrors>
