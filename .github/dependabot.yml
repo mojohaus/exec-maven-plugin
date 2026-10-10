@@ -9,6 +9,7 @@ updates:
       interval: "monthly"
     groups:
       maven:
+        patterns: ["*"]
         update-types: ["minor", "patch"]
     ignore:
       # Maven Resolver 2.x targets Maven 4
