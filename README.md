@@ -20,6 +20,8 @@ Running a single test:
 mvn -P run-its clean verify "-Dinvoker.test=setup-parent,<TEST-PROJECT-NAME>"
 ```
 
+Contributor and agent notes are in [AGENTS.md](AGENTS.md).
+
 ## Releasing
 
 * Make sure `gpg-agent` is running.
