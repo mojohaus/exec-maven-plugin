@@ -34,7 +34,7 @@
   
   <dependencies>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
+      <groupId>localhost</groupId>
       <artifactId>plexus-utils</artifactId>
       <version>3.0.24</version>
     </dependency>
