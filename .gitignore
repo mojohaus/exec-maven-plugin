@@ -13,3 +13,6 @@ build
 *.versionsBackup
 test-output
 
+
+# mrm writes _*.jar next to the mock jar directories while serving them
+/src/it-repo/_*.jar
