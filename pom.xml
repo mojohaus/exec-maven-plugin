@@ -121,7 +121,7 @@
   </contributors>
 
   <prerequisites>
-    <maven>3.6.3</maven>
+    <maven>3.9.0</maven>
   </prerequisites>
 
   <scm>
@@ -132,8 +132,8 @@
   </scm>
 
   <properties>
-    <mavenVersion>3.9.11</mavenVersion>
-    <minimalMavenBuildVersion>3.6.3</minimalMavenBuildVersion>
+    <mavenVersion>3.9.16</mavenVersion>
+    <minimalMavenBuildVersion>3.9.0</minimalMavenBuildVersion>
     <slf4j.version>1.7.36</slf4j.version>
     <asm.version>9.11</asm.version>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
