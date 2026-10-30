@@ -139,7 +139,6 @@
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2026-09-11T20:46:13Z</project.build.outputTimestamp>
     <maven-toolchains-plugin.version>3.3.0</maven-toolchains-plugin.version>
-    <mojo.java.target>8</mojo.java.target>
   </properties>
 
   <dependencies>
