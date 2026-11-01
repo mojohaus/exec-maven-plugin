@@ -136,6 +136,7 @@
     <minimalMavenBuildVersion>3.9.0</minimalMavenBuildVersion>
     <slf4j.version>1.7.36</slf4j.version>
     <asm.version>9.11.1</asm.version>
+    <sisuVersion>1.1.1</sisuVersion>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
     <project.build.outputTimestamp>2026-09-11T20:46:13Z</project.build.outputTimestamp>
     <maven-toolchains-plugin.version>3.3.0</maven-toolchains-plugin.version>
@@ -206,7 +207,14 @@
     <dependency>
       <groupId>org.eclipse.sisu</groupId>
       <artifactId>org.eclipse.sisu.plexus</artifactId>
-      <version>1.1.1</version>
+      <version>${sisuVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- keep in step with org.eclipse.sisu.plexus, which calls into it -->
+      <groupId>org.eclipse.sisu</groupId>
+      <artifactId>org.eclipse.sisu.inject</artifactId>
+      <version>${sisuVersion}</version>
       <scope>provided</scope>
     </dependency>
 
