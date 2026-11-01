@@ -23,6 +23,9 @@ updates:
         versions: [">= 3.10.0"]
       - dependency-name: "org.apache.maven:maven-plugin-api"
         versions: [">= 3.10.0"]
+      # Maven 3.9.x ships Sisu 1.0.0
+      - dependency-name: "org.eclipse.sisu:org.eclipse.sisu.*"
+        versions: [">= 1.1.0"]
       # Maven Resolver 2.x targets Maven 4
       - dependency-name: "org.apache.maven.resolver:*"
         versions: [">= 2.0"]
