@@ -332,6 +332,20 @@ class ExecJavaMojoTest {
     }
 
     /**
+     * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
+     *
+     * @throws Exception if any exception occurs
+     */
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "CompactClass")
+    void runCompact(ExecJavaMojo mojo) throws Exception {
+        String resultString = execute(mojo);
+
+        assertEquals("Hello World", resultString);
+    }
+
+    /**
      * Ensures that classpath can be filtered (exclude from plugin deps or project deps) to resolve conflicts.
      *
      * @throws Exception if something unexpected occurs.
