@@ -1,99 +1,92 @@
- ------
- Running Java programs with the exec goal
- ------
- Jerome Lacoste
- ------
- 2008-10-10
- ------
+title: Running Java programs with the exec goal
+author: Jerome Lacoste
+date: 2008-10-10
 
- ~~ Copyright 2008 The Codehaus
- ~~
- ~~ Licensed under the Apache License, Version 2.0 (the "License");
- ~~ you may not use this file except in compliance with the License.
- ~~ You may obtain a copy of the License at
- ~~
- ~~      http://www.apache.org/licenses/LICENSE-2.0
- ~~
- ~~ Unless required by applicable law or agreed to in writing, software
- ~~ distributed under the License is distributed on an "AS IS" BASIS,
- ~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- ~~ See the License for the specific language governing permissions and
- ~~ limitations under the License.
+<!--
+Copyright 2008 The Codehaus
 
- ~~ NOTE: For help with the syntax of this file, see:
- ~~ http://maven.apache.org/doxia/references/apt-format.html
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Running Java programs with the exec goal
+http://www.apache.org/licenses/LICENSE-2.0
 
- Special treatment of some command line arguments and configuration parameters facilitate the running of Java programs in external processes.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 
-  Note: With the <<<exec>>> goal, there are some confusion caused by the almost duplication of functionality between the <<<arguments>>> and
-  <<<commandlineArgs>>> configuration parameters.
+# Running Java programs with the exec goal
 
-  *  If <<<commandlineArgs>>> is specified, it will be used as is, except for replacing %classpath and %modulepath with their matching path using dependencies
+Special treatment of some command line arguments and configuration parameters facilitate the running of Java programs in external processes.
 
-  * Otherwise if the property <<<exec.args>>> is specified, it will be used
+Note: With the `exec` goal, there are some confusion caused by the almost duplication of functionality between the `arguments` and
+`commandlineArgs` configuration parameters.
 
-  * Otherwise the list of <argument>, <classpath> and <modulepath> will be parsed and used
+* If `commandlineArgs` is specified, it will be used as is, except for replacing %classpath and %modulepath with their matching path using dependencies
+* Otherwise if the property `exec.args` is specified, it will be used
+* Otherwise the list of `<argument>`, `<classpath>` and `<modulepath>` will be parsed and used
 
+## Command line
 
-* Command line
+If specified as part of the `exec.args` argument, the special string `%classpath`
+will be replaced by the project classpath as computed by Maven. Same counts for `%modulepath`
 
- If specified as part of the <<<exec.args>>> argument, the special string <<<%classpath>>>
- will be replaced by the project classpath as computed by Maven. Same counts for <<<%modulepath>>>
-
------
+```sh
 mvn exec:exec -Dexec.executable="java" [...] -Dexec.args="%classpath"
------
+```
 
-* POM configuration
+## POM configuration
 
- To execute Java programs, the Exec Maven Plugin helps by allowing the <<<\<classpath\>>>> special argument:
+To execute Java programs, the Exec Maven Plugin helps by allowing the `<classpath>` special argument:
 
-+-------------------+
-        <configuration>
-          <executable>java</executable>
-          <arguments>
-            <argument>-classpath</argument>
-            <!-- automatically creates the classpath using all project dependencies,
-                 also adding the project build directory -->
-            <classpath/>
-            <argument>com.example.Main</argument>
-            ...
-          </arguments>
-        </configuration>
--------------------
+```xml
+<configuration>
+  <executable>java</executable>
+  <arguments>
+    <argument>-classpath</argument>
+    <!-- automatically creates the classpath using all project dependencies,
+         also adding the project build directory -->
+    <classpath/>
+    <argument>com.example.Main</argument>
+    ...
+  </arguments>
+</configuration>
+```
 
- or if one wants to restrict the dependencies in the classpath:
+or if one wants to restrict the dependencies in the classpath:
 
--------------------
-        <configuration>
-          <executable>java</executable>
-          <arguments>
-            <argument>-classpath</argument>
-            <classpath>
-              <dependency>commons-io:commons-io</dependency>
-              <dependency>commons-lang:commons-lang</dependency>
-            </classpath>
-            <argument>com.example.Main</argument>
-            ...
-          </arguments>
-        </configuration>
-+-------------------+
+```xml
+<configuration>
+  <executable>java</executable>
+  <arguments>
+    <argument>-classpath</argument>
+    <classpath>
+      <dependency>commons-io:commons-io</dependency>
+      <dependency>commons-lang:commons-lang</dependency>
+    </classpath>
+    <argument>com.example.Main</argument>
+    ...
+  </arguments>
+</configuration>
+```
 
 In case of the modules as supported since Java9 the configuration looks like
 
-+-------------------+
-        <configuration>
-          <executable>java</executable>
-          <arguments>
-            <argument>--module-path</argument> <!-- or -p  -->
-            <!-- automatically creates the modulepath using all project dependencies,
-                 also adding the project build directory -->
-            <modulepath/>
-            <argument>--module</argument> <!-- or -m -->
-            <argument>mymodule/com.example.Main</argument>
-            ...
-          </arguments>
-        </configuration>
-+-------------------+
+```xml
+<configuration>
+  <executable>java</executable>
+  <arguments>
+    <argument>--module-path</argument> <!-- or -p  -->
+    <!-- automatically creates the modulepath using all project dependencies,
+         also adding the project build directory -->
+    <modulepath/>
+    <argument>--module</argument> <!-- or -m -->
+    <argument>mymodule/com.example.Main</argument>
+    ...
+  </arguments>
+</configuration>
+```
+
