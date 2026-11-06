@@ -1,44 +1,40 @@
- ------
- Changing the classpath scope
- ------
- Jerome Lacoste
- ------
- 2008-10-10
- ------
+title: Changing the classpath scope
+author: Jerome Lacoste
+date: 2008-10-10
 
- ~~ Copyright 2008 The Codehaus
- ~~
- ~~ Licensed under the Apache License, Version 2.0 (the "License");
- ~~ you may not use this file except in compliance with the License.
- ~~ You may obtain a copy of the License at
- ~~
- ~~      http://www.apache.org/licenses/LICENSE-2.0
- ~~
- ~~ Unless required by applicable law or agreed to in writing, software
- ~~ distributed under the License is distributed on an "AS IS" BASIS,
- ~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- ~~ See the License for the specific language governing permissions and
- ~~ limitations under the License.
+<!--
+Copyright 2008 The Codehaus
 
- ~~ NOTE: For help with the syntax of this file, see:
- ~~ http://maven.apache.org/doxia/references/apt-format.html
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Changing the classpath scope when running Java programs
+http://www.apache.org/licenses/LICENSE-2.0
 
-  Whether you use the <<<java>>> goal or the special support of Java for the <<<exec>>> goal, you might want
-  to change the scope of the plugin execution. This can be achieved using the <<<classpathScope>>> configuration element,
-  e.g. for a <<<test>>> scope:
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 
-+-------------------+
-        <configuration>
-          ...
-          <classpathScope>test</classpathScope>
-          ...
-        </configuration>
-+-------------------+
+# Changing the classpath scope when running Java programs
 
-  or, on the command line,
+Whether you use the `java` goal or the special support of Java for the `exec` goal, you might want
+to change the scope of the plugin execution. This can be achieved using the `classpathScope` configuration element,
+e.g. for a `test` scope:
 
------
+```xml
+<configuration>
+  ...
+  <classpathScope>test</classpathScope>
+  ...
+</configuration>
+```
+
+or, on the command line,
+
+```sh
 mvn exec:java [...] -Dexec.classpathScope="test"
------
+```
+

@@ -1,76 +1,65 @@
- ------
- Introduction
- ------
- Jerome Lacoste
- ------
- 2008-10-10
- ------
+title: Introduction
+author: Jerome Lacoste
+date: 2008-10-10
 
- ~~ Copyright 2006 The Codehaus
- ~~
- ~~ Licensed under the Apache License, Version 2.0 (the "License");
- ~~ you may not use this file except in compliance with the License.
- ~~ You may obtain a copy of the License at
- ~~
- ~~      http://www.apache.org/licenses/LICENSE-2.0
- ~~
- ~~ Unless required by applicable law or agreed to in writing, software
- ~~ distributed under the License is distributed on an "AS IS" BASIS,
- ~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- ~~ See the License for the specific language governing permissions and
- ~~ limitations under the License.
+<!--
+Copyright 2006 The Codehaus
 
- ~~ NOTE: For help with the syntax of this file, see:
- ~~ http://maven.apache.org/doxia/references/apt-format.html
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Exec Maven Plugin
+http://www.apache.org/licenses/LICENSE-2.0
 
- The plugin provides 2 goals to help execute system and Java programs.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
 
-* Goals Overview
+# Exec Maven Plugin
 
-  General information about the goals.
+The plugin provides 2 goals to help execute system and Java programs.
 
-  * {{{./exec-mojo.html}exec:exec}} execute programs and Java programs in a separate process.
+## Goals Overview
 
-  * {{{./java-mojo.html}exec:java}} execute Java programs in the same VM.
+General information about the goals.
 
-* Usage
+* [exec:exec](./exec-mojo.html) execute programs and Java programs in a separate process.
+* [exec:java](./java-mojo.html) execute Java programs in the same VM.
 
-  General instructions on how to use the Exec Maven Plugin can be found on the {{{./usage.html}usage page}}.
+## Usage
 
-  In case you still have questions regarding the plugin's usage, please feel
-  free to contact the {{{./mailing-lists.html}user mailing list}}. The posts to the mailing list are archived and could
-  already contain the answer to your question as part of an older thread. Hence, it is also worth browsing/searching
-  the {{{./mailing-lists.html}mail archive}}.
+General instructions on how to use the Exec Maven Plugin can be found on the [usage page](./usage.html).
 
-  If you feel like the plugin is missing a feature or has a defect, you can fill a feature request or bug report in our
-  {{{./issue-management.html}issue tracker}}.
+In case you still have questions regarding the plugin's usage, please feel
+free to contact the [user mailing list](./mailing-lists.html). The posts to the mailing list are archived and could
+already contain the answer to your question as part of an older thread. Hence, it is also worth browsing/searching
+the [mail archive](./mailing-lists.html).
 
-  When creating a new issue, please provide a comprehensive description of your
-  concern. Especially for fixing bugs it is crucial that the developers can reproduce your problem. For this reason,
-  entire debug logs, POMs or most preferably little demo projects attached to the issue are very much appreciated.
-  Of course, patches are most welcome too.
+If you feel like the plugin is missing a feature or has a defect, you can fill a feature request or bug report in our
+[issue tracker](./issue-management.html).
 
-  Contributors can check out the project from our {{{./scm.html}source repository}} and will find supplementary
-  information in the {{{https://www.mojohaus.org/contribution/reporting-an-issue.html}Reporting an Issue}},
-  {{{https://www.mojohaus.org/contribution/submitting-a-patch.html}Submitting a Patch}}
+When creating a new issue, please provide a comprehensive description of your
+concern. Especially for fixing bugs it is crucial that the developers can reproduce your problem. For this reason,
+entire debug logs, POMs or most preferably little demo projects attached to the issue are very much appreciated.
+Of course, patches are most welcome too.
 
-* Examples
+Contributors can check out the project from our [source repository](./scm.html) and will find supplementary
+information in the [Reporting an Issue](https://www.mojohaus.org/contribution/reporting-an-issue.html),
+[Submitting a Patch](https://www.mojohaus.org/contribution/submitting-a-patch.html)
 
-  To provide you with better understanding of some usages of the Exec Maven Plugin,
-  you can take a look into the following examples:
+## Examples
 
-  * {{{./examples/example-exec-for-java-programs.html} Running Java programs with exec:exec}}
+To provide you with better understanding of some usages of the Exec Maven Plugin,
+you can take a look into the following examples:
 
-  * {{{./examples/example-exec-or-java-change-classpath-scope.html} Changing the classpath scope when running Java programs}}
+* [Running Java programs with exec:exec](./examples/example-exec-for-java-programs.html)
+* [Changing the classpath scope when running Java programs](./examples/example-exec-or-java-change-classpath-scope.html)
+* [Using plugin dependencies with exec:exec](./examples/example-exec-using-plugin-dependencies.html)
+* [Using toolchains instead of explicit paths](./examples/example-exec-using-toolchains.html)
+* [Using executable binary dependencies instead of local executables](./examples/example-exec-using-executabledependency.html)
+* [Forward maven system properties to the main](./examples/example-java-project-properties.html)
+* [Execute a Runnable instead of a main](./examples/example-java-runnable.html)
 
-  * {{{./examples/example-exec-using-plugin-dependencies.html} Using plugin dependencies with exec:exec}}
-
-  * {{{./examples/example-exec-using-toolchains.html} Using toolchains instead of explicit paths}}
-  
-  * {{{./examples/example-exec-using-executabledependency.html} Using executable binary dependencies instead of local executables}}
-
-  * {{{./examples/example-java-project-properties.html} Forward maven system properties to the main}}
-
-  * {{{./examples/example-java-runnable.html} Execute a Runnable instead of a main}}
