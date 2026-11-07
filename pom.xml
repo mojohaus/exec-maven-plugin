@@ -506,6 +506,13 @@
                   <goal>integration-test</goal>
                   <goal>verify</goal>
                 </goals>
+                <configuration>
+                  <extraArtifacts>
+                    <!-- the heaviest plugins setup-parent resolves: resolved by the main build, so CI caches them -->
+                    <extraArtifact>org.apache.maven.plugins:maven-site-plugin:${maven-site-plugin.version}:maven-plugin</extraArtifact>
+                    <extraArtifact>org.apache.maven.plugins:maven-assembly-plugin:${maven-assembly-plugin.version}:maven-plugin</extraArtifact>
+                  </extraArtifacts>
+                </configuration>
               </execution>
             </executions>
           </plugin>
