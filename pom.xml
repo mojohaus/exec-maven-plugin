@@ -490,6 +490,8 @@
               <postBuildHookScript>verify</postBuildHookScript>
               <settingsFile>src/it/settings.xml</settingsFile>
               <properties>
+                <!-- reuse the prefix file the main build cached instead of fetching it again in every fork -->
+                <aether.remoteRepositoryFilter.prefixes.basedir>${settings.localRepository}/.meta</aether.remoteRepositoryFilter.prefixes.basedir>
                 <maven.compiler.source>${mojo.java.target}</maven.compiler.source>
                 <maven.compiler.target>${mojo.java.target}</maven.compiler.target>
               </properties>
