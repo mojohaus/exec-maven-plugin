@@ -724,6 +724,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             if (throwable instanceof ThreadDeath) {
                 return; // harmless
             }
+            delegateToUserHandler(thread, throwable);
             synchronized (this) {
                 if (uncaughtException == null) // only remember the first one
                 {
@@ -731,6 +732,27 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 }
             }
             getLog().warn(throwable);
+        }
+
+        /**
+         * Gives the handler the executed program set (on the thread, else the default one) a chance to see the
+         * exception, as it would see it outside of the plugin. A thread without its own handler reports to its
+         * thread group, which is this one, so that case is skipped to avoid calling ourselves.
+         */
+        private void delegateToUserHandler(Thread thread, Throwable throwable) {
+            Thread.UncaughtExceptionHandler handler = thread.getUncaughtExceptionHandler();
+            if (handler == null || handler == this) {
+                handler = Thread.getDefaultUncaughtExceptionHandler();
+            }
+            if (handler == null || handler == this) {
+                return;
+            }
+            try {
+                handler.uncaughtException(thread, throwable);
+            } catch (Throwable t) {
+                // like the JVM, ignore what the handler throws
+                getLog().debug("The uncaught exception handler " + handler + " threw " + t);
+            }
         }
     }
 
