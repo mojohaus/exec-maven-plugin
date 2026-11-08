@@ -147,6 +147,24 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     protected boolean cleanupDaemonThreads;
 
     /**
+     * Whether to leave the class loader that runs the main class open after <code>main</code> returns.
+     * <p>
+     * By default the class loader is closed as soon as the main class and its threads are done. Shutdown hooks and
+     * daemon threads that outlive the goal then fail with a <code>NoClassDefFoundError</code> when they load a class
+     * for the first time. Set this to <code>true</code> to let them keep loading classes.
+     * </p>
+     * <p>
+     * An open class loader holds on to its jar files and to every class it loaded, for as long as a thread or a hook
+     * references it. In a long-lived Maven process such as mvnd, each execution then leaks the loader, its classes and
+     * its open file handles, so enable this only when you need it.
+     * </p>
+     *
+     * @since 3.7.0
+     */
+    @Parameter(property = "exec.keepClassLoaderOpen", defaultValue = "false")
+    protected boolean keepClassLoaderOpen;
+
+    /**
      * This defines the number of milliseconds to wait for daemon threads to quit following their interruption.<br/>
      * This is only taken into account if {@link #cleanupDaemonThreads} is <code>true</code>. A value &lt;=0 means to
      * not timeout (i.e. wait indefinitely for threads to finish). Following a timeout, a warning will be logged.
@@ -360,7 +378,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             }
         }
 
-        if (classLoader != null) {
+        if (classLoader != null && !keepClassLoaderOpen) {
             try {
                 classLoader.close();
             } catch (IOException e) {
