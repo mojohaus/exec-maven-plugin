@@ -38,6 +38,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.util.FileUtils;
@@ -56,11 +57,14 @@ import static org.apache.maven.api.plugin.testing.MojoExtension.setVariableValue
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -334,6 +338,22 @@ class ExecMojoTest {
         setVariableValueToObject(execMojo, "commandlineArgs", "\n  com.example.Main\n");
 
         assertEquals(Collections.singletonList("com.example.Main"), Arrays.asList(execMojo.parseCommandlineArgs()));
+    }
+
+    // GH-114
+    @Test
+    void executeExceptionLogsMessageAtErrorAndStackTraceAtDebug() {
+        Log log = mock(Log.class);
+        mojo.setLog(log);
+        mojo.failureMsg = "Process exited with an error: 1 (Exit value: 1)";
+
+        MojoExecutionException e = assertThrows(MojoExecutionException.class, () -> mojo.execute());
+
+        assertEquals("Command execution failed.", e.getMessage());
+        assertTrue(e.getCause() instanceof ExecuteException, "the cause is kept");
+        verify(log).error("Command execution failed: " + e.getCause().getMessage());
+        verify(log, never()).error(any(CharSequence.class), any(Throwable.class));
+        verify(log).debug(eq("Command execution failed."), any(Throwable.class));
     }
 
     @Test
