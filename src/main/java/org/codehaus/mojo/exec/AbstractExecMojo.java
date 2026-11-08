@@ -276,11 +276,43 @@ public abstract class AbstractExecMojo extends AbstractMojo {
             return null;
         } else {
             try {
-                return CommandLineUtils.translateCommandline(commandlineArgs);
+                return CommandLineUtils.translateCommandline(normalizeWhitespace(commandlineArgs));
             } catch (Exception e) {
                 throw new MojoExecutionException(e.getMessage());
             }
         }
+    }
+
+    /**
+     * Replaces every run of line breaks and tabs outside of quotes with a single space. The command line tokenizer
+     * only splits on spaces, so an argument string that spans lines, such as {@code "\n  com.example.Main"}, would
+     * otherwise yield an argument that holds just the line break.
+     *
+     * @param arguments the argument string, as given in a property or in the POM
+     * @return the argument string with unquoted line breaks and tabs turned into spaces
+     */
+    static String normalizeWhitespace(String arguments) {
+        StringBuilder result = new StringBuilder(arguments.length());
+        char quote = 0;
+        boolean inWhitespaceRun = false;
+        for (int i = 0; i < arguments.length(); i++) {
+            char c = arguments.charAt(i);
+            if (quote == 0 && (c == '\r' || c == '\n' || c == '\t')) {
+                if (!inWhitespaceRun) {
+                    result.append(' ');
+                    inWhitespaceRun = true;
+                }
+                continue;
+            }
+            inWhitespaceRun = false;
+            if (quote == 0 && (c == '"' || c == '\'')) {
+                quote = c;
+            } else if (c == quote) {
+                quote = 0;
+            }
+            result.append(c);
+        }
+        return result.toString();
     }
 
     /**

@@ -279,6 +279,37 @@ class ExecMojoTest {
         checkMojo(SOME_EXECUTABLE + " --version");
     }
 
+    // GH-466
+    @Test
+    void lineBreakFollowedBySpacesInExecArgsDoesNotYieldAnEmptyArgument() throws Exception {
+        mojo.systemProperties.put("exec.args", "\n  com.example.Main\r\n\t-v");
+
+        mojo.execute();
+
+        checkMojo(SOME_EXECUTABLE + " com.example.Main -v");
+    }
+
+    // GH-466
+    @Test
+    void lineBreakInsideQuotesOfExecArgsIsKept() throws Exception {
+        mojo.systemProperties.put("exec.args", "-Dtext=\"a\nb\" 'c\td'");
+
+        mojo.execute();
+
+        assertEquals(
+                Arrays.asList("-Dtext=a\nb", "c\td"),
+                Arrays.asList(mojo.getExecutedCommandline(0).getArguments()));
+    }
+
+    // GH-466
+    @Test
+    @InjectMojo(goal = "exec")
+    void lineBreakFollowedBySpacesInCommandlineArgsDoesNotYieldAnEmptyArgument(ExecMojo execMojo) throws Exception {
+        setVariableValueToObject(execMojo, "commandlineArgs", "\n  com.example.Main\n");
+
+        assertEquals(Collections.singletonList("com.example.Main"), Arrays.asList(execMojo.parseCommandlineArgs()));
+    }
+
     @Test
     void overrides() throws Exception {
         mojo.systemProperties.put("exec.args", "-f pom.xml");
