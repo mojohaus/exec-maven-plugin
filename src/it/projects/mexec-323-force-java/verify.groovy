@@ -18,5 +18,5 @@
  */
 def log = new File( basedir, "build.log" )
 assert log.exists()
-// missing dist/emails here
-assert log.text.contains( "Executing command line: [echo, --, -p]" )
+// the argument after -p is kept
+assert log.text.contains( "Executing command line: [echo, --, -p, dist/emails]" )
