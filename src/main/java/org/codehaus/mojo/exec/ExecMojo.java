@@ -792,6 +792,13 @@ public class ExecMojo extends AbstractExecMojo {
 
     CommandLine getExecutablePath(Map<String, String> enviro, File dir) {
         File execFile = new File(executable);
+        if (dir != null && !execFile.isAbsolute() && hasPathSeparator(executable)) {
+            // a relative path such as ../node_modules/.bin/ng is relative to the working directory
+            File inWorkingDirectory = new File(dir, executable);
+            if (inWorkingDirectory.isFile()) {
+                execFile = inWorkingDirectory;
+            }
+        }
         String exec = null;
         if (execFile.isFile()) {
             getLog().debug("Toolchains are ignored, 'executable' parameter is set to " + executable);
@@ -833,6 +840,10 @@ public class ExecMojo extends AbstractExecMojo {
         }
 
         return toRet;
+    }
+
+    private static boolean hasPathSeparator(String path) {
+        return path.indexOf('/') >= 0 || path.indexOf(File.separatorChar) >= 0;
     }
 
     static String findExecutable(final String executable, final List<String> paths) {

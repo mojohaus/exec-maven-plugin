@@ -40,6 +40,7 @@ import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -214,6 +215,31 @@ class ExecMojoTest {
 
             f.delete();
             assertFalse(f.exists(), "file deleted...");
+        }
+    }
+
+    // GH-92
+    @Test
+    @InjectMojo(goal = "exec")
+    void getExecutablePathResolvesRelativePathAgainstWorkingDirectory(ExecMojo realMojo) throws Exception {
+        Path root = Files.createTempDirectory("exec-relative");
+        try {
+            Path workDir = Files.createDirectories(root.resolve("src").resolve("node"));
+            Path script =
+                    Files.createDirectories(root.resolve("src").resolve("bin")).resolve("tool.sh");
+            Files.write(script, Collections.singletonList("#!/bin/sh"), StandardCharsets.UTF_8);
+
+            realMojo.setExecutable(".." + File.separator + "bin" + File.separator + "tool.sh");
+
+            CommandLine cmd = realMojo.getExecutablePath(emptyMap(), workDir.toFile());
+
+            assertEquals(
+                    script.toRealPath(),
+                    new File(cmd.getExecutable()).toPath().toRealPath(),
+                    "relative executable is resolved against the working directory");
+            assertTrue(new File(cmd.getExecutable()).isAbsolute());
+        } finally {
+            FileUtils.deleteDirectory(root.toFile());
         }
     }
 
