@@ -21,11 +21,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 import org.apache.maven.api.plugin.testing.InjectMojo;
 import org.apache.maven.api.plugin.testing.MojoParameter;
 import org.apache.maven.api.plugin.testing.MojoTest;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -38,6 +47,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.apache.maven.api.plugin.testing.MojoExtension.setVariableValueToObject;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -378,6 +388,67 @@ class ExecJavaMojoTest {
 
         String output = execute(mojo);
         assertEquals("Hello project18 project" + System.lineSeparator(), output);
+    }
+
+    private Artifact jarWithMainClass(String mainClass) throws IOException {
+        Path jar = Files.createTempFile("exec-main", ".jar");
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        if (mainClass != null) {
+            manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
+        }
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar), manifest)) {
+            out.flush();
+        }
+        Artifact artifact = new DefaultArtifact(
+                "org.acme", "runner", "1.0", "runtime", "jar", null, new DefaultArtifactHandler("jar"));
+        artifact.setFile(jar.toFile());
+        return artifact;
+    }
+
+    private void useExecutableDependency(ExecJavaMojo mojo, Artifact artifact) throws Exception {
+        ExecutableDependency dependency = new ExecutableDependency();
+        dependency.setGroupId("org.acme");
+        dependency.setArtifactId("runner");
+        setVariableValueToObject(mojo, "executableDependency", dependency);
+        setVariableValueToObject(mojo, "pluginDependencies", Collections.singletonList(artifact));
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/89
+    @Test
+    @InjectMojo(goal = "java")
+    void mainClassComesFromTheManifestOfTheExecutableDependency(ExecJavaMojo mojo) throws Exception {
+        useExecutableDependency(mojo, jarWithMainClass("org.codehaus.mojo.exec.DummyMain"));
+
+        assertEquals("Hello" + System.lineSeparator(), execute(mojo));
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/89
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.JSR512DummyMain1")
+    void configuredMainClassWinsOverTheManifest(ExecJavaMojo mojo) throws Exception {
+        useExecutableDependency(mojo, jarWithMainClass("org.codehaus.mojo.exec.DummyMain"));
+
+        assertEquals("Correct choice" + System.lineSeparator(), execute(mojo));
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/89
+    @Test
+    @InjectMojo(goal = "java")
+    void missingMainClassEntryFailsWithAClearMessage(ExecJavaMojo mojo) throws Exception {
+        useExecutableDependency(mojo, jarWithMainClass(null));
+
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertTrue(exception.getMessage().contains("Main-Class"), exception.getMessage());
+        assertTrue(exception.getMessage().contains("org.acme:runner"), exception.getMessage());
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    void mainClassIsStillRequiredWithoutExecutableDependency(ExecJavaMojo mojo) {
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertTrue(exception.getMessage().contains("mainClass"), exception.getMessage());
     }
 
     /**

@@ -2,11 +2,14 @@ package org.codehaus.mojo.exec;
 
 import javax.inject.Inject;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -22,6 +25,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
 import org.apache.maven.artifact.Artifact;
@@ -67,10 +73,14 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      *     <li><code>projectPropertiesUpdater</code>: <code>BiConsumer&lt;String, String&gt;</code>, project properties update callback (pass the key/value to update, null value means removal of the key)</li>
      *     <li><code>highestVersionResolver</code>: <code>Function&lt;String, String&gt;</code>, passing a <code>groupId:artifactId</code> you get the latest resolved version from the project repositories</li>
      * </ul>
+     * <p>
+     * Required, unless {@link #executableDependency} is set: the plugin then runs the <code>Main-Class</code> entry
+     * of that dependency's manifest, and fails if the manifest has none.
+     * </p>
      *
      * @since 1.0
      */
-    @Parameter(required = true, property = "exec.mainClass")
+    @Parameter(property = "exec.mainClass")
     protected String mainClass;
 
     /**
@@ -244,6 +254,8 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             return;
         }
 
+        mainClass = resolveMainClass();
+
         if (null == arguments) {
             arguments = new String[0];
         }
@@ -370,6 +382,49 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         }
 
         registerSourceRoots();
+    }
+
+    /**
+     * @return the configured main class, or the <code>Main-Class</code> manifest entry of the executable dependency
+     *         when no main class is configured
+     * @throws MojoExecutionException if there is no main class to run
+     */
+    private String resolveMainClass() throws MojoExecutionException {
+        if (mainClass != null && !mainClass.trim().isEmpty()) {
+            return mainClass;
+        }
+        if (executableDependency == null) {
+            throw new MojoExecutionException("The parameter 'mainClass' is missing or invalid");
+        }
+
+        File file = findExecutableArtifact().getFile();
+        String fromManifest = null;
+        try {
+            if (file != null && file.isDirectory()) {
+                File manifestFile = new File(file, JarFile.MANIFEST_NAME);
+                if (manifestFile.isFile()) {
+                    try (InputStream in = Files.newInputStream(manifestFile.toPath())) {
+                        fromManifest = new Manifest(in).getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+                    }
+                }
+            } else if (file != null && file.isFile()) {
+                try (JarFile jar = new JarFile(file)) {
+                    Manifest manifest = jar.getManifest();
+                    if (manifest != null) {
+                        fromManifest = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new MojoExecutionException("Cannot read the manifest of the executableDependency " + file, e);
+        }
+
+        if (fromManifest == null || fromManifest.trim().isEmpty()) {
+            throw new MojoExecutionException("The parameter 'mainClass' is not set and the executableDependency "
+                    + executableDependency + " has no Main-Class entry in its manifest (" + file + ")");
+        }
+        getLog().debug("Using the Main-Class " + fromManifest.trim() + " of the executableDependency " + file);
+        return fromManifest.trim();
     }
 
     protected void doExecClassLoader(final String bootClassName) throws Throwable {
