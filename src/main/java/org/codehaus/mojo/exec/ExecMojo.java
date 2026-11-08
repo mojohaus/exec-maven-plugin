@@ -481,7 +481,8 @@ public class ExecMojo extends AbstractExecMojo {
                     getLog().error(message);
                     throw new MojoExecutionException(message, e);
                 } else {
-                    getLog().error("Command execution failed.", e);
+                    getLog().error("Command execution failed: " + e.getMessage());
+                    getLog().debug("Command execution failed.", e);
                     throw new MojoExecutionException("Command execution failed.", e);
                 }
             } catch (IOException e) {
