@@ -156,6 +156,22 @@ public abstract class AbstractExecMojo extends AbstractMojo {
     private boolean addOutputToClasspath;
 
     /**
+     * List of project dependencies to leave off the classpath, each as <code>groupId:artifactId</code>, for example
+     * <code>org.acme:project-a</code>. Only the named artifact is removed; its transitive dependencies stay. It applies
+     * to the project dependencies of both <code>exec:java</code> and <code>exec:exec</code>.
+     *
+     * <pre>
+     * &lt;classpathDependencyExcludes&gt;
+     *   &lt;classpathDependencyExclude&gt;org.acme:project-a&lt;/classpathDependencyExclude&gt;
+     * &lt;/classpathDependencyExcludes&gt;
+     * </pre>
+     *
+     * @since 3.7.0
+     */
+    @Parameter(property = "exec.classpathDependencyExcludes")
+    protected List<String> classpathDependencyExcludes;
+
+    /**
      * Indicates if this plugin's dependencies should be used when executing the main class.
      * <p>
      * This is useful when project dependencies are not appropriate. Using only the plugin dependencies can be
@@ -230,6 +246,17 @@ public abstract class AbstractExecMojo extends AbstractMojo {
             artifacts.addAll(project.getSystemArtifacts());
         } else {
             throw new IllegalStateException("Invalid classpath scope: " + classpathScope);
+        }
+
+        if (classpathDependencyExcludes != null && !classpathDependencyExcludes.isEmpty()) {
+            artifacts.removeIf(artifact -> {
+                boolean excluded =
+                        classpathDependencyExcludes.contains(artifact.getGroupId() + ':' + artifact.getArtifactId());
+                if (excluded) {
+                    getLog().debug("Excluding project dependency from the classpath: " + artifact);
+                }
+                return excluded;
+            });
         }
 
         getLog().debug("Collected project artifacts " + artifacts);
