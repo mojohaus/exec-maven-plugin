@@ -78,7 +78,9 @@ if (!outLog.exists()) {
     throw new FileNotFoundException( "Could not find the " + outLog );
 }
 
-def expectedOutput = FileUtils.fileRead(outLog)
+// The JVM reports JAVA_TOOL_OPTIONS and similar variables on stderr ("Picked up ..."), at a point
+// that depends on the environment. It is not output of the test program, so leave it out.
+def expectedOutput = FileUtils.fileRead(outLog).replaceAll(/(?m)^Picked up [^\r\n]*(\r?\n)?/, '')
 
 def expectedHexString = convertStringToHex(expectedOutput);
 
