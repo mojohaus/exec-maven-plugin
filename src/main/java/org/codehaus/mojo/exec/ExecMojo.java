@@ -596,7 +596,10 @@ public class ExecMojo extends AbstractExecMojo {
             Object argument = arguments.get(i);
 
             if (specialArg != null) {
-                if (isLongClassPathArgument(specialArg) && argument instanceof Classpath) {
+                String pendingArg = specialArg;
+                specialArg = null;
+
+                if (isLongClassPathArgument(pendingArg) && argument instanceof Classpath) {
                     // it is assumed that starting from -cp or -classpath the arguments
                     // are: -classpath/-cp %classpath mainClass
                     // the arguments are replaced with: -jar $TMP/maven-exec.jar
@@ -605,7 +608,8 @@ public class ExecMojo extends AbstractExecMojo {
 
                     File tmpFile = createJar(computePath((Classpath) argument), (String) arguments.get(++i));
                     commandArguments.add(tmpFile.getAbsolutePath());
-                } else if (isLongModulePathArgument(specialArg) && argument instanceof Modulepath) {
+                    continue;
+                } else if (isLongModulePathArgument(pendingArg) && argument instanceof Modulepath) {
                     String filePath = new File(buildDirectory, "modulepath").getAbsolutePath();
 
                     StringBuilder modulePath = new StringBuilder();
@@ -624,13 +628,12 @@ public class ExecMojo extends AbstractExecMojo {
 
                     createArgFile(filePath, Arrays.asList("-p", modulePath.toString()));
                     commandArguments.add('@' + filePath);
-                } else {
-                    commandArguments.add(specialArg);
+                    continue;
                 }
 
-                specialArg = null;
-
-                continue;
+                // not followed by a path element: the pending argument is an ordinary one, and the current
+                // argument, which may itself be special, is processed below
+                commandArguments.add(pendingArg);
             }
 
             if (argument instanceof Classpath) {
@@ -647,6 +650,11 @@ public class ExecMojo extends AbstractExecMojo {
             } else {
                 commandArguments.add((String) argument);
             }
+        }
+
+        if (specialArg != null) {
+            // the last argument was -p or -classpath, with nothing after it
+            commandArguments.add(specialArg);
         }
     }
 

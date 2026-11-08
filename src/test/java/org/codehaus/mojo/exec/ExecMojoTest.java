@@ -356,6 +356,43 @@ class ExecMojoTest {
         verify(log).debug(eq("Command execution failed."), any(Throwable.class));
     }
 
+    // GH-334
+    @Test
+    void pathOptionFollowedByAnotherOptionKeepsBoth() throws Exception {
+        setVariableValueToObject(mojo, "forceJava", true);
+        setVariableValueToObject(mojo, "longModulepath", true);
+        mojo.setArguments(Arrays.asList("-p", "-q", "-r"));
+
+        mojo.execute();
+
+        checkMojo(SOME_EXECUTABLE + " -p -q -r");
+    }
+
+    // GH-334
+    @Test
+    void classpathOptionFollowedByAnotherSpecialOptionKeepsBoth() throws Exception {
+        setVariableValueToObject(mojo, "forceJava", true);
+        setVariableValueToObject(mojo, "longModulepath", true);
+        setVariableValueToObject(mojo, "longClasspath", true);
+        mojo.setArguments(Arrays.asList("-classpath", "--module-path", "-p", "-cp", "-q"));
+
+        mojo.execute();
+
+        checkMojo(SOME_EXECUTABLE + " -classpath --module-path -p -cp -q");
+    }
+
+    // GH-334
+    @Test
+    void trailingPathOptionIsKept() throws Exception {
+        setVariableValueToObject(mojo, "forceJava", true);
+        setVariableValueToObject(mojo, "longModulepath", true);
+        mojo.setArguments(Arrays.asList("-q", "-p"));
+
+        mojo.execute();
+
+        checkMojo(SOME_EXECUTABLE + " -q -p");
+    }
+
     @Test
     void overrides() throws Exception {
         mojo.systemProperties.put("exec.args", "-f pom.xml");
