@@ -21,6 +21,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -449,6 +451,38 @@ class ExecJavaMojoTest {
     void mainClassIsStillRequiredWithoutExecutableDependency(ExecJavaMojo mojo) {
         MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
         assertTrue(exception.getMessage().contains("mainClass"), exception.getMessage());
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/513
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.LoaderProbeMain")
+    void classLoaderIsClosedByDefault(ExecJavaMojo mojo) throws Exception {
+        assertNull(runProbeAndFindResource(mojo));
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/513
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.LoaderProbeMain")
+    @MojoParameter(name = "keepClassLoaderOpen", value = "true")
+    void classLoaderStaysOpenWhenAsked(ExecJavaMojo mojo) throws Exception {
+        assertNotNull(runProbeAndFindResource(mojo));
+    }
+
+    /**
+     * Runs the probe with a directory holding a marker file on the loader's own URLs, then looks the marker up.
+     */
+    private URL runProbeAndFindResource(ExecJavaMojo mojo) throws Exception {
+        Path dir = Files.createTempDirectory("exec-probe");
+        Files.createFile(dir.resolve("marker.txt"));
+        setVariableValueToObject(mojo, "additionalClasspathElements", Collections.singletonList(dir.toString()));
+        LoaderProbeMain.loader = null;
+
+        execute(mojo);
+
+        assertNotNull(LoaderProbeMain.loader);
+        return ((URLClassLoader) LoaderProbeMain.loader).findResource("marker.txt");
     }
 
     /**
