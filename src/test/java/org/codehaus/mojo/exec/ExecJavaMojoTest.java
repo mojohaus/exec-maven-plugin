@@ -232,6 +232,41 @@ class ExecJavaMojoTest {
         }
     }
 
+    // GH-141
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.ThreadHandlerMain")
+    void uncaughtExceptionHandlerOfTheMainThreadIsCalled(ExecJavaMojo mojo) {
+        System.getProperties().remove(ThreadHandlerMain.SEEN_PROPERTY);
+        try {
+            MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+
+            assertInstanceOf(IllegalStateException.class, exception.getCause());
+            Object seen = System.getProperties().get(ThreadHandlerMain.SEEN_PROPERTY);
+            assertInstanceOf(IllegalStateException.class, seen, "the handler set by the program was called");
+        } finally {
+            System.getProperties().remove(ThreadHandlerMain.SEEN_PROPERTY);
+        }
+    }
+
+    // GH-141
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.ThrowingMain")
+    void defaultUncaughtExceptionHandlerIsCalled(ExecJavaMojo mojo) {
+        Thread.UncaughtExceptionHandler original = Thread.getDefaultUncaughtExceptionHandler();
+        AtomicReference<Throwable> seen = new AtomicReference<>();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> seen.set(throwable));
+        try {
+            MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+
+            assertInstanceOf(IOException.class, exception.getCause());
+            assertEquals(exception.getCause(), seen.get(), "the default handler was called");
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(original);
+        }
+    }
+
     /**
      * MEXEC-29 exec:java throws NPE if the mainClass main method has not a correct signature
      */
