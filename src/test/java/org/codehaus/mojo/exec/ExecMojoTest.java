@@ -32,7 +32,10 @@ import org.apache.maven.api.di.Provides;
 import org.apache.maven.api.plugin.testing.InjectMojo;
 import org.apache.maven.api.plugin.testing.MojoTest;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Build;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -384,6 +388,51 @@ class ExecMojoTest {
         Path resultFilePath = basedir.toPath().resolve("testfile.txt");
         String result = new String(Files.readAllBytes(resultFilePath), StandardCharsets.UTF_8);
         assertTrue(result.contains(testJavaPath));
+    }
+
+    private void withResourcesAndOutput(Path resources, Path classes) throws Exception {
+        Build build = new Build();
+        Resource resource = new Resource();
+        resource.setDirectory(resources.toString());
+        build.addResource(resource);
+        build.setOutputDirectory(classes.toString());
+        MavenProject project = mock(MavenProject.class);
+        when(project.getBuild()).thenReturn(build);
+        when(project.getRuntimeArtifacts()).thenReturn(Collections.emptyList());
+        mojo.setProject(project);
+        setVariableValueToObject(mojo, "classpathScope", "runtime");
+        setVariableValueToObject(mojo, "addResourcesToClasspath", true);
+        setVariableValueToObject(mojo, "addOutputToClasspath", true);
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/534
+    @Test
+    void resourceDirectoriesStayOffTheModulePath() throws Exception {
+        Path resources = Paths.get("target", "resources-dir").toAbsolutePath();
+        Path classes = Paths.get("target", "classes-dir").toAbsolutePath();
+        withResourcesAndOutput(resources, classes);
+        mojo.setArguments(Arrays.asList("-cp", new Classpath(), "-p", new Modulepath()));
+
+        mojo.execute();
+
+        String[] args = mojo.getExecutedCommandline(0).getArguments();
+        assertEquals(resources + File.pathSeparator + classes, args[1], "class path keeps the resources");
+        assertEquals(classes.toString(), args[3], "module path has no resources");
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/534
+    @Test
+    void resourceDirectoriesStayOffTheModulePathToken() throws Exception {
+        Path resources = Paths.get("target", "resources-dir").toAbsolutePath();
+        Path classes = Paths.get("target", "classes-dir").toAbsolutePath();
+        withResourcesAndOutput(resources, classes);
+        setVariableValueToObject(mojo, "commandlineArgs", "-cp %classpath -p %modulepath");
+
+        mojo.execute();
+
+        String[] args = mojo.getExecutedCommandline(0).getArguments();
+        assertEquals(resources + File.pathSeparator + classes, args[1]);
+        assertEquals(classes.toString(), args[3]);
     }
 
     private void checkMojo(String expectedCommandLine) {

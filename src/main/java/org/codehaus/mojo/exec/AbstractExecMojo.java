@@ -138,7 +138,8 @@ public abstract class AbstractExecMojo extends AbstractMojo {
 
     /**
      * Add project resource directories to classpath. This is especially useful if the exec plugin is used for a code
-     * generator that reads its settings from the classpath.
+     * generator that reads its settings from the classpath. The directories go on the class path only, never on the
+     * module path.
      *
      * @since 1.5.1
      */
@@ -179,7 +180,22 @@ public abstract class AbstractExecMojo extends AbstractMojo {
      * @param theClasspathFiles the list where to collect the scope specific output directories
      */
     protected void collectProjectArtifactsAndClasspath(List<Artifact> artifacts, List<Path> theClasspathFiles) {
-        if (addResourcesToClasspath) {
+        collectProjectArtifactsAndClasspath(artifacts, theClasspathFiles, true);
+    }
+
+    /**
+     * Collects the project artifacts in the specified List and the project specific classpath (build output and build
+     * test output) Files in the specified List, depending on the plugin classpathScope value.
+     *
+     * @param artifacts the list where to collect the scope specific artifacts
+     * @param theClasspathFiles the list where to collect the scope specific output directories
+     * @param includeResources whether the resource directories are collected when
+     *            <code>addResourcesToClasspath</code> is set; {@code false} when the result becomes a module path,
+     *            where a plain resource directory is neither a module nor a jar
+     */
+    protected void collectProjectArtifactsAndClasspath(
+            List<Artifact> artifacts, List<Path> theClasspathFiles, boolean includeResources) {
+        if (addResourcesToClasspath && includeResources) {
             for (Resource r : project.getBuild().getResources()) {
                 theClasspathFiles.add(Paths.get(r.getDirectory()));
             }
