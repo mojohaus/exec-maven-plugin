@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -203,6 +204,32 @@ class ExecJavaMojoTest {
         MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
         assertInstanceOf(IOException.class, exception.getCause());
         assertEquals("expected IOException thrown by test", exception.getCause().getMessage());
+    }
+
+    // GH-526
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.SlowMain")
+    void waitsForMainClassWhenRunFromDaemonThread(ExecJavaMojo mojo) throws Exception {
+        System.clearProperty(SlowMain.DONE_PROPERTY);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread daemon = new Thread(() -> {
+            try {
+                execute(mojo);
+            } catch (Throwable t) {
+                failure.set(t);
+            }
+        });
+        daemon.setDaemon(true);
+        try {
+            daemon.start();
+            daemon.join(30_000);
+
+            assertNull(failure.get());
+            assertEquals("true", System.getProperty(SlowMain.DONE_PROPERTY), "the main class ran to the end");
+        } finally {
+            System.clearProperty(SlowMain.DONE_PROPERTY);
+        }
     }
 
     /**
