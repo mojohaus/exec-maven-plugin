@@ -355,6 +355,9 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 mainClass + ".main()");
         URLClassLoader classLoader = getClassLoader(); // TODO: enable to cache accross executions
         bootstrapThread.setContextClassLoader(classLoader);
+        // A new thread inherits the daemon status of its creator. When the build runs in a daemon thread, such as
+        // a ForkJoinPool worker in an IDE, joinNonDaemonThreads would skip this thread and return at once.
+        bootstrapThread.setDaemon(false);
         setSystemProperties();
 
         bootstrapThread.start();
