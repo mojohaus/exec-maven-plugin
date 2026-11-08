@@ -521,6 +521,36 @@ class ExecMojoTest {
         return result;
     }
 
+    // GH-63
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    @InjectMojo(goal = "exec")
+    void asyncExecutionWritesOutputFile(ExecMojo execMojo) throws Exception {
+        File outputFile = Files.createTempFile("async-output", ".txt").toFile();
+        try {
+            execMojo.setExecutable("sh");
+            execMojo.setArguments(Arrays.asList("-c", "sleep 1; echo async-output-line"));
+            execMojo.setBasedir(new File("target"));
+            setVariableValueToObject(execMojo, "async", true);
+            setVariableValueToObject(execMojo, "outputFile", outputFile);
+
+            execMojo.execute();
+
+            long deadline = System.currentTimeMillis() + 20_000;
+            String content = "";
+            while (System.currentTimeMillis() < deadline) {
+                content = new String(Files.readAllBytes(outputFile.toPath()), StandardCharsets.UTF_8);
+                if (content.contains("async-output-line")) {
+                    break;
+                }
+                Thread.sleep(100);
+            }
+            assertTrue(content.contains("async-output-line"), "output file content: '" + content + "'");
+        } finally {
+            outputFile.delete();
+        }
+    }
+
     @Test
     @InjectMojo(goal = "exec")
     void getShebang(ExecMojo execMojo) throws Exception {

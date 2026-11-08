@@ -23,6 +23,7 @@ import javax.inject.Inject;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -435,8 +436,13 @@ public class ExecMojo extends AbstractExecMojo {
                         getLog().warn("Could not create non existing parent directories for log file: " + outputFile);
                     }
 
-                    try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
-                        resultCode = executeCommandLine(exec, commandLine, enviro, outputStream);
+                    if (async) {
+                        // the stream outlives this method: the result handler closes it when the process ends
+                        resultCode = executeCommandLine(exec, commandLine, enviro, new FileOutputStream(outputFile));
+                    } else {
+                        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+                            resultCode = executeCommandLine(exec, commandLine, enviro, outputStream);
+                        }
                     }
                 } else if (useMavenLogger) {
                     getLog().debug("Will redirect program output to Maven logger");
@@ -889,20 +895,39 @@ public class ExecMojo extends AbstractExecMojo {
         return executeCommandLine(exec, commandLine, enviro, psh);
     }
 
+    /**
+     * Executes the command line and writes the output to the given file stream. For a synchronous execution the
+     * caller closes the stream; for an asynchronous one the stream is closed when the process has ended.
+     */
     protected int executeCommandLine(
             Executor exec, CommandLine commandLine, Map<String, String> enviro, FileOutputStream outputFile)
             throws IOException {
         BufferedOutputStream bos = new BufferedOutputStream(outputFile);
         PumpStreamHandler psh = new PumpStreamHandler(bos);
-        return executeCommandLine(exec, commandLine, enviro, psh);
+        return executeCommandLine(exec, commandLine, enviro, psh, async ? bos : null);
     }
 
     protected int executeCommandLine(
             Executor exec, final CommandLine commandLine, Map<String, String> enviro, final PumpStreamHandler psh)
             throws IOException {
+        return executeCommandLine(exec, commandLine, enviro, psh, null);
+    }
+
+    /**
+     * @param asyncOutput a stream to close once an asynchronous process has ended (or failed to start), or
+     *            {@code null}
+     */
+    private int executeCommandLine(
+            Executor exec,
+            final CommandLine commandLine,
+            Map<String, String> enviro,
+            final PumpStreamHandler psh,
+            final Closeable asyncOutput)
+            throws IOException {
         exec.setStreamHandler(psh);
 
         int result;
+        boolean asyncStarted = false;
         try {
             psh.start();
             if (async) {
@@ -913,17 +938,24 @@ public class ExecMojo extends AbstractExecMojo {
                 exec.execute(commandLine, enviro, new ExecuteResultHandler() {
                     public void onProcessFailed(ExecuteException e) {
                         getLog().error("Async process failed for: " + commandLine, e);
+                        finish();
                     }
 
                     public void onProcessComplete(int exitValue) {
                         getLog().info("Async process complete, exit value = " + exitValue + " for: " + commandLine);
+                        finish();
+                    }
+
+                    private void finish() {
                         try {
                             psh.stop();
                         } catch (IOException e) {
                             getLog().error("Error stopping async process stream handler for: " + commandLine, e);
                         }
+                        closeQuietly(asyncOutput, commandLine);
                     }
                 });
+                asyncStarted = true;
                 result = 0;
             } else {
                 result = exec.execute(commandLine, enviro);
@@ -931,9 +963,22 @@ public class ExecMojo extends AbstractExecMojo {
         } finally {
             if (!async) {
                 psh.stop();
+            } else if (!asyncStarted) {
+                closeQuietly(asyncOutput, commandLine);
             }
         }
         return result;
+    }
+
+    private void closeQuietly(Closeable closeable, CommandLine commandLine) {
+        if (closeable == null) {
+            return;
+        }
+        try {
+            closeable.close();
+        } catch (IOException e) {
+            getLog().error("Error closing the output file for: " + commandLine, e);
+        }
     }
 
     //
