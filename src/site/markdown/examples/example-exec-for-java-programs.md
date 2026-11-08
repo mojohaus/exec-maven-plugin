@@ -90,3 +90,29 @@ In case of the modules as supported since Java9 the configuration looks like
 </configuration>
 ```
 
+### The module path goes into an argument file
+
+When the executable is `java` (or `forceJava` is set), the plugin does not put `--module-path` or `-p` and the
+path on the command line. It writes both to the file `modulepath` in the build directory and passes `@<build directory>/modulepath`
+instead, so that a long module path does not exceed the command line length limit of the operating system. `java` reads
+the options from that file, so the program runs as if you had written them out. With the configuration above, `mvn -X exec:exec`
+shows a command line like this one:
+
+```
+java @/path/to/project/target/modulepath --module mymodule/com.example.Main
+```
+
+Neither `--module-path` nor the path appears in it, and that is expected.
+
+To get the two arguments on the command line instead, set `longModulepath` to `false`, for example with `-Dexec.longModulepath=false`:
+
+```xml
+<configuration>
+  <executable>java</executable>
+  <longModulepath>false</longModulepath>
+  ...
+</configuration>
+```
+
+Use this setting also when the executable is not `java` but a launcher that does not understand `@` argument files.
+Only the pair of `--module-path` (or `-p`) followed by `<modulepath/>` is rewritten: a `<modulepath/>` without that option before it is replaced by the bare path.
