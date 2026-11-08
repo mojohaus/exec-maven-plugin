@@ -575,7 +575,7 @@ public class ExecMojo extends AbstractExecMojo {
             } else if (args[i].contains(CLASSPATH_TOKEN)) {
                 commandArguments.add(args[i].replace(CLASSPATH_TOKEN, computeClasspathString(null)));
             } else if (args[i].contains(MODULEPATH_TOKEN)) {
-                commandArguments.add(args[i].replace(MODULEPATH_TOKEN, computeClasspathString(null)));
+                commandArguments.add(args[i].replace(MODULEPATH_TOKEN, computeClasspathString(null, false)));
             } else {
                 commandArguments.add(args[i]);
             }
@@ -605,7 +605,7 @@ public class ExecMojo extends AbstractExecMojo {
                     modulePath.append('"');
 
                     for (Iterator<String> it =
-                                    computePath((Modulepath) argument).iterator();
+                                    computePath((Modulepath) argument, false).iterator();
                             it.hasNext(); ) {
                         modulePath.append(it.next().replace("\\", "\\\\"));
                         if (it.hasNext()) {
@@ -631,7 +631,7 @@ public class ExecMojo extends AbstractExecMojo {
                 commandArguments.add(computeClasspathString(specifiedClasspath));
             } else if (argument instanceof Modulepath) {
                 Modulepath specifiedModulepath = (Modulepath) argument;
-                commandArguments.add(computeClasspathString(specifiedModulepath));
+                commandArguments.add(computeClasspathString(specifiedModulepath, false));
             } else if ((argument instanceof String)
                     && (isLongModulePathArgument((String) argument) || isLongClassPathArgument((String) argument))) {
                 specialArg = (String) argument;
@@ -699,7 +699,12 @@ public class ExecMojo extends AbstractExecMojo {
      * @return a platform specific String representation of the classpath
      */
     private String computeClasspathString(AbstractPath specifiedClasspath) throws MojoExecutionException {
-        List<String> resultList = computePath(specifiedClasspath);
+        return computeClasspathString(specifiedClasspath, true);
+    }
+
+    private String computeClasspathString(AbstractPath specifiedClasspath, boolean includeResources)
+            throws MojoExecutionException {
+        List<String> resultList = computePath(specifiedClasspath, includeResources);
         StringBuffer theClasspath = new StringBuffer();
 
         for (String str : resultList) {
@@ -719,11 +724,20 @@ public class ExecMojo extends AbstractExecMojo {
      * @return a list of class path elements
      */
     private List<String> computePath(AbstractPath specifiedClasspath) throws MojoExecutionException {
+        return computePath(specifiedClasspath, true);
+    }
+
+    /**
+     * Same as {@link #computePath(AbstractPath)}, optionally leaving the resource directories out, which a module path
+     * must do.
+     */
+    private List<String> computePath(AbstractPath specifiedClasspath, boolean includeResources)
+            throws MojoExecutionException {
         List<Artifact> artifacts = new ArrayList<>();
         List<Path> theClasspathFiles = new ArrayList<>();
         List<String> resultList = new ArrayList<>();
 
-        collectProjectArtifactsAndClasspath(artifacts, theClasspathFiles);
+        collectProjectArtifactsAndClasspath(artifacts, theClasspathFiles, includeResources);
 
         Set<Artifact> pluginDependencies = determineRelevantPluginDependencies();
         if (pluginDependencies != null) {
