@@ -31,6 +31,9 @@ import org.apache.commons.exec.Executor;
 import org.apache.maven.api.di.Provides;
 import org.apache.maven.api.plugin.testing.InjectMojo;
 import org.apache.maven.api.plugin.testing.MojoTest;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Resource;
@@ -433,6 +436,58 @@ class ExecMojoTest {
         String[] args = mojo.getExecutedCommandline(0).getArguments();
         assertEquals(resources + File.pathSeparator + classes, args[1]);
         assertEquals(classes.toString(), args[3]);
+    }
+
+    private Artifact artifact(String groupId, String artifactId) {
+        Artifact artifact = new DefaultArtifact(
+                groupId, artifactId, "1.0", "runtime", "jar", null, new DefaultArtifactHandler("jar"));
+        artifact.setFile(new File("target", artifactId + "-1.0.jar").getAbsoluteFile());
+        return artifact;
+    }
+
+    private void withRuntimeArtifacts(Artifact... artifacts) throws Exception {
+        MavenProject project = mock(MavenProject.class);
+        when(project.getRuntimeArtifacts()).thenReturn(Arrays.asList(artifacts));
+        mojo.setProject(project);
+        setVariableValueToObject(mojo, "classpathScope", "runtime");
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/68
+    @Test
+    void classpathDependencyExcludesRemoveOnlyTheNamedArtifacts() throws Exception {
+        withRuntimeArtifacts(artifact("org.acme", "project-a"), artifact("org.acme", "project-b"));
+        setVariableValueToObject(mojo, "classpathDependencyExcludes", Collections.singletonList("org.acme:project-a"));
+
+        List<Artifact> artifacts = new ArrayList<>();
+        mojo.collectProjectArtifactsAndClasspath(artifacts, new ArrayList<>());
+
+        assertEquals(1, artifacts.size());
+        assertEquals("project-b", artifacts.get(0).getArtifactId());
+    }
+
+    // https://github.com/mojohaus/exec-maven-plugin/issues/68
+    @Test
+    void classpathDependencyExcludesApplyToExecClasspath() throws Exception {
+        Artifact a = artifact("org.acme", "project-a");
+        Artifact b = artifact("org.acme", "project-b");
+        withRuntimeArtifacts(a, b);
+        setVariableValueToObject(mojo, "classpathDependencyExcludes", Collections.singletonList("org.acme:project-a"));
+        mojo.setArguments(Arrays.asList("-cp", new Classpath()));
+
+        mojo.execute();
+
+        assertEquals(
+                b.getFile().getAbsolutePath(), mojo.getExecutedCommandline(0).getArguments()[1]);
+    }
+
+    @Test
+    void withoutClasspathDependencyExcludesEveryArtifactStays() throws Exception {
+        withRuntimeArtifacts(artifact("org.acme", "project-a"), artifact("org.acme", "project-b"));
+
+        List<Artifact> artifacts = new ArrayList<>();
+        mojo.collectProjectArtifactsAndClasspath(artifacts, new ArrayList<>());
+
+        assertEquals(2, artifacts.size());
     }
 
     private void checkMojo(String expectedCommandLine) {
