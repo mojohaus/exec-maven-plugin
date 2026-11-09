@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>exec-maven-plugin</artifactId>
-  <version>3.7.0</version>
+  <version>3.7.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Exec Maven Plugin</name>
@@ -127,7 +127,7 @@
   <scm>
     <connection>scm:git:https://github.com/mojohaus/exec-maven-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/mojohaus/exec-maven-plugin.git</developerConnection>
-    <tag>3.7.0</tag>
+    <tag>3.6.3</tag>
     <url>https://github.com/mojohaus/exec-maven-plugin/tree/master</url>
   </scm>
 
@@ -138,7 +138,7 @@
     <asm.version>9.11.1</asm.version>
     <sisuVersion>1.1.1</sisuVersion>
     <invoker.parallelThreads>1C</invoker.parallelThreads>
-    <project.build.outputTimestamp>2026-11-09T19:16:21Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-11-09T19:17:06Z</project.build.outputTimestamp>
     <maven-toolchains-plugin.version>3.3.0</maven-toolchains-plugin.version>
   </properties>
 
