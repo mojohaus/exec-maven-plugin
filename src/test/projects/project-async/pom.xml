@@ -1,0 +1,68 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.cb.maven.plugins.exec</groupId>
+    <artifactId>project-async</artifactId>
+    <version>0.1</version>
+    <packaging>jar</packaging>
+    <name>Maven Exec Plugin</name>
+    <description>Test that test the async function of the java mojo</description>
+
+    <inceptionYear>2020</inceptionYear>
+    <licenses>
+        <license>
+            <name>Apache License 2</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <async>true</async>
+                    <asyncStartCheckPollInterval>1500</asyncStartCheckPollInterval>
+                    <mainClass>org.codehaus.mojo.exec.TestServerMain</mainClass>
+                    <asyncStartCheckScriptLanguage>groovy</asyncStartCheckScriptLanguage>
+                    <asyncStartCheck>
+                        try {
+                          def code = new URL('http://localhost:9081/test').openConnection().with {
+                            requestMethod = 'HEAD'
+                            connect()
+                            responseCode
+                          }
+
+                          code == 200
+                        }
+                        catch (java.net.ConnectException e) {
+                          false
+                        }
+                    </asyncStartCheck>
+                    <additionalClasspathElements>
+                        <additionalClasspathElements>target/test-classes</additionalClasspathElements>
+                    </additionalClasspathElements>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

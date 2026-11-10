@@ -264,6 +264,12 @@
       <version>${slf4j.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-jsr223</artifactId>
+      <version>4.0.33</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
