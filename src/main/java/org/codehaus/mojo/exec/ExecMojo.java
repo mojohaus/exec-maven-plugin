@@ -571,7 +571,7 @@ public class ExecMojo extends AbstractExecMojo {
         getLog().debug("got arguments from system properties: " + argsProp);
 
         try {
-            String[] args = CommandLineUtils.translateCommandline(normalizeWhitespace(argsProp));
+            String[] args = CommandLineUtils.translateCommandline(argsProp);
             commandArguments.addAll(Arrays.asList(args));
         } catch (Exception e) {
             throw new MojoExecutionException("Couldn't parse systemproperty 'exec.args'");
