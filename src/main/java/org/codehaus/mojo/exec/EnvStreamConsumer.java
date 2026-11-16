@@ -19,6 +19,7 @@ public class EnvStreamConsumer implements StreamConsumer {
 
     private boolean startParsing;
 
+    @Override
     public void consumeLine(String line) {
 
         if (line.startsWith(START_PARSING_INDICATOR)) {

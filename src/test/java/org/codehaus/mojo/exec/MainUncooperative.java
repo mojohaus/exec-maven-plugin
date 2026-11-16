@@ -20,6 +20,7 @@ public class MainUncooperative extends Thread {
 
     final long SIMWORKTIME = 15 * 1000; // 15 seconds of work which is going to be more than exec:java wants to wait
 
+    @Override
     public void run() {
         boolean interruptedOnce = false;
         long startedTime = System.currentTimeMillis();

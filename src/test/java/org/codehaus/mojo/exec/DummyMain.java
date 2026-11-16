@@ -16,7 +16,7 @@ public class DummyMain {
         StringBuilder buffer = new StringBuilder("Hello");
 
         for (String arg : args) {
-            buffer.append(System.getProperty("line.separator")).append(arg);
+            buffer.append(System.lineSeparator()).append(arg);
         }
 
         System.out.println(buffer.toString());
