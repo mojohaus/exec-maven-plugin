@@ -640,7 +640,7 @@ class ExecMojoTest {
         String result = commandline.getExecutable();
         boolean isCmd = false;
 
-        if (OS.WINDOWS.isCurrentOs() && result.equals("cmd")) {
+        if (OS.WINDOWS.isCurrentOs() && "cmd".equals(result)) {
             result = "";
             isCmd = true;
         }

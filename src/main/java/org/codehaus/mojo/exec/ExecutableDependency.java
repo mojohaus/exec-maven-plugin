@@ -107,18 +107,13 @@ public class ExecutableDependency {
         if (artifactId != null ? !artifactId.equals(that.artifactId) : that.artifactId != null) {
             return false;
         }
-        if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) {
-            return false;
-        }
-
-        return true;
+        return groupId != null ? groupId.equals(that.groupId) : that.groupId == null;
     }
 
     /** {@inheritDoc} */
     public int hashCode() {
         int result;
-        result = (groupId != null ? groupId.hashCode() : 0);
-        result = 29 * result + (artifactId != null ? artifactId.hashCode() : 0);
-        return result;
+        result = groupId != null ? groupId.hashCode() : 0;
+        return 29 * result + (artifactId != null ? artifactId.hashCode() : 0);
     }
 }

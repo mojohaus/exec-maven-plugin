@@ -17,7 +17,7 @@ public class EnvStreamConsumer implements StreamConsumer {
 
     private List<String> unparsed = new ArrayList<>();
 
-    private boolean startParsing = false;
+    private boolean startParsing;
 
     public void consumeLine(String line) {
 
@@ -34,7 +34,7 @@ public class EnvStreamConsumer implements StreamConsumer {
                 // Don't hide an environment variable with no value e.g. APP_OVERRIDE=
                 String trimmedLine = line.trim();
                 if (trimmedLine.endsWith("=")) {
-                    envs.put(trimmedLine.substring(0, (trimmedLine.length() - 1)), null);
+                    envs.put(trimmedLine.substring(0, trimmedLine.length() - 1), null);
                 } else {
                     unparsed.add(line);
                 }

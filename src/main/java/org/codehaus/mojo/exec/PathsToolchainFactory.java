@@ -44,11 +44,15 @@ class PathsToolchainFactory implements ToolchainFactory {
 
     @Override
     public ToolchainPrivate createToolchain(final ToolchainModel model) throws MisconfiguredToolchainException {
-        if (model == null) return null;
+        if (model == null) {
+            return null;
+        }
 
         final PathsToolchain pathsToolchain = new PathsToolchain(model);
         final Xpp3Dom config = (Xpp3Dom) model.getConfiguration();
-        if (config == null) return pathsToolchain;
+        if (config == null) {
+            return pathsToolchain;
+        }
 
         final Xpp3Dom pathDom = config.getChild("paths");
         if (pathDom == null) {
@@ -64,12 +68,15 @@ class PathsToolchainFactory implements ToolchainFactory {
         for (final Xpp3Dom pathdom : pathDoms) {
             final String pathString = pathdom.getValue();
 
-            if (pathString == null) throw new MisconfiguredToolchainException("path element is empty");
+            if (pathString == null) {
+                throw new MisconfiguredToolchainException("path element is empty");
+            }
 
             final String normalizedPath = FileUtils.normalize(pathString);
             final File file = new File(normalizedPath);
-            if (!file.exists())
+            if (!file.exists()) {
                 throw new MisconfiguredToolchainException("Non-existing path '" + file.getAbsolutePath() + "'");
+            }
 
             paths.add(normalizedPath);
         }

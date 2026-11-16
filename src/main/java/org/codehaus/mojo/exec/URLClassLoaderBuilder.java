@@ -44,7 +44,7 @@ import static java.util.Arrays.asList;
  * @author Robert Scholte
  * @since 3.0.0
  */
-class URLClassLoaderBuilder {
+final class URLClassLoaderBuilder {
     private Log logger;
     private List<String> forcedJvmPackages;
     private List<String> excludedJvmPackages;
@@ -434,7 +434,7 @@ class URLClassLoaderBuilder {
             return forcedJvmPackages != null && forcedJvmPackages.stream().anyMatch(name::startsWith);
         }
 
-        private class FilteringUrlEnum implements Enumeration<URL> {
+        private final class FilteringUrlEnum implements Enumeration<URL> {
             private final Enumeration<URL> delegate;
             private URL next;
 
@@ -459,7 +459,7 @@ class URLClassLoaderBuilder {
             }
         }
 
-        private static class ChainedEnumerations implements Enumeration<URL> {
+        private static final class ChainedEnumerations implements Enumeration<URL> {
             private final Iterator<Enumeration<URL>> enumerations;
             private Enumeration<URL> current;
 
