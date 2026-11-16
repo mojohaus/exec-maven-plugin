@@ -88,7 +88,7 @@ public class BlockExitTransformer implements ClassFileTransformer {
         classLoader.close();
     }
 
-    private static class SystemExitOverrideVisitor extends ClassVisitor {
+    private static final class SystemExitOverrideVisitor extends ClassVisitor {
         private static final String SYSTEM_REPLACEMENT =
                 SystemExitManager.class.getName().replace('.', '/');
 
@@ -116,7 +116,7 @@ public class BlockExitTransformer implements ClassFileTransformer {
                         final String name,
                         final String descriptor,
                         final boolean isInterface) {
-                    if (owner.equals("java/lang/System") && name.equals("exit")) {
+                    if ("java/lang/System".equals(owner) && "exit".equals(name)) {
                         mv.visitMethodInsn(opcode, SYSTEM_REPLACEMENT, name, descriptor, isInterface);
                     } else {
                         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);

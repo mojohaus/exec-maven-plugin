@@ -867,7 +867,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         originalSystemProperties = new Properties();
         originalSystemProperties.putAll(System.getProperties());
 
-        if (Stream.of(systemProperties).anyMatch(it -> it instanceof ProjectProperties)) {
+        if (Stream.of(systemProperties).anyMatch(ProjectProperties.class::isInstance)) {
             System.getProperties().putAll(project.getProperties());
         }
 

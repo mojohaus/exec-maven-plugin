@@ -290,7 +290,7 @@ public class ExecMojo extends AbstractExecMojo {
      * @since 1.4.0
      */
     @Parameter
-    private File environmentScript = null;
+    private File environmentScript;
 
     /**
      * Exit codes to be resolved as successful execution for non-compliant applications (applications not returning 0
@@ -871,15 +871,21 @@ public class ExecMojo extends AbstractExecMojo {
         search:
         for (final String path : paths) {
             f = new File(path, executable);
-            if (!OS.isFamilyWindows() && f.isFile()) break;
-            else
+            if (!OS.isFamilyWindows() && f.isFile()) {
+                break;
+            } else {
                 for (final String extension : getExecutableExtensions()) {
                     f = new File(path, executable + extension);
-                    if (f.isFile()) break search;
+                    if (f.isFile()) {
+                        break search;
+                    }
                 }
+            }
         }
 
-        if (f == null || !f.exists()) return null;
+        if (f == null || !f.exists()) {
+            return null;
+        }
 
         return f.getAbsolutePath();
     }
@@ -891,7 +897,11 @@ public class ExecMojo extends AbstractExecMojo {
 
     private static boolean hasExecutableExtension(final String exec) {
         final String lowerCase = exec.toLowerCase();
-        for (final String ext : getExecutableExtensions()) if (lowerCase.endsWith(ext)) return true;
+        for (final String ext : getExecutableExtensions()) {
+            if (lowerCase.endsWith(ext)) {
+                return true;
+            }
+        }
 
         return false;
     }

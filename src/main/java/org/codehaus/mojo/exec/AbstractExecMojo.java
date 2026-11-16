@@ -287,7 +287,7 @@ public abstract class AbstractExecMojo extends AbstractMojo {
      * @return true of the mojo has command line arguments
      */
     protected boolean hasCommandlineArgs() {
-        return (commandlineArgs != null);
+        return commandlineArgs != null;
     }
 
     /**
