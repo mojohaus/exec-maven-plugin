@@ -56,6 +56,7 @@ import static java.util.Collections.emptyMap;
 import static org.apache.maven.api.plugin.testing.MojoExtension.setVariableValueToObject;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -351,7 +352,7 @@ class ExecMojoTest {
         MojoExecutionException e = assertThrows(MojoExecutionException.class, () -> mojo.execute());
 
         assertEquals("Command execution failed.", e.getMessage());
-        assertTrue(e.getCause() instanceof ExecuteException, "the cause is kept");
+        assertInstanceOf(ExecuteException.class, e.getCause(), "the cause is kept");
         verify(log).error("Command execution failed: " + e.getCause().getMessage());
         verify(log, never()).error(any(CharSequence.class), any(Throwable.class));
         verify(log).debug(eq("Command execution failed."), any(Throwable.class));
