@@ -266,6 +266,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      * @throws MojoExecutionException execution of the main class or one of the threads it generated failed.
      * @throws MojoFailureException something bad happened...
      */
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (isSkip()) {
             getLog().info("skipping execute as per configuration");
@@ -721,6 +722,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             super(name);
         }
 
+        @Override
         public void uncaughtException(Thread thread, Throwable throwable) {
             if (throwable instanceof ThreadDeath) {
                 return; // harmless

@@ -8,7 +8,7 @@ public class JSR512DummyMain3 {
         StringBuilder buffer = new StringBuilder("Wrong choice");
 
         for (String arg : args) {
-            buffer.append(System.getProperty("line.separator")).append(arg);
+            buffer.append(System.lineSeparator()).append(arg);
         }
 
         System.out.println(buffer.toString());

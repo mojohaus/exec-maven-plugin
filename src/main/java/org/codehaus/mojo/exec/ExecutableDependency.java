@@ -89,11 +89,13 @@ public class ExecutableDependency {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String toString() {
         return this.groupId + ":" + this.artifactId;
     }
 
     /** {@inheritDoc} */
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -111,6 +113,7 @@ public class ExecutableDependency {
     }
 
     /** {@inheritDoc} */
+    @Override
     public int hashCode() {
         int result;
         result = groupId != null ? groupId.hashCode() : 0;

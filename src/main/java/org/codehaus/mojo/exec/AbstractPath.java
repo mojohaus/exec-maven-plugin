@@ -44,6 +44,7 @@ abstract class AbstractPath {
         return dependencies;
     }
 
+    @Override
     public String toString() {
         StringBuilder buffer = new StringBuilder("Classpath {");
 

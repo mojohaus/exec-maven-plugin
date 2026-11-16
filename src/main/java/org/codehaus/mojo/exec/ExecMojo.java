@@ -376,6 +376,7 @@ public class ExecMojo extends AbstractExecMojo {
      *
      * @throws MojoExecutionException if a failure happens
      */
+    @Override
     public void execute() throws MojoExecutionException {
         if (executable == null) {
             if (executableDependency == null) {
@@ -977,11 +978,13 @@ public class ExecMojo extends AbstractExecMojo {
                 }
 
                 exec.execute(commandLine, enviro, new ExecuteResultHandler() {
+                    @Override
                     public void onProcessFailed(ExecuteException e) {
                         getLog().error("Async process failed for: " + commandLine, e);
                         finish();
                     }
 
+                    @Override
                     public void onProcessComplete(int exitValue) {
                         getLog().info("Async process complete, exit value = " + exitValue + " for: " + commandLine);
                         finish();

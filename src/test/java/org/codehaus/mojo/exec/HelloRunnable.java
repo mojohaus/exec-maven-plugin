@@ -18,6 +18,7 @@ public class HelloRunnable implements Runnable {
         this.updater = systemPropertiesUpdater;
     }
 
+    @Override
     public void run() {
         final String v = properties.getProperty("test.version");
         updater.accept("hello.runnable.output", v + ": " + (versionResolver != null));

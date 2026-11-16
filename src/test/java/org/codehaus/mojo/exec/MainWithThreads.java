@@ -33,6 +33,7 @@ public class MainWithThreads extends Thread {
         if (optionsContains(args, "cancelTimer")) {
             t.schedule(
                     new TimerTask() {
+                        @Override
                         public void run() {
                             System.out.print("(cancelled timer)");
                             t.cancel();
@@ -60,6 +61,7 @@ public class MainWithThreads extends Thread {
         this.message = message;
     }
 
+    @Override
     public void run() {
         try {
             Thread.sleep(millisecsToSleep);

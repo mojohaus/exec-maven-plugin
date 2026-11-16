@@ -127,6 +127,7 @@ class ExecMojoTest {
             return executeResult;
         }
 
+        @Override
         protected String getSystemProperty(String key) {
             return systemProperties.get(key);
         }
