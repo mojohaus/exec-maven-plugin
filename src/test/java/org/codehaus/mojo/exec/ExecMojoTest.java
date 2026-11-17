@@ -41,7 +41,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +48,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -227,26 +227,22 @@ class ExecMojoTest {
     // GH-92
     @Test
     @InjectMojo(goal = "exec")
-    void getExecutablePathResolvesRelativePathAgainstWorkingDirectory(ExecMojo realMojo) throws Exception {
-        Path root = Files.createTempDirectory("exec-relative");
-        try {
-            Path workDir = Files.createDirectories(root.resolve("src").resolve("node"));
-            Path script =
-                    Files.createDirectories(root.resolve("src").resolve("bin")).resolve("tool.sh");
-            Files.write(script, Collections.singletonList("#!/bin/sh"), StandardCharsets.UTF_8);
+    void getExecutablePathResolvesRelativePathAgainstWorkingDirectory(@TempDir Path root, ExecMojo realMojo)
+            throws Exception {
+        Path workDir = Files.createDirectories(root.resolve("src").resolve("node"));
+        Path script =
+                Files.createDirectories(root.resolve("src").resolve("bin")).resolve("tool.sh");
+        Files.write(script, Collections.singletonList("#!/bin/sh"), StandardCharsets.UTF_8);
 
-            realMojo.setExecutable(".." + File.separator + "bin" + File.separator + "tool.sh");
+        realMojo.setExecutable(".." + File.separator + "bin" + File.separator + "tool.sh");
 
-            CommandLine cmd = realMojo.getExecutablePath(emptyMap(), workDir.toFile());
+        CommandLine cmd = realMojo.getExecutablePath(emptyMap(), workDir.toFile());
 
-            assertEquals(
-                    script.toRealPath(),
-                    new File(cmd.getExecutable()).toPath().toRealPath(),
-                    "relative executable is resolved against the working directory");
-            assertTrue(new File(cmd.getExecutable()).isAbsolute());
-        } finally {
-            FileUtils.deleteDirectory(root.toFile());
-        }
+        assertEquals(
+                script.toRealPath(),
+                new File(cmd.getExecutable()).toPath().toRealPath(),
+                "relative executable is resolved against the working directory");
+        assertTrue(new File(cmd.getExecutable()).isAbsolute());
     }
 
     // under Windows cmd/bat files should be preferred over files with the same prefix without extension, e.g.
