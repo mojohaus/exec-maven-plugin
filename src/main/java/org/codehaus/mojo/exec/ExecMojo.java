@@ -406,7 +406,7 @@ public class ExecMojo extends AbstractExecMojo {
 
             if (hasCommandlineArgs()) {
                 handleCommandLineArgs(commandArguments);
-            } else if (!(argsProp == null || argsProp.isEmpty())) {
+            } else if (!StringUtils.isEmpty(argsProp)) {
                 handleSystemPropertyArguments(argsProp, commandArguments);
             } else {
                 if (arguments != null) {
