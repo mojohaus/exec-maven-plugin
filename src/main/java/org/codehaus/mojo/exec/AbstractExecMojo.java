@@ -329,8 +329,6 @@ public abstract class AbstractExecMojo extends AbstractMojo {
      * @throws MojoExecutionException if no executable artifact was found
      */
     protected Artifact findExecutableArtifact() throws MojoExecutionException {
-        // ILimitedArtifactIdentifier execToolAssembly = this.getExecutableToolAssembly();
-
         Artifact executableTool = null;
         for (Artifact pluginDep : this.pluginDependencies) {
             if (this.executableDependency.matches(pluginDep)) {
