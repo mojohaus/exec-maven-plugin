@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -283,12 +282,8 @@ class ExecMojoTest {
     void runFailure() {
         mojo.executeResult = 1;
 
-        try {
-            mojo.execute();
-            fail("expected failure");
-        } catch (MojoExecutionException e) {
-            assertEquals("Result of " + mojo.getExecutedCommandline(0) + " execution is: '1'.", e.getMessage());
-        }
+        MojoExecutionException e = assertThrows(MojoExecutionException.class, mojo::execute);
+        assertEquals("Result of " + mojo.getExecutedCommandline(0) + " execution is: '1'.", e.getMessage());
 
         checkMojo(SOME_EXECUTABLE + " --version");
     }
@@ -297,12 +292,8 @@ class ExecMojoTest {
     void runError() {
         mojo.failureMsg = "simulated failure";
 
-        try {
-            mojo.execute();
-            fail("expected failure");
-        } catch (MojoExecutionException e) {
-            assertEquals("Command execution failed.", e.getMessage());
-        }
+        MojoExecutionException e = assertThrows(MojoExecutionException.class, mojo::execute);
+        assertEquals("Command execution failed.", e.getMessage());
 
         checkMojo(SOME_EXECUTABLE + " --version");
     }
