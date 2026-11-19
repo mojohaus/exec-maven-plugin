@@ -23,8 +23,8 @@ what the code and the POMs do not make obvious.
 - The plugin compiles against Maven 3.9.16 (`mavenVersion`) and declares a literal
   `<prerequisites><maven>3.9.0</maven>`; keep the two apart, so raising `mavenVersion` does not
   raise the prerequisite. Building the plugin itself needs Maven 3.9 (`minimalMavenBuildVersion`).
-- `.github/workflows/maven.yml` calls the shared `apache/maven-gh-actions-shared`
-  `maven-verify.yml@v5` workflow. Branches in this repository build under the push event.
+- `.github/workflows/maven.yml` calls the MojoHaus `maven-verify.yml` workflow in `mojohaus/.github`.
+  Branches in this repository build under the push event.
 
 ## Unit tests
 
