@@ -19,48 +19,41 @@ package org.codehaus.mojo.exec;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * Starts the test server.
+ * Starts the test server, for the tests of the asynchronous <code>exec:java</code>.
+ * <p>
+ * The first argument is the port, <code>0</code> or none picks a free one. {@code main} does not return until its
+ * thread is interrupted, the way a server that waits for its shutdown does, and then stops the server.
+ * </p>
  *
  * @author <a href="mailto:k_o_@users.sourceforge.net ">Karsten Ohme
  * (k_o_@users.sourceforge.net )</a>
  */
 public class TestServerMain {
 
-    public static final int SERVER_PORT = 9081;
+    private static volatile HttpServer server;
 
-    private static HttpServer server;
+    /** Counted down once the server has stopped. */
+    public static volatile CountDownLatch stopped = new CountDownLatch(1);
 
-    public static void start() throws Exception {
-        // simulate a delay of 5 seconds
-        int i = 0;
-        while (i++ < 5) {
-            Thread.sleep(1000);
-        }
-        server = HttpServer.create(new InetSocketAddress("localhost", SERVER_PORT), 0);
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            public void run() {
-                stop();
-            }
-        }));
-        try {
-            server.createContext("/test", new MyHttpHandler());
-            ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
-            server.setExecutor(threadPoolExecutor);
-            server.start();
-            System.out.println("Started test server.");
-        } catch (Exception e) {
-            throw new RuntimeException("Could not start test server.", e);
-        }
+    public static int start(int port) throws IOException {
+        stopped = new CountDownLatch(1);
+        HttpServer httpServer = HttpServer.create(new InetSocketAddress("localhost", port), 0);
+        httpServer.createContext("/test", new MyHttpHandler());
+        httpServer.setExecutor(Executors.newFixedThreadPool(1));
+        httpServer.start();
+        server = httpServer;
+        System.out.println("Started test server.");
+        return httpServer.getAddress().getPort();
     }
 
     private static class MyHttpHandler implements HttpHandler {
@@ -77,17 +70,26 @@ public class TestServerMain {
     }
 
     public static void stop() {
-        if (server != null) {
-            server.stop(0);
-            Executor executor = server.getExecutor();
+        HttpServer httpServer = server;
+        if (httpServer != null) {
+            server = null;
+            httpServer.stop(0);
+            Executor executor = httpServer.getExecutor();
             if (executor instanceof ExecutorService) {
                 ((ExecutorService) executor).shutdown();
             }
-            server = null;
+            stopped.countDown();
         }
     }
 
     public static void main(String[] args) throws Exception {
-        start();
+        start(args.length > 0 ? Integer.parseInt(args[0]) : 0);
+        try {
+            new CountDownLatch(1).await();
+        } catch (InterruptedException e) {
+            // asked to stop
+        } finally {
+            stop();
+        }
     }
 }
