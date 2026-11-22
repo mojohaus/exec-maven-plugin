@@ -228,13 +228,16 @@ The program has three steps in the build:
   since Java 15, so add one as a dependency of the plugin and there is no default language. Without a check the goal
   returns at once. The goal waits at most `asyncStartTimeout` milliseconds, polling every
   `asyncStartCheckPollInterval`, and fails, after stopping the program, when the time is up, when the program throws,
-  or when it ends before it is ready.
+  or when it ends before it is ready. The address checks use the proxy settings of the JVM, not those of
+  `settings.xml`.
 * **Run.** Later executions in the same build use the program. System properties set with `systemProperties` stay set
   until the program stops, and they are those of the whole Maven JVM.
 * **Stop.** `exec:java-stop` interrupts every thread of the program, waits for them at most
   `daemonThreadJoinTimeout` milliseconds (15000 if that is not positive), closes the class loader unless
-  `keepClassLoaderOpen` is set, and restores the system properties. It fails the build if the program threw an
-  exception, whenever that happened. `startExecutionId` stops only the program of that execution.
+  `keepClassLoaderOpen` is set, and restores the system properties that the program set with `systemProperties`, each
+  one only if it still has the value the program gave it, so other programs and mojos keep what they set meanwhile. It fails the build if the program threw an
+  exception, whenever that happened. `startExecutionId` stops only the program of that execution. With no program to stop, or no program under that id
+  because `async` or the start was skipped, the goal logs it and succeeds.
 
 The program should end when its thread is interrupted, which is what a server does that waits for its shutdown. A
 thread that ignores the interruption lingers and is reported in the log, as it is without `async`.
@@ -244,9 +247,9 @@ different ids (`default-cli` on the command line). A program belongs to its proj
 module's program in that module, and a goal that runs in another module does not see it.
 
 If the build ends without `java-stop`, for example because a test failed before `post-integration-test`, a shutdown
-hook interrupts the program, waits at most `daemonThreadJoinTimeout` milliseconds, and never waits for non-daemon
-threads, so Maven still exits. In a long-lived Maven process such as mvnd the hook runs only when that process ends,
-so the program, and the port it holds, stay up until `mvnd --stop`.
+hook interrupts the program and waits for its threads at most `daemonThreadJoinTimeout` milliseconds (15 seconds
+when that is 0 or less), so Maven still exits. In a long-lived Maven process such as mvnd the hook runs only when that
+process ends, so the program, and the port it holds, stay up until `mvnd --stop`.
 
 `exec.async` is the property of `exec:exec`. The `java` goal uses `exec.java.async` instead, so that setting
 `-Dexec.async=true` for a forked process does not move every `exec:java` execution into the background, where it needs

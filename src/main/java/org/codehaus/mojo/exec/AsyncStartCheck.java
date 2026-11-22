@@ -16,6 +16,8 @@ package org.codehaus.mojo.exec;
  * limitations under the License.
  */
 
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -52,6 +54,16 @@ abstract class AsyncStartCheck {
      */
     abstract boolean isReady() throws MojoExecutionException;
 
+    volatile IOException lastFailure;
+
+    /**
+     * @return why the latest {@link #isReady()} that said <code>false</code> did so, or <code>null</code> if it was
+     *         not an I/O failure, such as a 404 status or a script that returned <code>false</code>
+     */
+    IOException getLastFailure() {
+        return lastFailure;
+    }
+
     /**
      * Creates the check, failing early on a configuration that can never work.
      *
@@ -77,12 +89,22 @@ abstract class AsyncStartCheck {
             throw new MojoExecutionException("Couldn't find an engine for the script language " + language
                     + ". Add a JSR-223 implementation for it as a dependency of the plugin.");
         }
+        final CompiledScript compiled;
+        if (engine instanceof Compilable) {
+            try {
+                compiled = ((Compilable) engine).compile(script);
+            } catch (ScriptException e) {
+                throw new MojoExecutionException("Couldn't compile the asyncStartCheck script.", e);
+            }
+        } else {
+            compiled = null;
+        }
         return new AsyncStartCheck() {
             @Override
             boolean isReady() throws MojoExecutionException {
                 final Object result;
                 try {
-                    result = engine.eval(script);
+                    result = compiled != null ? compiled.eval() : engine.eval(script);
                 } catch (ScriptException e) {
                     throw new MojoExecutionException("Couldn't evaluate the asyncStartCheck script.", e);
                 }
@@ -117,6 +139,7 @@ abstract class AsyncStartCheck {
                             socket.connect(socketAddress, CONNECT_TIMEOUT_MILLIS);
                             return true;
                         } catch (IOException e) {
+                            lastFailure = e;
                             return false;
                         }
                     }
@@ -143,6 +166,7 @@ abstract class AsyncStartCheck {
                             int status = connection.getResponseCode();
                             return status >= 200 && status < 300;
                         } catch (IOException e) {
+                            lastFailure = e;
                             return false;
                         } finally {
                             if (connection != null) {

@@ -59,9 +59,16 @@ class ExecJavaAsyncTest {
         AsyncTestMain.interrupted = new java.util.concurrent.CountDownLatch(1);
     }
 
-    private static int freePort() throws IOException {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
+    private static final java.util.Set<Integer> HANDED_OUT = new java.util.HashSet<>();
+
+    /** A free port that no other call of this JVM got, as the OS may hand out the same closed port twice. */
+    private static synchronized int freePort() throws IOException {
+        while (true) {
+            try (ServerSocket socket = new ServerSocket(0)) {
+                if (HANDED_OUT.add(socket.getLocalPort())) {
+                    return socket.getLocalPort();
+                }
+            }
         }
     }
 
@@ -242,7 +249,7 @@ class ExecJavaAsyncTest {
             assertTrue(e.getMessage().contains("still running"), e.getMessage());
             assertTrue(program.isAlive(), "the running program is untouched");
 
-            assertThrows(MojoExecutionException.class, () -> stop("some-other-id"));
+            stop("some-other-id"); // no program under that id: nothing to stop, not an error
             assertTrue(program.isAlive());
 
             stop(program.getExecutionId());
@@ -369,5 +376,134 @@ class ExecJavaAsyncTest {
         mojo.execute();
 
         assertTrue(AsyncJavaProgram.findAll(pluginContext).isEmpty());
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    void stopOfAnIdWithoutAProgramSucceeds(ExecJavaMojo mojo) throws Exception {
+        stop("never-started");
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    void timeoutReportsTheLastFailureOfTheCheck(ExecJavaMojo mojo) throws Exception {
+        assertTimeoutPreemptively(LIMIT, () -> {
+            int port = freePort();
+            asyncProgram(
+                    mojo, "org.codehaus.mojo.exec.AsyncTestMain", "tcp://localhost:" + freePort(), "tcp", "" + port);
+            setVariableValueToObject(mojo, "asyncStartTimeout", 400L);
+
+            MojoExecutionException e = assertThrows(MojoExecutionException.class, mojo::execute);
+
+            assertTrue(e.getMessage().contains("last attempt failed"), e.getMessage());
+            assertTrue(e.getCause() instanceof IOException, String.valueOf(e.getCause()));
+        });
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    void interruptWhileWaitingStopsTheProgramAndKeepsTheFlag(ExecJavaMojo mojo) throws Exception {
+        assertTimeoutPreemptively(LIMIT, () -> {
+            int port = freePort();
+            // never ready, and a long timeout
+            asyncProgram(
+                    mojo, "org.codehaus.mojo.exec.AsyncTestMain", "tcp://localhost:" + freePort(), "tcp", "" + port);
+            setVariableValueToObject(mojo, "asyncStartTimeout", 600000L);
+            java.util.concurrent.atomic.AtomicReference<Throwable> thrown =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicBoolean flag = new java.util.concurrent.atomic.AtomicBoolean();
+            Thread waiter = new Thread(() -> {
+                try {
+                    mojo.execute();
+                } catch (Throwable t) {
+                    thrown.set(t);
+                }
+                flag.set(Thread.currentThread().isInterrupted());
+            });
+            waiter.start();
+            AsyncJavaProgram program = null;
+            while (program == null) {
+                Thread.sleep(20);
+                program = AsyncJavaProgram.find(pluginContext, "default");
+            }
+            waiter.interrupt();
+            waiter.join();
+
+            assertTrue(thrown.get() instanceof MojoExecutionException, String.valueOf(thrown.get()));
+            assertTrue(flag.get(), "the interrupt flag is set again");
+            assertFalse(program.isAlive(), "the joins waited for the program's threads");
+            assertFalse(isListening(port));
+            assertTrue(AsyncJavaProgram.findAll(pluginContext).isEmpty());
+        });
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    void stoppingProgramsRestoresOnlyTheirOwnSystemProperties(ExecJavaMojo first) throws Exception {
+        for (boolean firstStopsFirst : new boolean[] {true, false}) {
+            assertTimeoutPreemptively(LIMIT, () -> {
+                pluginContext.clear();
+                AsyncJavaProgram a = startWithProperty(first, "exec.async.a");
+                AsyncJavaProgram b = startWithProperty(first, "exec.async.b");
+                System.setProperty("exec.async.unrelated", "kept");
+                try {
+                    assertEquals("set", System.getProperty("exec.async.a"));
+                    assertEquals("set", System.getProperty("exec.async.b"));
+
+                    stop((firstStopsFirst ? a : b).getExecutionId());
+                    assertNull(System.getProperty(firstStopsFirst ? "exec.async.a" : "exec.async.b"));
+                    assertEquals("set", System.getProperty(firstStopsFirst ? "exec.async.b" : "exec.async.a"));
+
+                    stop((firstStopsFirst ? b : a).getExecutionId());
+                    assertNull(System.getProperty("exec.async.a"));
+                    assertNull(System.getProperty("exec.async.b"));
+                    assertEquals("kept", System.getProperty("exec.async.unrelated"));
+                } finally {
+                    System.clearProperty("exec.async.unrelated");
+                }
+            });
+        }
+    }
+
+    /** Starts a program under its own execution id: the mojo gets a fresh id by a fresh mojoExecution. */
+    @Test
+    @InjectMojo(goal = "java")
+    void programsSettingTheSameKeyRestoreItInAnyStopOrder(ExecJavaMojo first) throws Exception {
+        for (boolean firstStopsFirst : new boolean[] {true, false}) {
+            assertTimeoutPreemptively(LIMIT, () -> {
+                pluginContext.clear();
+                System.setProperty("exec.async.shared", "before");
+                try {
+                    AsyncJavaProgram a = startWithProperty(first, "exec.async.first", "exec.async.shared", "A");
+                    AsyncJavaProgram b = startWithProperty(first, "exec.async.second", "exec.async.shared", "B");
+                    assertEquals("B", System.getProperty("exec.async.shared"));
+
+                    stop((firstStopsFirst ? a : b).getExecutionId());
+                    assertEquals(firstStopsFirst ? "B" : "A", System.getProperty("exec.async.shared"));
+
+                    stop((firstStopsFirst ? b : a).getExecutionId());
+                    assertEquals("before", System.getProperty("exec.async.shared"));
+                } finally {
+                    System.clearProperty("exec.async.shared");
+                }
+            });
+        }
+    }
+
+    private AsyncJavaProgram startWithProperty(ExecJavaMojo mojo, String key) throws Exception {
+        return startWithProperty(mojo, key, key, "set");
+    }
+
+    private AsyncJavaProgram startWithProperty(ExecJavaMojo mojo, String executionId, String key, String value)
+            throws Exception {
+        asyncProgram(mojo, "org.codehaus.mojo.exec.AsyncTestMain", null, "wait");
+        Property property = new Property();
+        property.setKey(key);
+        property.setValue(value);
+        setVariableValueToObject(mojo, "systemProperties", new AbstractProperty[] {property});
+        org.apache.maven.plugin.MojoExecution execution = new org.apache.maven.plugin.MojoExecution(null, executionId);
+        setVariableValueToObject(mojo, "mojoExecution", execution);
+        mojo.execute();
+        return AsyncJavaProgram.find(pluginContext, executionId);
     }
 }
