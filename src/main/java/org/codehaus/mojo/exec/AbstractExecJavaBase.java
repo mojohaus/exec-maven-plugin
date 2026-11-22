@@ -996,6 +996,33 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     }
 
     /**
+     * Calls {@code Thread.stop()} reflectively: JDK 27 removed the method, so a direct call fails to link with a
+     * {@link NoSuchMethodError} when this class runs there.
+     *
+     * @return {@code false} if the method is missing or throws {@link UnsupportedOperationException} (JDK 20-26)
+     */
+    private static boolean stopThread(Thread thread) {
+        try {
+            Thread.class.getMethod("stop").invoke(thread);
+            return true;
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return false;
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof UnsupportedOperationException) {
+                return false;
+            }
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            }
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new IllegalStateException(cause);
+        }
+    }
+
+    /**
      * Interrupts the threads of the group and waits for them.
      *
      * @param threadGroup the group
@@ -1034,9 +1061,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 uncooperativeThreads.add(thread); // ensure we don't process again
                 if (stopUnresponsiveDaemonThreads && threadStopIsAvailable) {
                     getLog().warn("thread " + thread + " will be Thread.stop()'ed");
-                    try {
-                        thread.stop();
-                    } catch (UnsupportedOperationException unsupportedOperationException) {
+                    if (!stopThread(thread)) {
                         threadStopIsAvailable = false;
                         getLog().warn(THREAD_STOP_UNAVAILABLE);
                     }
