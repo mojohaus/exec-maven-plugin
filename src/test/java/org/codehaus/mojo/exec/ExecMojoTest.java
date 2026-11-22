@@ -54,6 +54,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static java.util.Collections.emptyMap;
 import static org.apache.maven.api.plugin.testing.MojoExtension.setVariableValueToObject;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -158,19 +159,6 @@ class ExecMojoTest {
 
         checkMojo(SOME_EXECUTABLE + " --version");
     }
-
-    /*
-     * This one won't work yet public void xxtestSimpleRunPropertiesAndArguments() throws MojoExecutionException,
-     * Exception { File pom = new File( getBasedir(), "src/test/projects/project1/pom.xml" ); String output = execute(
-     * pom, "exec" ); System.out.println(" OUTPUT" + output + "\n\n\n"); String expectedOutput =
-     * "arg.arg1\narg.arg2\nproject.env1=value1"; // FIXME should work on Windows as well assertEquals( expectedOutput,
-     * output ); }
-     */
-
-    /*
-     * integration test... - compile the Test class using mvn clean compile - run the test file using java, use it to
-     * generate a file whose contains are compared to expected output
-     */
 
     // MEXEC-12, MEXEC-72
     @Test
@@ -614,6 +602,49 @@ class ExecMojoTest {
         mojo.collectProjectArtifactsAndClasspath(artifacts, new ArrayList<>());
 
         assertEquals(2, artifacts.size());
+    }
+
+    // MEXEC-66
+    @Test
+    void classpathTokenIsReplacedWhereverItAppearsInTheArgument() throws Exception {
+        Artifact a = artifact("org.acme", "project-a");
+        withRuntimeArtifacts(a);
+        String cp = a.getFile().getAbsolutePath();
+        String sep = File.pathSeparator;
+        setVariableValueToObject(
+                mojo,
+                "commandlineArgs",
+                "-classpath %classpath -classpath %classpath" + sep + "after -classpath before" + sep
+                        + "%classpath -classpath before" + sep + "%classpath" + sep + "after");
+
+        mojo.execute();
+
+        assertArrayEquals(
+                new String[] {
+                    "-classpath",
+                    cp,
+                    "-classpath",
+                    cp + sep + "after",
+                    "-classpath",
+                    "before" + sep + cp,
+                    "-classpath",
+                    "before" + sep + cp + sep + "after"
+                },
+                mojo.getExecutedCommandline(0).getArguments());
+    }
+
+    // MEXEC-70
+    @Test
+    void classpathElementInArgumentsIsExpanded() throws Exception {
+        Artifact a = artifact("org.acme", "project-a");
+        withRuntimeArtifacts(a);
+        mojo.setArguments(Arrays.asList("-classpath", new Classpath(), "Main"));
+
+        mojo.execute();
+
+        assertArrayEquals(
+                new String[] {"-classpath", a.getFile().getAbsolutePath(), "Main"},
+                mojo.getExecutedCommandline(0).getArguments());
     }
 
     private void checkMojo(String expectedCommandLine) {

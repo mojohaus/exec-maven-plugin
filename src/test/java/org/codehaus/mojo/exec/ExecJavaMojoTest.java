@@ -77,12 +77,6 @@ class ExecJavaMojoTest {
         session.getSystemProperties().setProperty("test.version", "junit");
     }
 
-    /*
-     * This one won't work yet public void xxtestSimpleRunPropertiesAndArguments() throws MojoExecutionException,
-     * Exception { File pom = new File( getBasedir(), "src/test/projects/project2/pom.xml" ); String output = execute(
-     * pom, "java" ); System.out.println(output); assertEquals( -1, output.trim().indexOf( "ERROR" ) ); }
-     */
-
     /**
      * Check that a simple execution with no arguments and no system properties produces the expected result.<br>
      * We load the config from a pom file and fill up the MavenProject property ourselves
@@ -268,47 +262,34 @@ class ExecJavaMojoTest {
     }
 
     /**
-     * MEXEC-29 exec:java throws NPE if the mainClass main method has not a correct signature
+     * MEXEC-29 exec:java threw an NPE when the main method of the main class had no usable signature.
      */
-    // Moved this test to src/it/mexec-29 (integration test)
-    // cause it will fail. This is based of trying to
-    // using dependencies (commons-logging:1.0.4:jar; commons-io:commons-is:1.1) which will be resolved
-    // against maven central which will not work always in particular
-    // when maven central is proxied via a repository manager.
-    // This could be solved by using the local settings.xml
-    // file of the user, but the tests don't use it.
-    // Apart from that if the class does not exist as in this test
-    // the real execution of the plugin will result in a ClassNotFoundException
-    // like this:
-    // [DEBUG] Adding project dependency artifact: commons-io to classpath
-    // [DEBUG] Adding project dependency artifact: commons-logging to classpath
-    // [DEBUG] joining on thread Thread[org.codehaus.mojo.exec.NoMain.main(),5,org.codehaus.mojo.exec.NoMain]
-    // [WARNING]
-    // java.lang.ClassNotFoundException: org.codehaus.mojo.exec.NoMain
-    // at java.net.URLClassLoader$1.run(URLClassLoader.java:366)
-    // at java.net.URLClassLoader$1.run(URLClassLoader.java:355)
-    // at java.security.AccessController.doPrivileged(Native Method)
-    // at java.net.URLClassLoader.findClass(URLClassLoader.java:354)
-    // at java.lang.ClassLoader.loadClass(ClassLoader.java:423)
-    // at java.lang.ClassLoader.loadClass(ClassLoader.java:356)
-    // at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:293)
-    // at java.lang.Thread.run(Thread.java:722)
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.WrongSignatureMain")
+    void incorrectMainMethodSignature(ExecJavaMojo mojo) {
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertTrue(
+                exception
+                        .getCause()
+                        .getMessage()
+                        .contains("The specified mainClass doesn't contain a main method with appropriate signature."),
+                String.valueOf(exception.getCause()));
+    }
 
-    /*
-     * public void testIncorrectMainMethodSignature() throws Exception { File pom = new File( getBasedir(),
-     * "src/test/projects/project12/pom.xml" ); try { String output = execute( pom, "java" ); } catch
-     * (MojoExecutionException e) { assertTrue( stringContains( e.getMessage(),
-     * "The specified mainClass doesn't contain a main method with appropriate signature." ) ); } }
+    /**
+     * MEXEC-29: a main class that is not on the classpath fails with the class name in the message.
      */
-
-    // this test doesn't work as the classpath passed to the project when executing the POM isn't the same as when maven
-    // is executed from within the project dir
-    // Should be moved as an integration-test
-    /*
-     * public void testSetClasspathScopeToTest() throws Exception { File pom = new File( getBasedir(),
-     * "src/test/projects/project14/pom.xml" ); String output = execute( pom, "java" ); assertEquals( "Hello" +
-     * System.getProperty( "line.separator" ), output ); }
-     */
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.DoesNotExist")
+    void missingMainClass(ExecJavaMojo mojo) {
+        MojoExecutionException exception = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertInstanceOf(ClassNotFoundException.class, exception.getCause());
+        assertTrue(
+                exception.getCause().getMessage().contains("org.codehaus.mojo.exec.DoesNotExist"),
+                String.valueOf(exception.getCause()));
+    }
 
     /**
      * For cases where the Java code spawns Threads and main returns soon. See
@@ -374,19 +355,6 @@ class ExecJavaMojoTest {
         // thereby allowing the stop()'ed thread to output the final "(f)".
         assertEquals(MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim());
     }
-
-    /**
-     * See <a href="http://jira.codehaus.org/browse/MEXEC-17">MEXEC-17</a>.
-     */
-    /**
-     * This test doesn't work because the sun.tools.javac.Main class referenced in the project pom is found even if the
-     * system scope dependencies are not added by the plugin. The class was probably loaded by another plugin ?! To fix
-     * the test we have to: - maybe use a different system scope dependency/class to load. - find a different way to
-     * test. When ran manually, the test works though (i.e. removing the code that manually adds the system scope
-     * dependencies make the test fail). public void testSystemDependencyFound() throws Exception { File pom = new File(
-     * getBasedir(), "src/test/projects/project11/pom.xml" ); String output = execute( pom, "java" ); assertEquals(
-     * FindClassInClasspath.FOUND_ALL, output.trim() ); }
-     */
 
     /**
      * Test the commandline parsing facilities of the {@link AbstractExecMojo} class
