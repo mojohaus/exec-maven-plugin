@@ -32,7 +32,8 @@ import org.apache.maven.plugins.annotations.Parameter;
  * project: interrupts their threads, waits for them, closes their class loaders and restores the system properties.
  * The goal fails if a program threw an exception, so that a failure in the background fails the build.
  * <p>
- * Without a program to stop it does nothing, so it is safe to bind when the start is skipped.
+ * Without a program to stop it logs that and succeeds, even when <code>startExecutionId</code> names an execution
+ * that has none, so it is safe to bind when the start is skipped or does not run in the background.
  * </p>
  *
  * @since 3.8.0
@@ -42,7 +43,7 @@ public class ExecJavaStopMojo extends AbstractMojo {
 
     /**
      * The id of the <code>exec:java</code> execution to stop. Without it every program that runs in the background in
-     * this project is stopped, the latest started first. On the command line the id of an execution is
+     * this project is stopped, the latest started first. An id without a program is not an error. On the command line the id of an execution is
      * <code>default-cli</code>.
      *
      * @since 3.8.0
@@ -80,8 +81,9 @@ public class ExecJavaStopMojo extends AbstractMojo {
         } else {
             AsyncJavaProgram program = AsyncJavaProgram.find(context, startExecutionId);
             if (program == null) {
-                throw new MojoExecutionException("No Java program of the execution '" + startExecutionId
-                        + "' runs in the background in this project. Is async set on that execution?");
+                getLog().info("No Java program of the execution '" + startExecutionId
+                        + "' runs in the background in this project");
+                return;
             }
             programs = Collections.singletonList(program);
         }

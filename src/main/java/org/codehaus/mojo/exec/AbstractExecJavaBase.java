@@ -193,7 +193,9 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     /**
      * Tells when a program that runs in the background is ready, so that the build waits for it before it goes on.
      * Without it the goal returns as soon as the program is launched. It applies only when {@link #async} is
-     * <code>true</code>. It is one of:
+     * <code>true</code>. The address checks use the JVM's own proxy settings (<code>http.proxyHost</code> and
+     * <code>http.nonProxyHosts</code>), not the proxies of <code>settings.xml</code>; the JVM does not proxy
+     * <code>localhost</code> by default. It is one of:
      * <ul>
      *     <li><code>tcp://host:port</code>: ready once a connection to the port opens.</li>
      *     <li><code>http://host:port/path</code> or <code>https://...</code>: ready once a GET request answers with
@@ -281,6 +283,8 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     protected boolean stopUnresponsiveDaemonThreads;
 
     protected Properties originalSystemProperties;
+
+    private AsyncJavaProgram.SystemPropertyChanges asyncSystemProperties;
 
     /**
      * Additional elements to be appended to the classpath.
@@ -461,7 +465,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             terminate(threadGroup, classLoader);
         } else {
             AsyncJavaProgram program = new AsyncJavaProgram(
-                    getAsyncExecutionId(), this, threadGroup, bootstrapThread, classLoader, originalSystemProperties);
+                    getAsyncExecutionId(), this, threadGroup, bootstrapThread, classLoader, asyncSystemProperties);
             program.register(getPluginContextMap());
             awaitReady(program, startCheck);
         }
@@ -479,6 +483,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             return;
         }
         final long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(asyncStartTimeout);
+        boolean interruptedWhileWaiting = false;
         try {
             while (true) {
                 Throwable failure = program.getFailure();
@@ -501,19 +506,34 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 }
                 long remaining = deadline - System.nanoTime();
                 if (remaining <= 0) {
-                    throw new MojoExecutionException("The Java class was not ready after " + asyncStartTimeout
-                            + " ms, as asyncStartCheck '" + asyncStartCheck + "' says");
+                    IOException lastFailure = startCheck.getLastFailure();
+                    throw new MojoExecutionException(
+                            "The Java class was not ready after " + asyncStartTimeout + " ms, as asyncStartCheck '"
+                                    + asyncStartCheck + "' says"
+                                    + (lastFailure == null ? "" : ". The last attempt failed with " + lastFailure),
+                            lastFailure);
                 }
                 getLog().info("The Java class is not yet ready. Waiting ...");
+                if (startCheck.getLastFailure() != null) {
+                    getLog().debug("The last start check attempt failed: " + startCheck.getLastFailure());
+                }
                 try {
                     Thread.sleep(Math.min(asyncStartCheckPollInterval, TimeUnit.NANOSECONDS.toMillis(remaining) + 1));
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    interruptedWhileWaiting = true; // the flag is set again once the program is stopped
                     throw new MojoExecutionException("Interrupted while waiting for the Java class to be ready", e);
                 }
             }
         } catch (MojoExecutionException | RuntimeException e) {
-            program.abort(getPluginContextMap());
+            // a set flag would make the joins of the stop return at once, leaving threads behind
+            boolean interrupted = Thread.interrupted() || interruptedWhileWaiting;
+            try {
+                program.abort(getPluginContextMap());
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             throw e;
         }
     }
@@ -539,7 +559,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     }
 
     /**
-     * Waits for the program to finish and cleans up. In asynchronous mode it is called by a shutdown hook.
+     * Waits for the program to finish and cleans up. Only used when the program is not asynchronous.
      */
     private void terminate(IsolatedThreadGroup threadGroup, URLClassLoader classLoader) throws MojoExecutionException {
         joinNonDaemonThreads(threadGroup);
@@ -1058,6 +1078,24 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         if (systemProperties == null) {
             return;
         }
+        if (async) {
+            // the program outlives this goal, so other programs and mojos change the properties meanwhile: only
+            // what this one sets is undone, and only while it still holds the value this one set
+            asyncSystemProperties = new AsyncJavaProgram.SystemPropertyChanges();
+            if (Stream.of(systemProperties).anyMatch(ProjectProperties.class::isInstance)) {
+                for (String name : project.getProperties().stringPropertyNames()) {
+                    asyncSystemProperties.set(name, project.getProperties().getProperty(name));
+                }
+            }
+            for (AbstractProperty systemProperty : systemProperties) {
+                if (systemProperty instanceof Property) {
+                    Property prop = (Property) systemProperty;
+                    asyncSystemProperties.set(prop.getKey(), prop.getValue() == null ? "" : prop.getValue());
+                }
+            }
+            return;
+        }
+
         // copy otherwise the restore phase does nothing
         originalSystemProperties = new Properties();
         originalSystemProperties.putAll(System.getProperties());

@@ -18,11 +18,14 @@ package org.codehaus.mojo.exec;
 
 import java.io.IOException;
 import java.net.URLClassLoader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -46,7 +49,7 @@ final class AsyncJavaProgram {
     private final AbstractExecJavaBase.IsolatedThreadGroup threadGroup;
     private final Thread bootstrapThread;
     private final URLClassLoader classLoader;
-    private final Properties originalSystemProperties;
+    private final SystemPropertyChanges systemProperties;
     private final AtomicBoolean stopped = new AtomicBoolean();
     private final Thread shutdownHook;
 
@@ -56,13 +59,13 @@ final class AsyncJavaProgram {
             AbstractExecJavaBase.IsolatedThreadGroup threadGroup,
             Thread bootstrapThread,
             URLClassLoader classLoader,
-            Properties originalSystemProperties) {
+            SystemPropertyChanges systemProperties) {
         this.executionId = executionId;
         this.owner = owner;
         this.threadGroup = threadGroup;
         this.bootstrapThread = bootstrapThread;
         this.classLoader = classLoader;
-        this.originalSystemProperties = originalSystemProperties;
+        this.systemProperties = systemProperties;
         this.shutdownHook = new Thread(() -> stopQuietly(), "exec-java-stop-" + executionId);
     }
 
@@ -234,8 +237,8 @@ final class AsyncJavaProgram {
                 owner.getLog().error(e.getMessage(), e);
             }
         }
-        if (originalSystemProperties != null) {
-            System.setProperties(originalSystemProperties);
+        if (systemProperties != null) {
+            systemProperties.restore();
         }
         Throwable late = getFailure();
         return failure != null ? failure : late;
@@ -243,5 +246,75 @@ final class AsyncJavaProgram {
 
     private long stopTimeout() {
         return owner.daemonThreadJoinTimeout > 0 ? owner.daemonThreadJoinTimeout : DEFAULT_STOP_TIMEOUT_MILLIS;
+    }
+
+    /**
+     * The system properties one background program set. Programs running at the same time may set the same key, so
+     * the value before the first of them and every program's value are kept per key for the whole JVM: stopping a
+     * program drops its value, and the key goes back to the value of the newest program still running, or to the
+     * value before all of them.
+     */
+    static final class SystemPropertyChanges {
+        private static final Map<String, KeyHistory> HISTORY = new HashMap<>();
+
+        private final Map<String, Value> own = new LinkedHashMap<>();
+
+        void set(String key, String value) {
+            synchronized (HISTORY) {
+                KeyHistory history = HISTORY.computeIfAbsent(key, k -> new KeyHistory(System.getProperty(k)));
+                Value previous = own.get(key);
+                if (previous != null) {
+                    history.values.remove(previous);
+                }
+                Value applied = new Value(value);
+                own.put(key, applied);
+                history.values.addLast(applied);
+                System.setProperty(key, value);
+            }
+        }
+
+        void restore() {
+            synchronized (HISTORY) {
+                for (Map.Entry<String, Value> entry : own.entrySet()) {
+                    String key = entry.getKey();
+                    Value value = entry.getValue();
+                    KeyHistory history = HISTORY.get(key);
+                    boolean newest = history.values.peekLast() == value;
+                    history.values.remove(value);
+                    // a value someone else set after this program stays
+                    if (newest && Objects.equals(System.getProperty(key), value.value)) {
+                        Value next = history.values.peekLast();
+                        String old = next != null ? next.value : history.before;
+                        if (old == null) {
+                            System.clearProperty(key);
+                        } else {
+                            System.setProperty(key, old);
+                        }
+                    }
+                    if (history.values.isEmpty()) {
+                        HISTORY.remove(key);
+                    }
+                }
+                own.clear();
+            }
+        }
+
+        /** One program's value; compared by identity, since two programs may set the same value. */
+        private static final class Value {
+            private final String value;
+
+            Value(String value) {
+                this.value = value;
+            }
+        }
+
+        private static final class KeyHistory {
+            private final String before;
+            private final Deque<Value> values = new ArrayDeque<>();
+
+            KeyHistory(String before) {
+                this.before = before;
+            }
+        }
     }
 }

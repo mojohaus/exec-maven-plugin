@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
  * <ul>
  *   <li><code>fail</code>: throws at once.</li>
  *   <li><code>finish</code>: returns at once, leaving no thread.</li>
+ *   <li><code>wait</code>: waits until interrupted.</li>
  *   <li><code>tcp PORT</code>: listens on the port until interrupted.</li>
  *   <li><code>late-fail PORT</code>: listens on the port and throws as soon as {@link #failNow} is released.</li>
  *   <li><code>stubborn</code>: returns, leaving a non-daemon thread that ignores interruption until
@@ -44,6 +45,9 @@ public class AsyncTestMain {
             case "fail":
                 throw new IllegalStateException("boom");
             case "finish":
+                return;
+            case "wait":
+                awaitInterrupt();
                 return;
             case "tcp":
                 try (ServerSocket socket = new ServerSocket(Integer.parseInt(args[1]))) {
