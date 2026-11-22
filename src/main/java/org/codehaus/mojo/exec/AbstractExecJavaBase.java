@@ -182,7 +182,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     protected long daemonThreadJoinTimeout;
 
     /**
-     * Wether to call {@link Thread#stop()} following a timing out of waiting for an interrupted thread to finish. This
+     * Whether to call {@link Thread#stop()} following a timing out of waiting for an interrupted thread to finish. This
      * is only taken into account if {@link #cleanupDaemonThreads} is <code>true</code> and the
      * {@link #daemonThreadJoinTimeout} threshold has been reached for an uncooperative thread. If this is
      * <code>false</code>, or if {@link Thread#stop()} fails to get the thread to stop, then a warning is logged and

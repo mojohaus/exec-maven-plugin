@@ -116,3 +116,23 @@ To get the two arguments on the command line instead, set `longModulepath` to `f
 
 Use this setting also when the executable is not `java` but a launcher that does not understand `@` argument files.
 Only the pair of `--module-path` (or `-p`) followed by `<modulepath/>` is rewritten: a `<modulepath/>` without that option before it is replaced by the bare path.
+
+## Arguments in a file
+
+A long command line can exceed the limit of the operating system. Set `argumentsFile` to `true`, for example with
+`-Dexec.argumentsFile=true`, and the `exec` goal writes all arguments to the file `target/commandLineArguments`,
+relative to the directory Maven runs in, and passes `@target/commandLineArguments` as the only argument. The
+program must understand `@` argument files, as `java` does:
+
+```xml
+<configuration>
+  <executable>java</executable>
+  <argumentsFile>true</argumentsFile>
+  <arguments>
+    <argument>-classpath</argument>
+    <classpath/>
+    <argument>com.example.Main</argument>
+  </arguments>
+</configuration>
+```
+

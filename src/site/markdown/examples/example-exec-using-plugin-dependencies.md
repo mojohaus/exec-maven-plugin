@@ -9,7 +9,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,15 +21,15 @@ limitations under the License.
 Using Plugin Dependencies Instead of Project Dependencies
 =========================================================
 
-Ocassionally it is desirable to execute a Java class without affecting your project's dependencies.
+Occasionally it is desirable to execute a Java class without affecting your project's dependencies.
 For example, if you are using the Maven csharp plugins, adding Java dependencies to your project
 will upset the csharp compiler. Therefore the Exec Maven Plugin allows you specify dependencies of
 your executable class as plugin dependencies. Since Maven takes plugin dependencies into consideration
 when determining build order for a multi-module project your build order should automatically be
-appropriately adjusted (I think).
+appropriately adjusted.
 
 If you specify your executable class dependencies as plugin dependencies, you may end up with extraneous
-undesirable dependences required by the Exec Maven Plugin but not by your executable class. If this
+undesirable dependencies required by the Exec Maven Plugin but not by your executable class. If this
 causes a problem, or if you simply prefer to avoid the extraneous dependencies you can use the
 `<executableDependency>` configuration element. The `<executableDependency>` element allows you to identify
 the particular artifact in the list of the plugin's dependencies which contains your executable class.
@@ -42,10 +42,13 @@ executed from seeing extraneous classes, the Exec Maven Plugin itself will still
 dependencies. For example if your executable Java class has a dependency upon a brand new version of
 `org.codehaus.plexus:plexus-utils` and you specify this as a plugin dependency then the Exec Maven Plugin,
 which already has a transitive dependency upon `org.codehaus.plexus:plexus-utils`, will end up using
-the brand new version you explictly supplied. It is unlikely you will encounter a situation
+the brand new version you explicitly supplied. It is unlikely you will encounter a situation
 where this will be a problem, but hopefully this knowledge will help you diagnose such a problem if
 it occurs. None of this is relevant unless you're using the plugin dependencies for your
 executable (`includePluginDependencies=true`).
+
+Since 3.7.0, `mainClass` can be left out when `executableDependency` is set: the `exec:java` goal then runs the
+`Main-Class` entry of that dependency's manifest, and fails if the manifest has none.
 
 Example POM Configuration using Plugin Dependencies
 ---------------------------------------------------
@@ -58,7 +61,6 @@ Example POM Configuration using Plugin Dependencies
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${project.version}</version>
         <executions>
           <execution>
             ...
@@ -101,3 +103,4 @@ Example POM Configuration using Plugin Dependencies
    ...
 </project>
 ```
+

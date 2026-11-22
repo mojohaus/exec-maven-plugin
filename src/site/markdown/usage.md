@@ -9,7 +9,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,7 @@ Exec goal
 You can formally specify all the relevant execution information in the plugin configuration.
 Depending on your use case, you can also specify some or all information using system properties.
 
-#[[### Command line]]#
+### Command line
 
 Using system properties you would just execute it like in the following example.
 
@@ -35,7 +35,7 @@ Using system properties you would just execute it like in the following example.
 mvn exec:exec -Dexec.executable="maven" [-Dexec.workingdir="/tmp"] -Dexec.args="-X myproject:dist"
 ```
 
-#[[### POM Configuration]]#
+### POM Configuration
 
 Add a configuration similar to the following to your POM:
 
@@ -47,7 +47,7 @@ Add a configuration similar to the following to your POM:
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${project.version}</version>
+        <version><!-- latest release --></version>
         <executions>
           <execution>
             ...
@@ -81,16 +81,16 @@ Java goal
 
 This goal helps you run a Java program within the same VM as Maven.
 
-#[[### Differences compared to plain command line]]#
+### Differences compared to plain command line
 
 The goal goes to great length to try to mimic the way the VM works, but there are some subtle differences.
 Today all differences come from the way the goal deals with **thread management**.
 
-| command line | Java Mojo |
-| --- | --- |
+|                             command line                              |                                                                                                                                            Java Mojo                                                                                                                                             |
+|-----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | The VM exits as soon as the only remaining threads are daemon threads | By default daemon threads are joined and interrupted once all known non daemon threads have quit. The join timeout is customisable. The user might wish to further cleanup by stopping the unresponsive threads. The user can disable the full extra thread management (interrupt/join/\[stop\]) |
 
-#[[#### Important limitation: Thread Group Isolation]]#
+#### Important limitation: Thread Group Isolation
 
 The java goal tracks threads created within its own **isolated thread group**.
 It does **not** track threads created in other thread groups.
@@ -118,7 +118,7 @@ Read the documentation for the [java goal](./java-mojo.html) for more informatio
 
 If you find out that these differences are unacceptable for your case, you may need to use the [exec goal](./exec-mojo.html) to wrap your Java executable.
 
-#[[### Command line]]#
+### Command line
 
 If you want to execute Java programs in the same VM, you can either use the command line version
 
@@ -126,7 +126,7 @@ If you want to execute Java programs in the same VM, you can either use the comm
 mvn exec:java -Dexec.mainClass="com.example.Main" [-Dexec.args="argument1"] ...
 ```
 
-#[[### POM Configuration]]#
+### POM Configuration
 
 or you can configure the plugin in your POM:
 
@@ -138,7 +138,6 @@ or you can configure the plugin in your POM:
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${project.version}</version>
         <executions>
           <execution>
             ...
@@ -177,3 +176,8 @@ MAVEN_OPTS=-Xmx1024m
 ```
 
 Otherwise consider using the `exec` goal.
+
+By default the class loader that runs the main class is closed once the program is done, so shutdown hooks and
+daemon threads that load a class afterwards fail with a `NoClassDefFoundError`. Since 3.7.0, set
+`keepClassLoaderOpen` to `true` to keep it open. An open class loader and its classes stay in memory for as long
+as a thread or hook references them, which matters in a long-lived Maven process such as mvnd.

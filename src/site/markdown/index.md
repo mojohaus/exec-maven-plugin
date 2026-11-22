@@ -20,7 +20,8 @@ limitations under the License.
 
 # Exec Maven Plugin
 
-The plugin provides 2 goals to help execute system and Java programs.
+The plugin provides 2 goals to help execute system and Java programs. It requires Maven 3.9.0 or later
+and Java 8 or later.
 
 ## Goals Overview
 

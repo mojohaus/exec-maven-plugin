@@ -38,3 +38,25 @@ or, on the command line,
 mvn exec:java [...] -Dexec.classpathScope="test"
 ```
 
+## Leaving dependencies off the classpath
+
+Since 3.7.0, `classpathDependencyExcludes` removes project dependencies from the classpath of both
+`exec:java` and `exec:exec`. List each one as `groupId:artifactId`. Only the named artifact is removed; its
+transitive dependencies stay.
+
+```xml
+<configuration>
+  ...
+  <classpathDependencyExcludes>
+    <classpathDependencyExclude>org.acme:project-a</classpathDependencyExclude>
+  </classpathDependencyExcludes>
+  ...
+</configuration>
+```
+
+or, on the command line,
+
+```sh
+mvn exec:java [...] -Dexec.classpathDependencyExcludes="org.acme:project-a"
+```
+
