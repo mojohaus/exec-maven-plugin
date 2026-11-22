@@ -9,7 +9,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,7 @@ Plugin Dependencies
 
 Plugin Dependencies are referenced from within the plugin configuration.
 
-#[[### pom.xml]]#
+### pom.xml
 
 ```xml
 <project>
@@ -43,7 +43,6 @@ Plugin Dependencies are referenced from within the plugin configuration.
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${project.version}</version>
         ...
         <configuration>
           <executableDependency>
@@ -68,3 +67,4 @@ Plugin Dependencies are referenced from within the plugin configuration.
   ...
 </project>
 ```
+

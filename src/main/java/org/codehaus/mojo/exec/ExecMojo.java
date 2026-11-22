@@ -338,7 +338,10 @@ public class ExecMojo extends AbstractExecMojo {
     private boolean async;
 
     /**
-     * If set to true all arguments will be written to file and then used as arguments file using a '@' when using the exec variant.
+     * If set to true, all arguments are written to the file <code>target/commandLineArguments</code>, relative to the
+     * directory Maven runs in, and the program gets <code>@target/commandLineArguments</code> as its only argument. The
+     * program must understand <code>@</code> argument files, as <code>java</code> does. This avoids the command line
+     * length limit of the operating system.
      */
     @Parameter(property = "exec.argumentsFile", defaultValue = "false")
     private boolean argumentsFile;

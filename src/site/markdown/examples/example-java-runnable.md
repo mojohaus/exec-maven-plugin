@@ -9,7 +9,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +34,6 @@ pom.xml
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${project.version}</version>
         <executions>
           <execution>
             ...
@@ -65,7 +64,7 @@ The Runnable can be a plain class but can also get constructor injections:
 * `highestVersionResolver`: `Function<String, String>`, passing a `groupId:artifactId` you get the latest resolved version from the project repositories.
 
 Lastly you can inject a custom maven component naming the Runnable constructor parameter with its type and replacing dots by underscores.
-If you need to provide a hint you can suffix previous type name by #[[`__hint_$yourhint`]]# (assuming it stays a valid java name).
+If you need to provide a hint you can suffix previous type name by `__hint_$yourhint` (assuming it stays a valid java name).
 This kind of parameter injection must be typed `Object`.
 
 Example:
@@ -91,3 +90,4 @@ public class HelloRunnable implements Runnable {
     }
 }
 ```
+
