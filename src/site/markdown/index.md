@@ -20,7 +20,7 @@ limitations under the License.
 
 # Exec Maven Plugin
 
-The plugin provides 2 goals to help execute system and Java programs. It requires Maven 3.9.0 or later
+The plugin provides 3 goals to help execute system and Java programs. It requires Maven 3.9.0 or later
 and Java 8 or later.
 
 ## Goals Overview
@@ -28,7 +28,8 @@ and Java 8 or later.
 General information about the goals.
 
 * [exec:exec](./exec-mojo.html) execute programs and Java programs in a separate process.
-* [exec:java](./java-mojo.html) execute Java programs in the same VM.
+* [exec:java](./java-mojo.html) execute Java programs in the same VM, optionally in the background.
+* [exec:java-stop](./java-stop-mojo.html) stop the Java programs that `exec:java` runs in the background.
 
 ## Usage
 

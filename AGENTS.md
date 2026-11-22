@@ -5,9 +5,11 @@ what the code and the POMs do not make obvious.
 
 ## Layout
 
-- One module with the goals `exec` (`ExecMojo`, runs a program in a forked process) and `java`
-  (`ExecJavaMojo`, runs a main class in the Maven JVM), in `org.codehaus.mojo.exec`.
-  `AbstractExecMojo` and `AbstractExecJavaBase` hold what they share.
+- One module with the goals `exec` (`ExecMojo`, runs a program in a forked process), `java`
+  (`ExecJavaMojo`, runs a main class in the Maven JVM) and `java-stop` (`ExecJavaStopMojo`, stops what
+  `java` runs with `async`), in `org.codehaus.mojo.exec`. `AbstractExecMojo` and `AbstractExecJavaBase`
+  hold what they share. A program that `java` runs in the background is an `AsyncJavaProgram` in the
+  plugin context of the project, keyed by execution id.
 - `src/main/java9` holds Java 9+ code. The `java9-mrjar` profile (JDK 9 and later) compiles it with
   `release` 9 into `META-INF/versions/9` of the jar, so the jar is multi-release.
 - The site is built from `src/site`.
@@ -52,6 +54,9 @@ what the code and the POMs do not make obvious.
 
 - The forked builds get `-XX:TieredStopAtLevel=1 -XX:+UseSerialGC` through `mavenOpts`, not through
   `JAVA_TOOL_OPTIONS`, which the JVMs that the tests start would report on stderr.
+
+- An IT that needs a free port writes `.mvn/maven.config` with it from `setup.groovy` (see `java-async`), and one
+  that must prove Maven exits sets `invoker.timeoutInSeconds`, so that a hang fails the test.
 
 - Write `verify.groovy` as `assert` statements. Invoker fails a script whose last expression is
   anything other than `true` or `null`, so a trailing `list.each { }` fails the test; use a `for`
