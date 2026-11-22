@@ -170,9 +170,12 @@ public class ExecMojo extends AbstractExecMojo {
 
     /**
      * When enabled, program standard and error output will be redirected to the
-     * Maven logger as <i>Info</i> and <i>Error</i> level logs, respectively. If not enabled the
-     * traditional behavior of program output being directed to standard System.out
-     * and System.err is used.<br>
+     * Maven logger as <i>Info</i> and <i>Error</i> level logs, respectively. This is enabled by
+     * default, so program output stays in order with the other Maven log messages
+     * (in particular with Maven 4, where output written straight to standard
+     * System.out and System.err is buffered until the end of the execution).
+     * To restore the traditional behavior of program output being directed to
+     * standard System.out and System.err, set {@code exec.useMavenLogger=false}.<br>
      * <br>
      * NOTE: When enabled, to log the program standard out as Maven <i>Debug</i> level instead of
      * <i>Info</i> level use {@code exec.quietLogs=true}. <br>
@@ -231,7 +234,7 @@ public class ExecMojo extends AbstractExecMojo {
      * @see java.lang.System#err
      * @see java.lang.System#in
      */
-    @Parameter(property = "exec.useMavenLogger", defaultValue = "false")
+    @Parameter(property = "exec.useMavenLogger", defaultValue = "true")
     private boolean useMavenLogger;
 
     /**
