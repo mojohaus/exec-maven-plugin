@@ -1,9 +1,6 @@
 package org.codehaus.mojo.exec;
 
 import javax.inject.Inject;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,14 +15,17 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.jar.Attributes;
@@ -34,6 +34,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -168,33 +169,76 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     protected boolean keepClassLoaderOpen;
 
     /**
-     * If set to true the Java class executes asynchronously and build execution continues in parallel.
+     * If set to true the Java class runs in the background and the build continues once it has started. Stop it with
+     * the <a href="java-stop-mojo.html">java-stop</a> goal, by default in the <code>post-integration-test</code>
+     * phase. If the build ends without that goal, a shutdown hook interrupts the program, waits at most
+     * {@link #daemonThreadJoinTimeout} for it and does not wait for its non-daemon threads.
+     * <p>
+     * Unlike the <code>async</code> parameter of <code>exec:exec</code> this one has its own property, as a build
+     * that sets <code>exec.async</code> for a forked process would otherwise also move every <code>exec:java</code>
+     * execution into the background, where it needs a stop goal.
+     * </p>
+     * <p>
+     * The system properties of the program and the system exit handling of {@link #blockSystemExit} are those of the
+     * whole Maven JVM, so a background program that calls <code>System.exit</code> ends the build unless
+     * <code>blockSystemExit</code> is set. The execution id selects the program: two executions that run in the
+     * background in one project need different ids, and one project does not see the programs of another.
+     * </p>
+     *
+     * @since 3.8.0
      */
-    @Parameter(property = "exec.async", defaultValue = "false")
+    @Parameter(property = "exec.java.async", defaultValue = "false")
     protected boolean async;
 
     /**
-     * Sets the script code to check if the Java class is successfully started.
-     * <p>
-     * The script is evaluated until it returns <code>true</code>. It is only supported when {@link #async} is
-     * <code>true</code>.
+     * Tells when a program that runs in the background is ready, so that the build waits for it before it goes on.
+     * Without it the goal returns as soon as the program is launched. It applies only when {@link #async} is
+     * <code>true</code>. It is one of:
+     * <ul>
+     *     <li><code>tcp://host:port</code>: ready once a connection to the port opens.</li>
+     *     <li><code>http://host:port/path</code> or <code>https://...</code>: ready once a GET request answers with
+     *         a 2xx status.</li>
+     *     <li>a script, when {@link #asyncStartCheckScriptLanguage} is set: ready once the script evaluates to
+     *         <code>true</code>.</li>
+     * </ul>
+     * The check is polled every {@link #asyncStartCheckPollInterval} milliseconds, for at most
+     * {@link #asyncStartTimeout} milliseconds. The goal fails, and stops the program, when the time is up, when the
+     * program throws, or when it ends before it is ready.
+     *
+     * @since 3.8.0
      */
     @Parameter(property = "exec.asyncStartCheck")
     protected String asyncStartCheck;
 
     /**
-     * Sets the script language to evaluate the {@link #asyncStartCheck}.
-     * <p>
-     * It is possible to add new plugin dependencies of script libraries supporting JSR-223.
+     * The JSR-223 language name that turns {@link #asyncStartCheck} into a script, such as <code>groovy</code>. There
+     * is no default, because the JDK ships no script engine since Java 15: add an implementation of the language as a
+     * dependency of the plugin. The script must evaluate to a boolean.
+     *
+     * @since 3.8.0
      */
-    @Parameter(property = "exec.asyncStartCheckScriptLanguage", defaultValue = "JavaScript")
+    @Parameter(property = "exec.asyncStartCheckScriptLanguage")
     protected String asyncStartCheckScriptLanguage;
 
     /**
-     * Sets the poll interval in ms to evaluate the {@link #asyncStartCheck}.
+     * The time in milliseconds between two runs of the {@link #asyncStartCheck}.
+     *
+     * @since 3.8.0
      */
-    @Parameter(property = "exec.asyncStartCheckPollInterval", defaultValue = "1000")
-    protected int asyncStartCheckPollInterval;
+    @Parameter(property = "exec.asyncStartCheckPollInterval", defaultValue = "500")
+    protected long asyncStartCheckPollInterval;
+
+    /**
+     * The longest time in milliseconds to wait for the {@link #asyncStartCheck} to succeed. It must be positive: the
+     * wait is always bounded.
+     *
+     * @since 3.8.0
+     */
+    @Parameter(property = "exec.asyncStartTimeout", defaultValue = "60000")
+    protected long asyncStartTimeout;
+
+    @Parameter(defaultValue = "${mojoExecution}", readonly = true)
+    private MojoExecution mojoExecution;
 
     /**
      * This defines the number of milliseconds to wait for daemon threads to quit following their interruption.<br/>
@@ -206,6 +250,10 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      * example java.util.Timer is known to not handle interruptions in JDK &lt;= 1.6. So it is not possible for us to
      * infinitely wait by default otherwise maven could hang. A sensible default value has been chosen, but this default
      * value <i>may change</i> in the future based on user feedback.
+     * </p>
+     * <p>
+     * A program that runs in the background ({@link #async}) is always interrupted when it is stopped, and the stop
+     * never waits unbounded: a value &lt;=0 means 15000 there.
      * </p>
      *
      * @since 1.1-beta-1
@@ -325,6 +373,21 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             getLog().debug(msg);
         }
 
+        AsyncStartCheck startCheck = null;
+        if (async) {
+            if (asyncStartTimeout <= 0) {
+                throw new MojoExecutionException("asyncStartTimeout must be positive, but it is " + asyncStartTimeout);
+            }
+            if (asyncStartCheckPollInterval <= 0) {
+                throw new MojoExecutionException(
+                        "asyncStartCheckPollInterval must be positive, but it is " + asyncStartCheckPollInterval);
+            }
+            if (asyncStartCheck != null) {
+                startCheck = AsyncStartCheck.create(asyncStartCheck, asyncStartCheckScriptLanguage);
+            }
+            AsyncJavaProgram.checkNotRunning(getPluginContextMap(), getAsyncExecutionId());
+        }
+
         if (preloadCommonPool >= 0) {
             preloadCommonPool();
         }
@@ -396,45 +459,83 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         bootstrapThread.start();
         if (!async) {
             terminate(threadGroup, classLoader);
-        } else if (asyncStartCheck != null) {
-            // wait until condition to know that java thread has started
-            ScriptEngineManager factory = new ScriptEngineManager();
-            // create a JavaScript engine
-            ScriptEngine engine = factory.getEngineByName(asyncStartCheckScriptLanguage);
-            if (engine == null) {
-                throw new MojoExecutionException(
-                        "Couldn't find engine for script language " + asyncStartCheckScriptLanguage);
-            }
-            // evaluate JavaScript code from String
-            while (true) {
-                try {
-                    Thread.sleep(asyncStartCheckPollInterval);
-                } catch (InterruptedException e) {
-                    throw new MojoExecutionException("Couldn't not sleep for poll interval.", e);
-                }
-                try {
-                    if ((Boolean) engine.eval(asyncStartCheck)) {
-                        getLog().info("Java class is ready.");
-                        break;
-                    } else {
-                        getLog().info("Java class is not yet ready. Waiting ...");
-                    }
-                } catch (ScriptException e) {
-                    throw new MojoExecutionException("Couldn't evaluate start check expression.", e);
-                }
-            }
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    try {
-                        terminate(threadGroup, classLoader);
-                    } catch (MojoExecutionException e) {
-                        getLog().error(e);
-                    }
-                }
-            });
+        } else {
+            AsyncJavaProgram program = new AsyncJavaProgram(
+                    getAsyncExecutionId(), this, threadGroup, bootstrapThread, classLoader, originalSystemProperties);
+            program.register(getPluginContextMap());
+            awaitReady(program, startCheck);
         }
 
         registerSourceRoots();
+    }
+
+    /**
+     * Waits until the program that runs in the background is ready. When it cannot become ready the program is
+     * stopped, so that nothing is left behind, and the goal fails.
+     */
+    private void awaitReady(AsyncJavaProgram program, AsyncStartCheck startCheck) throws MojoExecutionException {
+        if (startCheck == null) {
+            getLog().info("The Java class runs in the background. Stop it with exec:java-stop.");
+            return;
+        }
+        final long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(asyncStartTimeout);
+        try {
+            while (true) {
+                Throwable failure = program.getFailure();
+                if (failure != null) {
+                    throw new MojoExecutionException(
+                            "The Java class failed before it was ready. " + failure.getMessage(), failure);
+                }
+                if (startCheck.isReady()) {
+                    getLog().info("The Java class is ready. Stop it with exec:java-stop.");
+                    return;
+                }
+                if (!program.isAlive()) {
+                    // it may have thrown just after the failure was read above
+                    failure = program.getFailure();
+                    if (failure != null) {
+                        throw new MojoExecutionException(
+                                "The Java class failed before it was ready. " + failure.getMessage(), failure);
+                    }
+                    throw new MojoExecutionException("The Java class ended before it was ready");
+                }
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    throw new MojoExecutionException("The Java class was not ready after " + asyncStartTimeout
+                            + " ms, as asyncStartCheck '" + asyncStartCheck + "' says");
+                }
+                getLog().info("The Java class is not yet ready. Waiting ...");
+                try {
+                    Thread.sleep(Math.min(asyncStartCheckPollInterval, TimeUnit.NANOSECONDS.toMillis(remaining) + 1));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new MojoExecutionException("Interrupted while waiting for the Java class to be ready", e);
+                }
+            }
+        } catch (MojoExecutionException | RuntimeException e) {
+            program.abort(getPluginContextMap());
+            throw e;
+        }
+    }
+
+    /**
+     * @return the id that tells the programs of one project apart: the id of the execution, which is
+     *         <code>default-cli</code> on the command line
+     */
+    private String getAsyncExecutionId() {
+        return mojoExecution != null && mojoExecution.getExecutionId() != null
+                ? mojoExecution.getExecutionId()
+                : "default";
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getPluginContextMap() {
+        Map<String, Object> context = getPluginContext();
+        if (context == null) {
+            context = new HashMap<>();
+            setPluginContext(context);
+        }
+        return context;
     }
 
     /**
@@ -799,6 +900,10 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             super(name);
         }
 
+        synchronized Throwable getUncaughtException() {
+            return uncaughtException;
+        }
+
         @Override
         public void uncaughtException(Thread thread, Throwable throwable) {
             if (throwable instanceof ThreadDeath) {
@@ -867,6 +972,17 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     }
 
     protected void terminateThreads(ThreadGroup threadGroup) {
+        terminateThreads(threadGroup, daemonThreadJoinTimeout);
+    }
+
+    /**
+     * Interrupts the threads of the group and waits for them.
+     *
+     * @param threadGroup the group
+     * @param joinTimeout the number of milliseconds to wait for all of them, <code>&lt;=0</code> to wait without
+     *                    limit
+     */
+    protected void terminateThreads(ThreadGroup threadGroup, long joinTimeout) {
         long startTime = System.currentTimeMillis();
         Set<Thread> uncooperativeThreads = new HashSet<>(); // these were not responsive to interruption
         for (Collection<Thread> threads = getActiveThreads(threadGroup);
@@ -884,11 +1000,11 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 if (!thread.isAlive()) {
                     continue; // and, presumably it won't show up in getActiveThreads() next iteration
                 }
-                if (daemonThreadJoinTimeout <= 0) {
+                if (joinTimeout <= 0) {
                     joinThread(thread, 0); // waits until not alive; no timeout
                     continue;
                 }
-                long timeout = daemonThreadJoinTimeout - (System.currentTimeMillis() - startTime);
+                long timeout = joinTimeout - (System.currentTimeMillis() - startTime);
                 if (timeout > 0) {
                     joinThread(thread, timeout);
                 }
