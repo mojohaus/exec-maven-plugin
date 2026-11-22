@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo.exec.it</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.1</version>
+  </parent>
+
+  <artifactId>java-async</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <executions>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>Server</mainClass>
+              <arguments>
+                <argument>${it.port}</argument>
+                <argument>${project.build.directory}/server-stopped.txt</argument>
+              </arguments>
+              <async>true</async>
+              <asyncStartCheck>tcp://localhost:${it.port}</asyncStartCheck>
+            </configuration>
+          </execution>
+          <execution>
+            <id>check</id>
+            <phase>integration-test</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>Client</mainClass>
+              <arguments>
+                <argument>${it.port}</argument>
+                <argument>${project.build.directory}/client-connected.txt</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>stop</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>java-stop</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
