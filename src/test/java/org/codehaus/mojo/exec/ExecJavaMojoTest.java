@@ -604,4 +604,17 @@ class ExecJavaMojoTest {
             }
         }
     }
+
+    /**
+     * Test the async feature.
+     *
+     * @throws Exception if any exception occurs
+     */
+    @Test
+    @InjectMojo(goal = "java", pom = "src/test/projects/project-async/pom.xml")
+    void asyncRun(ExecJavaMojo mojo) throws Exception {
+        String output = execute(mojo);
+        assertTrue(output.trim().contains("Started test server."));
+        TestServerMain.stop();
+    }
 }
