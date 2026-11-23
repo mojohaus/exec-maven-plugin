@@ -13,6 +13,7 @@ import javax.inject.Inject;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -158,6 +159,16 @@ class ExecMojoTest {
         mojo.execute();
 
         checkMojo(SOME_EXECUTABLE + " --version");
+    }
+
+    // GH-527
+    @Test
+    @InjectMojo(goal = "exec")
+    void useMavenLoggerDefaultsToTrue(ExecMojo execMojo) throws Exception {
+        Field field = ExecMojo.class.getDeclaredField("useMavenLogger");
+        field.setAccessible(true);
+
+        assertTrue((Boolean) field.get(execMojo), "useMavenLogger should default to true");
     }
 
     // MEXEC-12, MEXEC-72
