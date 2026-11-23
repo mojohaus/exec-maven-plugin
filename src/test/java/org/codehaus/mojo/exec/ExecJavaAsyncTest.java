@@ -306,6 +306,32 @@ class ExecJavaAsyncTest {
 
     @Test
     @InjectMojo(goal = "java")
+    void stopFailsOnLingeringThreadsAfterCleaningUp(ExecJavaMojo mojo) throws Exception {
+        assertTimeoutPreemptively(LIMIT, () -> {
+            asyncProgram(mojo, "org.codehaus.mojo.exec.AsyncTestMain", null, "stubborn");
+            setVariableValueToObject(mojo, "daemonThreadJoinTimeout", 500L);
+            setVariableValueToObject(mojo, "failOnLingeringThreads", true);
+            Property property = new Property();
+            property.setKey("exec.async.lingering.test");
+            property.setValue("set");
+            setVariableValueToObject(mojo, "systemProperties", new AbstractProperty[] {property});
+            mojo.execute();
+            assertEquals("set", System.getProperty("exec.async.lingering.test"));
+            try {
+                MojoExecutionException e = assertThrows(MojoExecutionException.class, () -> stop(null));
+                // the exception comes after the cleanup, which restores the properties as its last step
+                assertNull(System.getProperty("exec.async.lingering.test"));
+                assertTrue(e.getMessage().contains("did not finish within 500 ms"), e.getMessage());
+                assertTrue(e.getMessage().contains("execution 'default'"), e.getMessage());
+                assertTrue(AsyncJavaProgram.findAll(pluginContext).isEmpty());
+            } finally {
+                AsyncTestMain.release.countDown();
+            }
+        });
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
     void restoresTheSystemProperties(ExecJavaMojo mojo) throws Exception {
         assertTimeoutPreemptively(LIMIT, () -> {
             int port = freePort();

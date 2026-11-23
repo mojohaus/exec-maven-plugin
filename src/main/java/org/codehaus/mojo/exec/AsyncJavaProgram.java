@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -51,6 +52,7 @@ final class AsyncJavaProgram {
     private final URLClassLoader classLoader;
     private final SystemPropertyChanges systemProperties;
     private final AtomicBoolean stopped = new AtomicBoolean();
+    private volatile List<Thread> lingering = Collections.emptyList();
     private final Thread shutdownHook;
 
     AsyncJavaProgram(
@@ -171,6 +173,7 @@ final class AsyncJavaProgram {
                             + failure.getMessage(),
                     failure);
         }
+        owner.failOnLingering(lingering, stopTimeout(), "the Java program of the execution '" + executionId + "'");
     }
 
     private void unregister(Map<String, Object> pluginContext) {
@@ -222,7 +225,7 @@ final class AsyncJavaProgram {
             }
         }
         Throwable failure = getFailure();
-        owner.terminateThreads(threadGroup, stopTimeout());
+        lingering = owner.interruptAndJoin(threadGroup, stopTimeout());
         if (owner.cleanupDaemonThreads) {
             try {
                 threadGroup.destroy();

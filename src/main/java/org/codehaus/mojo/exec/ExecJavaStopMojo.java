@@ -30,7 +30,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 /**
  * Stops the Java programs that <code>exec:java</code> runs in the background (<code>async</code>) in the current
  * project: interrupts their threads, waits for them, closes their class loaders and restores the system properties.
- * The goal fails if a program threw an exception, so that a failure in the background fails the build.
+ * The goal fails if a program threw an exception, so that a failure in the background fails the build. It also
+ * fails when <code>failOnLingeringThreads</code> is set and a thread of the program is still alive after the
+ * interruption and the wait.
  * <p>
  * Without a program to stop it logs that and succeeds, even when <code>startExecutionId</code> names an execution
  * that has none, so it is safe to bind when the start is skipped or does not run in the background.
