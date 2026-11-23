@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
 
 import org.apache.maven.api.plugin.testing.InjectMojo;
 import org.apache.maven.api.plugin.testing.MojoParameter;
@@ -41,12 +42,13 @@ import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledForJreRange;
-import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -324,36 +326,71 @@ class ExecJavaMojoTest {
 
     /**
      * See <a href="http://jira.codehaus.org/browse/MEXEC-15">MEXEC-15</a>,
-     * <a href="https://github.com/mojohaus/exec-maven-plugin/issues/391">GitHub-391</a>.
-     * <p>
-     * FIXME: This sometimes fails with {@code unit.framework.ComparisonFailure: expected:<...>; but was:<...3(f)>}.
-     *
-     * @throws Exception if any exception occurs
+     * <a href="https://github.com/mojohaus/exec-maven-plugin/issues/391">GitHub-391</a>. The thread ignores the
+     * interruption, so it lingers: the build succeeds and the warning names the thread.
      */
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
-    @MojoParameter(name = "daemonThreadJoinTimeout", value = "3000")
-    @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
-    @EnabledForJreRange(max = JRE.JAVA_19)
-    void uncooperativeThread(ExecJavaMojo mojo) throws Exception {
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "500")
+    void uncooperativeThreadIsReported(ExecJavaMojo mojo) throws Exception {
+        Log log = Mockito.mock(Log.class);
+        mojo.setLog(log);
         String output = execute(mojo);
-        // note: execute() will wait a little bit before returning the output,
-        // thereby allowing the stop()'ed thread to output the final "(f)".
-        assertEquals(MainUncooperative.SUCCESS, output.trim());
+        assertEquals(MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim());
+        assertTrue(warnings(log)
+                .anyMatch(w -> w.contains("will linger") && w.contains(MainUncooperative.NAME) && w.contains("\tat ")));
     }
 
     @Test
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
-    @MojoParameter(name = "daemonThreadJoinTimeout", value = "3000")
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "500")
+    @MojoParameter(name = "failOnLingeringThreads", value = "true")
+    void uncooperativeThreadFailsTheBuild(ExecJavaMojo mojo) throws Exception {
+        mojo.setLog(Mockito.mock(Log.class));
+        MojoExecutionException e = assertThrows(MojoExecutionException.class, () -> execute(mojo));
+        assertTrue(e.getMessage().contains("'" + MainUncooperative.NAME + "'"), e.getMessage());
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "500")
     @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
-    @EnabledForJreRange(min = JRE.JAVA_20)
-    void uncooperativeThreadJdk20(ExecJavaMojo mojo) throws Exception {
+    void stopUnresponsiveDaemonThreadsIsDeprecatedAndInert(ExecJavaMojo mojo) throws Exception {
+        Log log = Mockito.mock(Log.class);
+        mojo.setLog(log);
         String output = execute(mojo);
-        // note: execute() will wait a little bit before returning the output,
-        // thereby allowing the stop()'ed thread to output the final "(f)".
+        // the thread is interrupted but never stopped, on every JDK
         assertEquals(MainUncooperative.INTERRUPTED_BUT_NOT_STOPPED, output.trim());
+        assertEquals(
+                1,
+                warnings(log)
+                        .filter(w -> w.contains("stopUnresponsiveDaemonThreads has no effect"))
+                        .count());
+    }
+
+    /** The lingering thread would print into the output of the tests that follow. */
+    @AfterEach
+    void releaseUncooperativeThread() throws InterruptedException {
+        System.setProperty(MainUncooperative.QUIT_PROPERTY, "true");
+        try {
+            for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                if (MainUncooperative.NAME.equals(thread.getName())) {
+                    thread.interrupt();
+                    thread.join(5000);
+                }
+            }
+        } finally {
+            System.clearProperty(MainUncooperative.QUIT_PROPERTY);
+        }
+    }
+
+    private static Stream<String> warnings(Log log) {
+        ArgumentCaptor<CharSequence> messages = ArgumentCaptor.forClass(CharSequence.class);
+        Mockito.verify(log, Mockito.atLeast(0)).warn(messages.capture());
+        return messages.getAllValues().stream().map(CharSequence::toString);
     }
 
     /**

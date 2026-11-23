@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,7 +56,10 @@ import static java.util.stream.Collectors.toList;
  * @since 3.6.2
  */
 public abstract class AbstractExecJavaBase extends AbstractExecMojo {
-    // Implementation note: Constants can be included in javadocs by {@value #MY_CONST}
+    /**
+     * @deprecated no longer used: the plugin never stops a thread
+     */
+    @Deprecated
     protected static final String THREAD_STOP_UNAVAILABLE =
             "Thread.stop() is unavailable in this JRE version, cannot force-stop any threads";
 
@@ -142,7 +146,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      * <p>
      * In certain cases (in particular if maven is embedded), you might need to keep this enabled to make sure threads
      * are properly cleaned up to ensure they don't interfere with subsequent activity. In that case, see
-     * {@link #daemonThreadJoinTimeout} and {@link #stopUnresponsiveDaemonThreads} for further tuning.
+     * {@link #daemonThreadJoinTimeout} and {@link #failOnLingeringThreads} for further tuning.
      * </p>
      *
      * @since 1.1-beta-1
@@ -264,23 +268,29 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     protected long daemonThreadJoinTimeout;
 
     /**
-     * Whether to call {@link Thread#stop()} following a timing out of waiting for an interrupted thread to finish. This
-     * is only taken into account if {@link #cleanupDaemonThreads} is <code>true</code> and the
-     * {@link #daemonThreadJoinTimeout} threshold has been reached for an uncooperative thread. If this is
-     * <code>false</code>, or if {@link Thread#stop()} fails to get the thread to stop, then a warning is logged and
-     * Maven will continue on while the affected threads (and related objects in memory) linger on. Consider setting
-     * this to <code>true</code> if you are invoking problematic code that you can't fix. An example is
-     * {@link java.util.Timer} which doesn't respond to interruption. To have <code>Timer</code> fixed, vote for
-     * <a href="https://bugs.java.com/bugdatabase/view_bug?bug_id=6336543">this bug</a>.
-     * <p>
-     * <b>Note:</b> In JDK 20+, the long deprecated {@link Thread#stop()} (since JDK 1.2) has been removed and will
-     * throw an {@link UnsupportedOperationException}. This will be handled gracefully, yielding a log warning
-     * {@value #THREAD_STOP_UNAVAILABLE} once and not trying to stop any further threads during the same execution.
+     * Has no effect. The JDK no longer supports stopping a thread ({@code Thread.stop()} was removed), so the plugin
+     * never stops one. A thread that is still alive after the interruption and the {@link #daemonThreadJoinTimeout}
+     * is logged with its name and stack trace; use {@link #failOnLingeringThreads} to fail the build instead.
      *
      * @since 1.1-beta-1
+     * @deprecated has no effect; see {@link #failOnLingeringThreads}
      */
+    @Deprecated
     @Parameter(property = "exec.stopUnresponsiveDaemonThreads", defaultValue = "false")
     protected boolean stopUnresponsiveDaemonThreads;
+
+    /**
+     * Whether to fail with a {@link MojoExecutionException} when a thread of the program is still alive after it was
+     * interrupted and {@link #daemonThreadJoinTimeout} has passed. The message names the threads; their stack traces
+     * are logged as warnings either way. Without {@link #async} this is only taken into account if
+     * {@link #cleanupDaemonThreads} is <code>true</code>. A program that runs in the background ({@link #async}) is
+     * always interrupted when it is stopped, so there it always applies: the <code>java-stop</code> goal fails after
+     * the program has been cleaned up.
+     *
+     * @since 3.8.0
+     */
+    @Parameter(property = "exec.failOnLingeringThreads", defaultValue = "false")
+    protected boolean failOnLingeringThreads;
 
     protected Properties originalSystemProperties;
 
@@ -355,6 +365,12 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         if (isSkip()) {
             getLog().info("skipping execute as per configuration");
             return;
+        }
+
+        if (stopUnresponsiveDaemonThreads) {
+            getLog().warn("The parameter stopUnresponsiveDaemonThreads has no effect: the JDK no longer supports"
+                    + " stopping threads, so no thread is stopped. Remove it, or set failOnLingeringThreads to fail"
+                    + " the build when a thread does not finish.");
         }
 
         mainClass = resolveMainClass();
@@ -571,9 +587,10 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
             waitFor(0);
         }
 
+        List<Thread> lingering = Collections.emptyList();
         if (cleanupDaemonThreads) {
 
-            terminateThreads(threadGroup);
+            lingering = interruptAndJoin(threadGroup, daemonThreadJoinTimeout);
 
             try {
                 threadGroup.destroy();
@@ -602,6 +619,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                         threadGroup.uncaughtException);
             }
         }
+        failOnLingering(lingering, daemonThreadJoinTimeout, "the Java program (" + mainClass + ")");
     }
 
     /**
@@ -996,30 +1014,14 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
     }
 
     /**
-     * Calls {@code Thread.stop()} reflectively: JDK 27 removed the method, so a direct call fails to link with a
-     * {@link NoSuchMethodError} when this class runs there.
+     * Interrupts the threads of the group and waits for them.
      *
-     * @return {@code false} if the method is missing or throws {@link UnsupportedOperationException} (JDK 20-26)
+     * @param threadGroup the group
+     * @param joinTimeout the number of milliseconds to wait for all of them, <code>&lt;=0</code> to wait without
+     *                    limit
      */
-    private static boolean stopThread(Thread thread) {
-        try {
-            Thread.class.getMethod("stop").invoke(thread);
-            return true;
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            return false;
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof UnsupportedOperationException) {
-                return false;
-            }
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            }
-            if (cause instanceof Error) {
-                throw (Error) cause;
-            }
-            throw new IllegalStateException(cause);
-        }
+    protected void terminateThreads(ThreadGroup threadGroup, long joinTimeout) {
+        interruptAndJoin(threadGroup, joinTimeout);
     }
 
     /**
@@ -1028,8 +1030,9 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      * @param threadGroup the group
      * @param joinTimeout the number of milliseconds to wait for all of them, <code>&lt;=0</code> to wait without
      *                    limit
+     * @return the threads that are still alive despite the interruption, with a warning logged for each
      */
-    protected void terminateThreads(ThreadGroup threadGroup, long joinTimeout) {
+    List<Thread> interruptAndJoin(ThreadGroup threadGroup, long joinTimeout) {
         long startTime = System.currentTimeMillis();
         Set<Thread> uncooperativeThreads = new HashSet<>(); // these were not responsive to interruption
         for (Collection<Thread> threads = getActiveThreads(threadGroup);
@@ -1041,8 +1044,7 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 getLog().debug("interrupting thread " + thread);
                 thread.interrupt();
             }
-            // Now join with a timeout and call stop() (assuming flags are set right)
-            boolean threadStopIsAvailable = true;
+            // Now join with a timeout
             for (Thread thread : threads) {
                 if (!thread.isAlive()) {
                     continue; // and, presumably it won't show up in getActiveThreads() next iteration
@@ -1059,19 +1061,18 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                     continue;
                 }
                 uncooperativeThreads.add(thread); // ensure we don't process again
-                if (stopUnresponsiveDaemonThreads && threadStopIsAvailable) {
-                    getLog().warn("thread " + thread + " will be Thread.stop()'ed");
-                    if (!stopThread(thread)) {
-                        threadStopIsAvailable = false;
-                        getLog().warn(THREAD_STOP_UNAVAILABLE);
-                    }
-                } else {
-                    getLog().warn("thread " + thread + " will linger despite being asked to die via interruption");
-                }
             }
         }
-        if (!uncooperativeThreads.isEmpty()) {
-            getLog().warn("NOTE: " + uncooperativeThreads.size() + " thread(s) did not finish despite being asked to"
+        List<Thread> lingering = new ArrayList<>();
+        for (Thread thread : uncooperativeThreads) {
+            if (thread.isAlive()) {
+                lingering.add(thread);
+                getLog().warn("thread " + thread + " will linger despite being asked to die via interruption"
+                        + stackTraceOf(thread));
+            }
+        }
+        if (!lingering.isEmpty()) {
+            getLog().warn("NOTE: " + lingering.size() + " thread(s) did not finish despite being asked to"
                     + " via interruption. This is not a problem with exec:java, it is a problem with the running code."
                     + " Although not serious, it should be remedied.");
         } else {
@@ -1083,6 +1084,35 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
                 getLog().debug("strange; " + activeCount + " thread(s) still active in the group " + threadGroup
                         + " such as " + threadsArray[0]);
             }
+        }
+        return lingering;
+    }
+
+    private static String stackTraceOf(Thread thread) {
+        StringBuilder trace = new StringBuilder();
+        for (StackTraceElement element : thread.getStackTrace()) {
+            trace.append(System.lineSeparator()).append("\tat ").append(element);
+        }
+        return trace.toString();
+    }
+
+    /**
+     * @param lingering the threads that outlived the interruption
+     * @param timeout the number of milliseconds that was waited for them
+     * @param program what ran them, for the message
+     * @throws MojoExecutionException naming the threads, if {@link #failOnLingeringThreads} is set and there are any
+     */
+    void failOnLingering(List<Thread> lingering, long timeout, String program) throws MojoExecutionException {
+        if (failOnLingeringThreads && !lingering.isEmpty()) {
+            StringBuilder names = new StringBuilder();
+            for (Thread thread : lingering) {
+                names.append(names.length() == 0 ? "" : ", ")
+                        .append('\'')
+                        .append(thread.getName())
+                        .append('\'');
+            }
+            throw new MojoExecutionException(lingering.size() + " thread(s) of " + program + " did not finish within "
+                    + timeout + " ms despite being interrupted: " + names);
         }
     }
 
