@@ -38,35 +38,35 @@
 // Otherwise this test will fail.
 
 private int countTheNumberOfLines(String expectedHexString, String line) {
-    int numberOfLine = 0;
+    int numberOfLine = 0
 
-    boolean found = true;
+    boolean found = true
     while (found) {
-        int posOfFirstLine = expectedHexString.indexOf(line);
+        int posOfFirstLine = expectedHexString.indexOf(line)
         if (posOfFirstLine >= 0) {
-            found = true;
-            numberOfLine++;
+            found = true
+            numberOfLine++
             // line.length():
             //     +2 for hex means two character like 0a
             //     +1 for space during the hex string generation.
             // depends on the platform.
-            expectedHexString = expectedHexString.substring(posOfFirstLine+line.length());
-        }  else {
-            found = false;
+            expectedHexString = expectedHexString.substring(posOfFirstLine+line.length())
+        } else {
+            found = false
         }
     }
 
-    return numberOfLine;
+    return numberOfLine
 }
 
 private String convertStringToHex(String expectedOutput) {
-    StringBuilder result = new StringBuilder();
-    for (int i = 0; i < expectedOutput.length(); i++) {
-        byte c = (byte) expectedOutput.charAt(i);
-        result.append(String.format("%02x", c));
-        result.append(' ');
+    StringBuilder result = new StringBuilder()
+    for (int i = 0; i <expectedOutput.length(); i++) {
+        byte c = (byte) expectedOutput.charAt(i)
+        result.append(String.format("%02x", c))
+        result.append(' ')
     }
-    return result.toString();
+    return result.toString()
 }
 
 
@@ -78,7 +78,7 @@ assert outLog.exists() : "Could not find the " + outLog
 // that depends on the environment. It is not output of the test program, so leave it out.
 def expectedOutput = outLog.getText('UTF-8').replaceAll(/(?m)^Picked up [^\r\n]*(\r?\n)?/, '')
 
-def expectedHexString = convertStringToHex(expectedOutput);
+def expectedHexString = convertStringToHex(expectedOutput)
 
 def expectedLines = [
     "1. System.out line",
@@ -89,12 +89,12 @@ def expectedLines = [
 ]
 
 for (int i = 0; i < expectedLines.size(); i++) {
-    def expectedLine = convertStringToHex(expectedLines[i]);
-    assert expectedHexString.contains(expectedLine);
+    def expectedLine = convertStringToHex(expectedLines[i])
+    assert expectedHexString.contains(expectedLine)
 }
 
-def LINE = System.getProperty("line.separator");
-def LineInHex = convertStringToHex(LINE);
+def LINE = System.getProperty("line.separator")
+def LineInHex = convertStringToHex(LINE)
 
-def numberOfLine = countTheNumberOfLines(expectedHexString, LineInHex);
-assert 5 == numberOfLine;
+def numberOfLine = countTheNumberOfLines(expectedHexString, LineInHex)
+assert 5 == numberOfLine

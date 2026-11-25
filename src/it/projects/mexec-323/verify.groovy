@@ -22,4 +22,4 @@ assert createdDir.isDirectory()
 
 File log = new File(basedir, 'build.log')
 assert log.exists()
-assert log.getText().contains( "Executing command line: [mkdir, -p, dist/emails]" )
+assert log.getText().contains("Executing command line: [mkdir, -p, dist/emails]")

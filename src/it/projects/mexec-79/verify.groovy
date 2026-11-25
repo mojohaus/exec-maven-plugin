@@ -16,6 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- File log = new File(basedir, 'exec.log')
- assert log.exists()
- assert log.getText().contains('target%20or%20build')
+File log = new File(basedir, 'exec.log')
+assert log.exists()
+assert log.getText().contains('target%20or%20build')

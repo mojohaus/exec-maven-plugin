@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-def log = new File( basedir, "build.log" )
+def log = new File(basedir, "build.log")
 assert log.exists()
 // the argument after -p is kept
-assert log.text.contains( "Executing command line: [echo, --, -p, dist/emails]" )
+assert log.text.contains("Executing command line: [echo, --, -p, dist/emails]")

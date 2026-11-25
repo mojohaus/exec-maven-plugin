@@ -22,5 +22,5 @@ assert log.contains('The Java class is ready.')
 assert log.contains("Stopping the Java program of the execution 'start'")
 assert new File(basedir, 'target/client-connected.txt').exists()
 assert new File(basedir, 'target/server-stopped.txt').exists()
-assert log.indexOf('Server listening on') < log.indexOf("Stopping the Java program")
+assert log.indexOf('Server listening on') <log.indexOf("Stopping the Java program")
 true
