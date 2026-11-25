@@ -17,6 +17,6 @@
  * under the License.
  */
 
-def buildLog = new File( basedir, "build.log" ).text
+def buildLog = new File(basedir, "build.log").text
 
 assert buildLog.contains("[ERROR] Timeout. Process runs longer than 1000 ms.")

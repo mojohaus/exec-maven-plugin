@@ -18,4 +18,4 @@
  */
 File log = new File(basedir, 'build.log')
 assert log.exists()
-assert log.getText().contains( "gREETINGS!")
+assert log.getText().contains("gREETINGS!")

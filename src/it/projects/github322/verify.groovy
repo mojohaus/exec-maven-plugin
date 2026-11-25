@@ -18,4 +18,4 @@
  */
 
 File log = new File(basedir, 'build.log')
-assert log.text.contains( 'Main Result: <null>')
+assert log.text.contains('Main Result: <null>')

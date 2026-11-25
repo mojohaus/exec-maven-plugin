@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-def buildLogLines = new File( basedir, "build.log" ).readLines()
+def buildLogLines = new File(basedir, "build.log").readLines()
 
 // Second-last line is the last line the called program prints before exiting the JVM with System.exit.
 // Last line is "Running post-build script: ...", i.e. we need to disregard it.

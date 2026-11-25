@@ -18,4 +18,4 @@
  */
 File log = new File(basedir, 'build.log')
 assert log.exists()
-assert log.getText().contains( "[DEBUG] env: MY_ENV_SCRIPT_SET_A_VAR_TO=something")
+assert log.getText().contains("[DEBUG] env: MY_ENV_SCRIPT_SET_A_VAR_TO=something")

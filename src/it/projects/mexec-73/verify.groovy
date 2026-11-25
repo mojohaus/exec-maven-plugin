@@ -20,13 +20,13 @@ File log = new File(basedir, 'build.log')
 assert log.exists()
 
 String expectedClasspath = basedir.toPath().resolve('target/classes').toString()
-assert log.getText().contains( "Adding to classpath : $expectedClasspath" )
+assert log.getText().contains("Adding to classpath : $expectedClasspath")
 
 expectedClasspath = basedir.toPath().resolve('etc/run1').toString()
-assert log.getText().contains( "Adding additional classpath element: $expectedClasspath" )
+assert log.getText().contains("Adding additional classpath element: $expectedClasspath")
 
 expectedClasspath = basedir.toPath().resolve('etc/run2').toString()
-assert log.getText().contains( "Adding additional classpath element: $expectedClasspath" )
+assert log.getText().contains("Adding additional classpath element: $expectedClasspath")
 
 //expectedClasspath = new File("c:\\windows\\system32\\drivers\\etc").toURI().toURL().toString()
 //assert log.getText().contains( "Adding additional classpath element: $expectedClasspath" )

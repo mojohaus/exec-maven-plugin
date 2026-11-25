@@ -18,7 +18,7 @@
  */
 
 
-def buildLog = new File( basedir, "build.log" ).text
+def buildLog = new File(basedir, "build.log").text
 
 // Newer versions of Maven can contains short name of plugin
 assert buildLog.contains('[DEBUG]   (f) arguments = [-cp, target/classes, Main]')
