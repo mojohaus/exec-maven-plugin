@@ -37,8 +37,6 @@
 // continuously without any break in it.
 // Otherwise this test will fail.
 
-import org.codehaus.plexus.util.FileUtils
-
 private int countTheNumberOfLines(String expectedHexString, String line) {
     int numberOfLine = 0;
 
@@ -74,13 +72,11 @@ private String convertStringToHex(String expectedOutput) {
 
 def outLog = new File(basedir, 'target/out.log')
 
-if (!outLog.exists()) {
-    throw new FileNotFoundException( "Could not find the " + outLog );
-}
+assert outLog.exists() : "Could not find the " + outLog
 
 // The JVM reports JAVA_TOOL_OPTIONS and similar variables on stderr ("Picked up ..."), at a point
 // that depends on the environment. It is not output of the test program, so leave it out.
-def expectedOutput = FileUtils.fileRead(outLog).replaceAll(/(?m)^Picked up [^\r\n]*(\r?\n)?/, '')
+def expectedOutput = outLog.getText('UTF-8').replaceAll(/(?m)^Picked up [^\r\n]*(\r?\n)?/, '')
 
 def expectedHexString = convertStringToHex(expectedOutput);
 
