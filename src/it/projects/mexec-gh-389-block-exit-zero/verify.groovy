@@ -18,6 +18,6 @@ def buildLogLines = new File(basedir, "build.log").readLines()
 
 // Find "System::exit was called" line index
 def infoMessageLineNumber = buildLogLines.indexOf("[INFO] System::exit was called with return code 0")
-assert infoMessageLineNumber> 0
+assert infoMessageLineNumber > 0
 // Verify that preceding line is program output
 assert buildLogLines[infoMessageLineNumber - 1].contains("[one, two, three]")
