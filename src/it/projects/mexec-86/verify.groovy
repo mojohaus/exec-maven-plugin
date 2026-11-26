@@ -61,7 +61,7 @@ private int countTheNumberOfLines(String expectedHexString, String line) {
 
 private String convertStringToHex(String expectedOutput) {
     StringBuilder result = new StringBuilder()
-    for (int i = 0; i <expectedOutput.length(); i++) {
+    for (int i = 0; i < expectedOutput.length(); i++) {
         byte c = (byte) expectedOutput.charAt(i)
         result.append(String.format("%02x", c))
         result.append(' ')
