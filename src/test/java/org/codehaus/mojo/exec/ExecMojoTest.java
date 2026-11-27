@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -515,7 +516,7 @@ class ExecMojoTest {
         build.setOutputDirectory(classes.toString());
         MavenProject project = mock(MavenProject.class);
         when(project.getBuild()).thenReturn(build);
-        when(project.getRuntimeArtifacts()).thenReturn(Collections.emptyList());
+        when(project.getArtifacts()).thenReturn(Collections.emptySet());
         mojo.setProject(project);
         setVariableValueToObject(mojo, "classpathScope", "runtime");
         setVariableValueToObject(mojo, "addResourcesToClasspath", true);
@@ -553,15 +554,16 @@ class ExecMojoTest {
     }
 
     private Artifact artifact(String groupId, String artifactId) {
-        Artifact artifact = new DefaultArtifact(
-                groupId, artifactId, "1.0", "runtime", "jar", null, new DefaultArtifactHandler("jar"));
+        DefaultArtifactHandler handler = new DefaultArtifactHandler("jar");
+        handler.setAddedToClasspath(true);
+        Artifact artifact = new DefaultArtifact(groupId, artifactId, "1.0", "runtime", "jar", null, handler);
         artifact.setFile(new File("target", artifactId + "-1.0.jar").getAbsoluteFile());
         return artifact;
     }
 
     private void withRuntimeArtifacts(Artifact... artifacts) throws Exception {
         MavenProject project = mock(MavenProject.class);
-        when(project.getRuntimeArtifacts()).thenReturn(Arrays.asList(artifacts));
+        when(project.getArtifacts()).thenReturn(new HashSet<>(Arrays.asList(artifacts)));
         mojo.setProject(project);
         setVariableValueToObject(mojo, "classpathScope", "runtime");
     }
@@ -784,5 +786,36 @@ class ExecMojoTest {
         }
         wrapper2.delete();
         envScriptWithShebang.delete();
+    }
+
+    @Test
+    void classpathScopeFiltersArtifactsByScope() throws Exception {
+        Artifact compile = artifactWithScope("compile");
+        Artifact provided = artifactWithScope("provided");
+        Artifact system = artifactWithScope("system");
+        Artifact runtime = artifactWithScope("runtime");
+        Artifact test = artifactWithScope("test");
+        MavenProject project = mock(MavenProject.class);
+        when(project.getArtifacts()).thenReturn(new HashSet<>(Arrays.asList(compile, provided, system, runtime, test)));
+        mojo.setProject(project);
+
+        assertEquals(new HashSet<>(Arrays.asList(compile, provided, system)), collectForScope("compile"));
+        assertEquals(new HashSet<>(Arrays.asList(compile, provided, system, runtime, test)), collectForScope("test"));
+        assertEquals(new HashSet<>(Arrays.asList(compile, runtime)), collectForScope("runtime"));
+        assertEquals(new HashSet<>(Arrays.asList(compile, provided, system, runtime)), collectForScope("provided"));
+        assertEquals(new HashSet<>(Arrays.asList(system)), collectForScope("system"));
+    }
+
+    private HashSet<Artifact> collectForScope(String scope) throws Exception {
+        setVariableValueToObject(mojo, "classpathScope", scope);
+        List<Artifact> artifacts = new ArrayList<>();
+        mojo.collectProjectArtifactsAndClasspath(artifacts, new ArrayList<>());
+        return new HashSet<>(artifacts);
+    }
+
+    private Artifact artifactWithScope(String scope) {
+        DefaultArtifactHandler handler = new DefaultArtifactHandler("jar");
+        handler.setAddedToClasspath(true);
+        return new DefaultArtifact("org.acme", scope, "1.0", scope, "jar", null, handler);
     }
 }

@@ -22,6 +22,7 @@ package org.codehaus.mojo.exec;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -218,32 +219,33 @@ public abstract class AbstractExecMojo extends AbstractMojo {
         }
 
         if ("compile".equals(classpathScope)) {
-            artifacts.addAll(project.getCompileArtifacts());
+            artifacts.addAll(filterArtifacts(Artifact.SCOPE_COMPILE, Artifact.SCOPE_PROVIDED, Artifact.SCOPE_SYSTEM));
             if (addOutputToClasspath) {
                 theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
         } else if ("test".equals(classpathScope)) {
-            artifacts.addAll(project.getTestArtifacts());
+            artifacts.addAll(filterArtifacts());
             if (addOutputToClasspath) {
                 theClasspathFiles.add(Paths.get(project.getBuild().getTestOutputDirectory()));
                 theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
         } else if ("runtime".equals(classpathScope)) {
-            artifacts.addAll(project.getRuntimeArtifacts());
+            artifacts.addAll(filterArtifacts(Artifact.SCOPE_COMPILE, Artifact.SCOPE_RUNTIME));
             if (addOutputToClasspath) {
                 theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
         } else if ("provided".equals(classpathScope)) {
             // "compile" gives compile, provided, and system scopes
             // "runtime" gives compile and runtime scopes
-            Set<Artifact> artifactSet = new HashSet<>(project.getCompileArtifacts());
-            artifactSet.addAll(project.getRuntimeArtifacts());
+            Set<Artifact> artifactSet = new HashSet<>(
+                    filterArtifacts(Artifact.SCOPE_COMPILE, Artifact.SCOPE_PROVIDED, Artifact.SCOPE_SYSTEM));
+            artifactSet.addAll(filterArtifacts(Artifact.SCOPE_COMPILE, Artifact.SCOPE_RUNTIME));
             artifacts.addAll(artifactSet);
             if (addOutputToClasspath) {
                 theClasspathFiles.add(Paths.get(project.getBuild().getOutputDirectory()));
             }
         } else if ("system".equals(classpathScope)) {
-            artifacts.addAll(project.getSystemArtifacts());
+            artifacts.addAll(filterArtifacts(Artifact.SCOPE_SYSTEM));
         } else {
             throw new IllegalStateException("Invalid classpath scope: " + classpathScope);
         }
@@ -261,6 +263,21 @@ public abstract class AbstractExecMojo extends AbstractMojo {
 
         getLog().debug("Collected project artifacts " + artifacts);
         getLog().debug("Collected project classpath " + theClasspathFiles);
+    }
+
+    /**
+     * Selects the classpath artifacts from {@link MavenProject#getArtifacts()}, matching the scope filters the
+     * deprecated {@code MavenProject} scope getters applied.
+     *
+     * @param scopes the scopes to include; all classpath artifacts when empty
+     * @return the matching artifacts
+     */
+    private List<Artifact> filterArtifacts(String... scopes) {
+        List<String> acceptedScopes = Arrays.asList(scopes);
+        return project.getArtifacts().stream()
+                .filter(artifact -> artifact.getArtifactHandler().isAddedToClasspath())
+                .filter(artifact -> acceptedScopes.isEmpty() || acceptedScopes.contains(artifact.getScope()))
+                .collect(Collectors.toList());
     }
 
     /**
