@@ -357,6 +357,17 @@ class ExecJavaMojoTest {
     @InjectMojo(goal = "java")
     @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
     @MojoParameter(name = "daemonThreadJoinTimeout", value = "500")
+    @MojoParameter(name = "cleanupDaemonThreads", value = "false")
+    @MojoParameter(name = "failOnLingeringThreads", value = "true")
+    void failOnLingeringThreadsIsInertWithoutCleanup(ExecJavaMojo mojo) throws Exception {
+        mojo.setLog(Mockito.mock(Log.class));
+        execute(mojo);
+    }
+
+    @Test
+    @InjectMojo(goal = "java")
+    @MojoParameter(name = "mainClass", value = "org.codehaus.mojo.exec.MainUncooperative")
+    @MojoParameter(name = "daemonThreadJoinTimeout", value = "500")
     @MojoParameter(name = "stopUnresponsiveDaemonThreads", value = "true")
     void stopUnresponsiveDaemonThreadsIsDeprecatedAndInert(ExecJavaMojo mojo) throws Exception {
         Log log = Mockito.mock(Log.class);
