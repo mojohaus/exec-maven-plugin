@@ -1009,6 +1009,11 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
         }
     }
 
+    /**
+     * @param threadGroup the group
+     * @deprecated no longer called by the plugin, overriding it has no effect
+     */
+    @Deprecated
     protected void terminateThreads(ThreadGroup threadGroup) {
         terminateThreads(threadGroup, daemonThreadJoinTimeout);
     }
@@ -1019,7 +1024,9 @@ public abstract class AbstractExecJavaBase extends AbstractExecMojo {
      * @param threadGroup the group
      * @param joinTimeout the number of milliseconds to wait for all of them, <code>&lt;=0</code> to wait without
      *                    limit
+     * @deprecated no longer called by the plugin, overriding it has no effect
      */
+    @Deprecated
     protected void terminateThreads(ThreadGroup threadGroup, long joinTimeout) {
         interruptAndJoin(threadGroup, joinTimeout);
     }
